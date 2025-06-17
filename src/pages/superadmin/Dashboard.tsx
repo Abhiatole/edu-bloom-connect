@@ -1,11 +1,13 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, School, BookOpen, TrendingUp, Plus, Settings, BarChart3 } from 'lucide-react';
+import { Users, School, BookOpen, TrendingUp, Plus, Settings, BarChart3, FileText, Bell, Shield } from 'lucide-react';
 import UserManagement from '@/components/superadmin/UserManagement';
 import PerformanceChart from '@/components/charts/PerformanceChart';
 import GradeDistributionChart from '@/components/charts/GradeDistributionChart';
+import PDFReportGenerator from '@/components/reports/PDFReportGenerator';
+import NotificationCenter from '@/components/notifications/NotificationCenter';
+import AuditLogsViewer from '@/components/admin/AuditLogsViewer';
 
 const SuperAdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -37,7 +39,10 @@ const SuperAdminDashboard = () => {
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
-    { id: 'users', label: 'User Management', icon: Users }
+    { id: 'users', label: 'User Management', icon: Users },
+    { id: 'reports', label: 'Reports', icon: FileText },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'audit', label: 'Audit Logs', icon: Shield }
   ];
 
   return (
@@ -48,7 +53,7 @@ const SuperAdminDashboard = () => {
           <p className="text-gray-600 mt-2">Manage your educational institution</p>
         </div>
         <div className="flex space-x-3">
-          <Button>
+          <Button onClick={() => setActiveTab('users')}>
             <Plus className="h-4 w-4 mr-2" />
             Add User
           </Button>
@@ -61,12 +66,12 @@ const SuperAdminDashboard = () => {
 
       {/* Tab Navigation */}
       <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+        <nav className="-mb-px flex space-x-8 overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+              className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -136,13 +141,17 @@ const SuperAdminDashboard = () => {
                   <Users className="h-4 w-4 mr-2" />
                   Manage Users
                 </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add New Teacher
+                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('reports')}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Generate Reports
                 </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <School className="h-4 w-4 mr-2" />
-                  Bulk Student Import
+                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('notifications')}>
+                  <Bell className="h-4 w-4 mr-2" />
+                  Send Notifications
+                </Button>
+                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('audit')}>
+                  <Shield className="h-4 w-4 mr-2" />
+                  View Audit Logs
                 </Button>
               </CardContent>
             </Card>
@@ -174,6 +183,9 @@ const SuperAdminDashboard = () => {
       )}
 
       {activeTab === 'users' && <UserManagement />}
+      {activeTab === 'reports' && <PDFReportGenerator />}
+      {activeTab === 'notifications' && <NotificationCenter />}
+      {activeTab === 'audit' && <AuditLogsViewer />}
     </div>
   );
 };

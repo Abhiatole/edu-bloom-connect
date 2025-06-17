@@ -1,9 +1,12 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, BookOpen, ClipboardCheck, TrendingUp, UserPlus, FileText } from 'lucide-react';
+import { Users, BookOpen, ClipboardCheck, TrendingUp, UserPlus, FileText, Calendar, Bell, BarChart3 } from 'lucide-react';
 import StudentEnrollment from '@/components/teacher/StudentEnrollment';
+import AttendanceManager from '@/components/attendance/AttendanceManager';
+import TimetableManager from '@/components/schedule/TimetableManager';
+import PDFReportGenerator from '@/components/reports/PDFReportGenerator';
+import NotificationCenter from '@/components/notifications/NotificationCenter';
 
 const TeacherDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -17,7 +20,11 @@ const TeacherDashboard = () => {
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: TrendingUp },
-    { id: 'students', label: 'Student Management', icon: Users }
+    { id: 'students', label: 'Student Management', icon: Users },
+    { id: 'attendance', label: 'Attendance', icon: ClipboardCheck },
+    { id: 'timetable', label: 'Timetable', icon: Calendar },
+    { id: 'reports', label: 'Reports', icon: BarChart3 },
+    { id: 'notifications', label: 'Notifications', icon: Bell }
   ];
 
   const recentTests = [
@@ -38,21 +45,21 @@ const TeacherDashboard = () => {
             <UserPlus className="h-4 w-4 mr-2" />
             Enroll Student
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => setActiveTab('reports')}>
             <FileText className="h-4 w-4 mr-2" />
-            Grade Tests
+            Generate Report
           </Button>
         </div>
       </div>
 
       {/* Tab Navigation */}
       <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+        <nav className="-mb-px flex space-x-8 overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+              className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -123,13 +130,17 @@ const TeacherDashboard = () => {
                   <Users className="h-4 w-4 mr-2" />
                   View All Students
                 </Button>
-                <Button className="w-full justify-start" variant="outline">
+                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('attendance')}>
                   <ClipboardCheck className="h-4 w-4 mr-2" />
-                  Create New Test
+                  Mark Attendance
                 </Button>
-                <Button className="w-full justify-start" variant="outline">
+                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('reports')}>
                   <FileText className="h-4 w-4 mr-2" />
                   Generate Reports
+                </Button>
+                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('timetable')}>
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Manage Timetable
                 </Button>
               </CardContent>
             </Card>
@@ -138,6 +149,10 @@ const TeacherDashboard = () => {
       )}
 
       {activeTab === 'students' && <StudentEnrollment />}
+      {activeTab === 'attendance' && <AttendanceManager />}
+      {activeTab === 'timetable' && <TimetableManager />}
+      {activeTab === 'reports' && <PDFReportGenerator />}
+      {activeTab === 'notifications' && <NotificationCenter />}
     </div>
   );
 };
