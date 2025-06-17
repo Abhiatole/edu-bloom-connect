@@ -8,6 +8,9 @@ import Layout from "./components/Layout";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
+import About from "./pages/About";
+import Features from "./pages/Features";
+import Contact from "./pages/Contact";
 import SuperAdminDashboard from "./pages/superadmin/Dashboard";
 import TeacherDashboard from "./pages/teacher/Dashboard";
 import StudentDashboard from "./pages/student/Dashboard";
@@ -27,6 +30,9 @@ const App = () => (
             <Route index element={<Index />} />
             <Route path="login" element={<Login />} />
             <Route path="forgot-password" element={<ForgotPassword />} />
+            <Route path="about" element={<About />} />
+            <Route path="features" element={<Features />} />
+            <Route path="contact" element={<Contact />} />
             
             {/* Protected Routes */}
             <Route 

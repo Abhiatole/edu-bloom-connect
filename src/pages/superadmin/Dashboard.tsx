@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Users, School, BookOpen, TrendingUp, Plus, Settings, BarChart3 } from 'lucide-react';
 import UserManagement from '@/components/superadmin/UserManagement';
+import PerformanceChart from '@/components/charts/PerformanceChart';
+import GradeDistributionChart from '@/components/charts/GradeDistributionChart';
 
 const SuperAdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -13,6 +15,24 @@ const SuperAdminDashboard = () => {
     { title: 'Total Students', value: '486', icon: School, color: 'text-green-600', bg: 'bg-green-50' },
     { title: 'Active Courses', value: '12', icon: BookOpen, color: 'text-purple-600', bg: 'bg-purple-50' },
     { title: 'Performance Rate', value: '94%', icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' }
+  ];
+
+  const performanceData = [
+    { month: 'Jan', students: 420, teachers: 22, performance: 89 },
+    { month: 'Feb', students: 435, teachers: 23, performance: 91 },
+    { month: 'Mar', students: 458, teachers: 24, performance: 88 },
+    { month: 'Apr', students: 472, teachers: 24, performance: 93 },
+    { month: 'May', students: 486, teachers: 24, performance: 94 },
+  ];
+
+  const gradeData = [
+    { grade: 'A+', count: 125, percentage: 25.7 },
+    { grade: 'A', count: 98, percentage: 20.2 },
+    { grade: 'B+', count: 87, percentage: 17.9 },
+    { grade: 'B', count: 76, percentage: 15.6 },
+    { grade: 'C+', count: 54, percentage: 11.1 },
+    { grade: 'C', count: 32, percentage: 6.6 },
+    { grade: 'D', count: 14, percentage: 2.9 },
   ];
 
   const tabs = [
@@ -79,6 +99,29 @@ const SuperAdminDashboard = () => {
                 </CardContent>
               </Card>
             ))}
+          </div>
+
+          {/* Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Performance Trends</CardTitle>
+                <CardDescription>Monthly overview of key metrics</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PerformanceChart data={performanceData} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Grade Distribution</CardTitle>
+                <CardDescription>Current semester grade breakdown</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <GradeDistributionChart data={gradeData} />
+              </CardContent>
+            </Card>
           </div>
 
           {/* Quick Actions */}
