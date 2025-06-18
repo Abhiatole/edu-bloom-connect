@@ -14,6 +14,7 @@ import Contact from "./pages/Contact";
 import SuperAdminDashboard from "./pages/superadmin/Dashboard";
 import TeacherDashboard from "./pages/teacher/Dashboard";
 import StudentDashboard from "./pages/student/Dashboard";
+import ParentPortal from "./components/parent/ParentPortal";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 
@@ -58,6 +59,15 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['student']}>
                   <StudentDashboard />
+                </ProtectedRoute>
+              } 
+            />
+
+            <Route 
+              path="parent/dashboard" 
+              element={
+                <ProtectedRoute allowedRoles={['parent']}>
+                  <ParentPortal />
                 </ProtectedRoute>
               } 
             />

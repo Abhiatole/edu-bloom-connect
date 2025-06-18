@@ -9,7 +9,263 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      analytics_cache: {
+        Row: {
+          date_range: string | null
+          expires_at: string | null
+          id: string
+          last_updated: string | null
+          metric_data: Json
+          metric_name: string
+        }
+        Insert: {
+          date_range?: string | null
+          expires_at?: string | null
+          id?: string
+          last_updated?: string | null
+          metric_data: Json
+          metric_name: string
+        }
+        Update: {
+          date_range?: string | null
+          expires_at?: string | null
+          id?: string
+          last_updated?: string | null
+          metric_data?: Json
+          metric_name?: string
+        }
+        Relationships: []
+      }
+      fee_payments: {
+        Row: {
+          amount_paid: number
+          created_at: string | null
+          fee_structure_id: string | null
+          id: string
+          payment_date: string | null
+          payment_method: string | null
+          payment_status: string | null
+          receipt_url: string | null
+          student_id: string | null
+          transaction_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount_paid: number
+          created_at?: string | null
+          fee_structure_id?: string | null
+          id?: string
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          receipt_url?: string | null
+          student_id?: string | null
+          transaction_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string | null
+          fee_structure_id?: string | null
+          id?: string
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          receipt_url?: string | null
+          student_id?: string | null
+          transaction_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_payments_fee_structure_id_fkey"
+            columns: ["fee_structure_id"]
+            isOneToOne: false
+            referencedRelation: "fee_structures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fee_structures: {
+        Row: {
+          amount: number
+          class_name: string
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          due_date: string
+          id: string
+          semester: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          class_name: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date: string
+          id?: string
+          semester: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          class_name?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date?: string
+          id?: string
+          semester?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      parent_students: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_primary: boolean | null
+          parent_id: string | null
+          relationship: string | null
+          student_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          parent_id?: string | null
+          relationship?: string | null
+          student_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          parent_id?: string | null
+          relationship?: string | null
+          student_id?: string | null
+        }
+        Relationships: []
+      }
+      performance_predictions: {
+        Row: {
+          actual_grade: number | null
+          confidence_score: number | null
+          created_at: string | null
+          id: string
+          predicted_grade: number | null
+          prediction_date: string | null
+          risk_level: string | null
+          student_id: string | null
+          subject: string
+          updated_at: string | null
+        }
+        Insert: {
+          actual_grade?: number | null
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          predicted_grade?: number | null
+          prediction_date?: string | null
+          risk_level?: string | null
+          student_id?: string | null
+          subject: string
+          updated_at?: string | null
+        }
+        Update: {
+          actual_grade?: number | null
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          predicted_grade?: number | null
+          prediction_date?: string | null
+          risk_level?: string | null
+          student_id?: string | null
+          subject?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      push_notifications: {
+        Row: {
+          created_at: string | null
+          data: Json | null
+          expires_at: string | null
+          id: string
+          message: string
+          read_status: boolean | null
+          sent_at: string | null
+          title: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data?: Json | null
+          expires_at?: string | null
+          id?: string
+          message: string
+          read_status?: boolean | null
+          sent_at?: string | null
+          title: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json | null
+          expires_at?: string | null
+          id?: string
+          message?: string
+          read_status?: boolean | null
+          sent_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      security_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          resource: string | null
+          success: boolean | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          resource?: string | null
+          success?: boolean | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          resource?: string | null
+          success?: boolean | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

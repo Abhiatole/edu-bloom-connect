@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, BookOpen, ClipboardCheck, TrendingUp, UserPlus, FileText, Calendar, Bell, BarChart3 } from 'lucide-react';
+import { Users, BookOpen, ClipboardCheck, TrendingUp, UserPlus, FileText, Calendar, Bell, BarChart3, Brain, DollarSign, Smartphone } from 'lucide-react';
 import StudentEnrollment from '@/components/teacher/StudentEnrollment';
 import AttendanceManager from '@/components/attendance/AttendanceManager';
 import TimetableManager from '@/components/schedule/TimetableManager';
 import PDFReportGenerator from '@/components/reports/PDFReportGenerator';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
+import PerformancePrediction from '@/components/ai/PerformancePrediction';
+import FeesManagement from '@/components/fees/FeesManagement';
+import PushNotifications from '@/components/notifications/PushNotifications';
 
 const TeacherDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -23,8 +26,11 @@ const TeacherDashboard = () => {
     { id: 'students', label: 'Student Management', icon: Users },
     { id: 'attendance', label: 'Attendance', icon: ClipboardCheck },
     { id: 'timetable', label: 'Timetable', icon: Calendar },
+    { id: 'ai-insights', label: 'AI Insights', icon: Brain },
+    { id: 'fees', label: 'Fees Management', icon: DollarSign },
     { id: 'reports', label: 'Reports', icon: BarChart3 },
-    { id: 'notifications', label: 'Notifications', icon: Bell }
+    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'push', label: 'Push Alerts', icon: Smartphone }
   ];
 
   const recentTests = [
@@ -38,7 +44,7 @@ const TeacherDashboard = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Teacher Dashboard</h1>
-          <p className="text-gray-600 mt-2">Manage your classes and students</p>
+          <p className="text-gray-600 mt-2">Manage your classes and students with AI-powered insights</p>
         </div>
         <div className="flex space-x-3">
           <Button onClick={() => setActiveTab('students')}>
@@ -123,24 +129,24 @@ const TeacherDashboard = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>Common teaching tasks</CardDescription>
+                <CardDescription>Access new Phase 3 features</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('students')}>
-                  <Users className="h-4 w-4 mr-2" />
-                  View All Students
+                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('ai-insights')}>
+                  <Brain className="h-4 w-4 mr-2" />
+                  AI Performance Insights
+                </Button>
+                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('fees')}>
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Fees Management
+                </Button>
+                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('push')}>
+                  <Smartphone className="h-4 w-4 mr-2" />
+                  Send Push Notifications
                 </Button>
                 <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('attendance')}>
                   <ClipboardCheck className="h-4 w-4 mr-2" />
                   Mark Attendance
-                </Button>
-                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('reports')}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  Generate Reports
-                </Button>
-                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('timetable')}>
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Manage Timetable
                 </Button>
               </CardContent>
             </Card>
@@ -151,8 +157,11 @@ const TeacherDashboard = () => {
       {activeTab === 'students' && <StudentEnrollment />}
       {activeTab === 'attendance' && <AttendanceManager />}
       {activeTab === 'timetable' && <TimetableManager />}
+      {activeTab === 'ai-insights' && <PerformancePrediction />}
+      {activeTab === 'fees' && <FeesManagement />}
       {activeTab === 'reports' && <PDFReportGenerator />}
       {activeTab === 'notifications' && <NotificationCenter />}
+      {activeTab === 'push' && <PushNotifications />}
     </div>
   );
 };

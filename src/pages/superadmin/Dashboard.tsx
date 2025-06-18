@@ -1,48 +1,49 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, School, BookOpen, TrendingUp, Plus, Settings, BarChart3, FileText, Bell, Shield } from 'lucide-react';
+import { Users, BookOpen, DollarSign, TrendingUp, UserPlus, Settings, BarChart3, Shield, Brain, Smartphone, UserCheck } from 'lucide-react';
 import UserManagement from '@/components/superadmin/UserManagement';
-import PerformanceChart from '@/components/charts/PerformanceChart';
-import GradeDistributionChart from '@/components/charts/GradeDistributionChart';
+import AttendanceManager from '@/components/attendance/AttendanceManager';
+import TimetableManager from '@/components/schedule/TimetableManager';
 import PDFReportGenerator from '@/components/reports/PDFReportGenerator';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import AuditLogsViewer from '@/components/admin/AuditLogsViewer';
+import PerformancePrediction from '@/components/ai/PerformancePrediction';
+import FeesManagement from '@/components/fees/FeesManagement';
+import PushNotifications from '@/components/notifications/PushNotifications';
+import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
+import SecurityLogs from '@/components/security/SecurityLogs';
+import ParentPortal from '@/components/parent/ParentPortal';
 
 const SuperAdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
   const stats = [
-    { title: 'Total Teachers', value: '24', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { title: 'Total Students', value: '486', icon: School, color: 'text-green-600', bg: 'bg-green-50' },
-    { title: 'Active Courses', value: '12', icon: BookOpen, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { title: 'Performance Rate', value: '94%', icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' }
-  ];
-
-  const performanceData = [
-    { month: 'Jan', students: 420, teachers: 22, performance: 89 },
-    { month: 'Feb', students: 435, teachers: 23, performance: 91 },
-    { month: 'Mar', students: 458, teachers: 24, performance: 88 },
-    { month: 'Apr', students: 472, teachers: 24, performance: 93 },
-    { month: 'May', students: 486, teachers: 24, performance: 94 },
-  ];
-
-  const gradeData = [
-    { grade: 'A+', count: 125, percentage: 25.7 },
-    { grade: 'A', count: 98, percentage: 20.2 },
-    { grade: 'B+', count: 87, percentage: 17.9 },
-    { grade: 'B', count: 76, percentage: 15.6 },
-    { grade: 'C+', count: 54, percentage: 11.1 },
-    { grade: 'C', count: 32, percentage: 6.6 },
-    { grade: 'D', count: 14, percentage: 2.9 },
+    { title: 'Total Users', value: '1,247', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { title: 'Active Classes', value: '45', icon: BookOpen, color: 'text-green-600', bg: 'bg-green-50' },
+    { title: 'Revenue', value: '$456K', icon: DollarSign, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { title: 'Performance', value: '87%', icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' }
   ];
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'overview', label: 'Overview', icon: TrendingUp },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'users', label: 'User Management', icon: Users },
-    { id: 'reports', label: 'Reports', icon: FileText },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'audit', label: 'Audit Logs', icon: Shield }
+    { id: 'ai-insights', label: 'AI Insights', icon: Brain },
+    { id: 'fees', label: 'Fees Management', icon: DollarSign },
+    { id: 'parent-portal', label: 'Parent Portal', icon: UserCheck },
+    { id: 'attendance', label: 'Attendance', icon: UserPlus },
+    { id: 'timetable', label: 'Timetable', icon: BookOpen },
+    { id: 'push', label: 'Push Alerts', icon: Smartphone },
+    { id: 'notifications', label: 'Notifications', icon: Settings },
+    { id: 'audit', label: 'Audit Logs', icon: Shield },
+    { id: 'security', label: 'Security Logs', icon: Shield }
+  ];
+
+  const systemAlerts = [
+    { type: 'warning', message: 'Server maintenance scheduled for tonight', time: '2 hours ago' },
+    { type: 'info', message: 'New feature: AI Performance Prediction deployed', time: '1 day ago' },
+    { type: 'error', message: '3 failed login attempts detected', time: '3 hours ago' }
   ];
 
   return (
@@ -50,16 +51,16 @@ const SuperAdminDashboard = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Super Admin Dashboard</h1>
-          <p className="text-gray-600 mt-2">Manage your educational institution</p>
+          <p className="text-gray-600 mt-2">Complete system control with AI-powered insights and analytics</p>
         </div>
         <div className="flex space-x-3">
           <Button onClick={() => setActiveTab('users')}>
-            <Plus className="h-4 w-4 mr-2" />
+            <UserPlus className="h-4 w-4 mr-2" />
             Add User
           </Button>
-          <Button variant="outline">
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
+          <Button variant="outline" onClick={() => setActiveTab('analytics')}>
+            <BarChart3 className="h-4 w-4 mr-2" />
+            View Analytics
           </Button>
         </div>
       </div>
@@ -106,75 +107,56 @@ const SuperAdminDashboard = () => {
             ))}
           </div>
 
-          {/* Charts */}
+          {/* Quick Access and Alerts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Performance Trends</CardTitle>
-                <CardDescription>Monthly overview of key metrics</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <PerformanceChart data={performanceData} />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Grade Distribution</CardTitle>
-                <CardDescription>Current semester grade breakdown</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <GradeDistributionChart data={gradeData} />
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>Common administrative tasks</CardDescription>
+                <CardTitle>Phase 3 Features</CardTitle>
+                <CardDescription>Access new intelligent capabilities</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('users')}>
-                  <Users className="h-4 w-4 mr-2" />
-                  Manage Users
+                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('analytics')}>
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Advanced Analytics Dashboard
                 </Button>
-                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('reports')}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  Generate Reports
+                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('ai-insights')}>
+                  <Brain className="h-4 w-4 mr-2" />
+                  AI Performance Predictions
                 </Button>
-                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('notifications')}>
-                  <Bell className="h-4 w-4 mr-2" />
-                  Send Notifications
+                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('parent-portal')}>
+                  <UserCheck className="h-4 w-4 mr-2" />
+                  Parent Portal Management
                 </Button>
-                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('audit')}>
+                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('fees')}>
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Online Fees Management
+                </Button>
+                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('security')}>
                   <Shield className="h-4 w-4 mr-2" />
-                  View Audit Logs
+                  Enhanced Security Logs
                 </Button>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>System Overview</CardTitle>
-                <CardDescription>Recent activities and alerts</CardDescription>
+                <CardTitle>System Alerts</CardTitle>
+                <CardDescription>Recent system notifications and alerts</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="text-sm">New teacher registration pending approval</span>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm">Monthly performance report generated</span>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg">
-                    <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                    <span className="text-sm">System backup completed successfully</span>
-                  </div>
+                <div className="space-y-4">
+                  {systemAlerts.map((alert, index) => (
+                    <div key={index} className="flex items-start space-x-3 p-3 border rounded-lg">
+                      <div className={`w-2 h-2 rounded-full mt-2 ${
+                        alert.type === 'error' ? 'bg-red-500' :
+                        alert.type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+                      }`}></div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{alert.message}</p>
+                        <p className="text-xs text-gray-500">{alert.time}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -182,10 +164,17 @@ const SuperAdminDashboard = () => {
         </div>
       )}
 
+      {activeTab === 'analytics' && <AnalyticsDashboard />}
       {activeTab === 'users' && <UserManagement />}
-      {activeTab === 'reports' && <PDFReportGenerator />}
+      {activeTab === 'ai-insights' && <PerformancePrediction />}
+      {activeTab === 'fees' && <FeesManagement />}
+      {activeTab === 'parent-portal' && <ParentPortal />}
+      {activeTab === 'attendance' && <AttendanceManager />}
+      {activeTab === 'timetable' && <TimetableManager />}
+      {activeTab === 'push' && <PushNotifications />}
       {activeTab === 'notifications' && <NotificationCenter />}
       {activeTab === 'audit' && <AuditLogsViewer />}
+      {activeTab === 'security' && <SecurityLogs />}
     </div>
   );
 };
