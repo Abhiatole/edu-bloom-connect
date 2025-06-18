@@ -175,7 +175,7 @@ const Index = () => {
               </Button>
             </Link>
             <Link to="/register/teacher">
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
+              <Button size="lg" variant="outline" className="border-white text-white bg-transparent hover:bg-white hover:text-blue-600">
                 Join as Teacher
               </Button>
             </Link>
