@@ -18,6 +18,21 @@ import ParentPortal from "./components/parent/ParentPortal";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 
+// New Registration Pages
+import StudentRegister from "./pages/register/StudentRegister";
+import TeacherRegister from "./pages/register/TeacherRegister";
+
+// New Admin Pages
+import UserApprovals from "./pages/admin/UserApprovals";
+import ExamManagement from "./pages/admin/ExamManagement";
+import Analytics from "./pages/admin/Analytics";
+
+// New Teacher Pages
+import StudentInsights from "./pages/teacher/StudentInsights";
+
+// New Student Pages
+import Performance from "./pages/student/Performance";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -35,12 +50,43 @@ const App = () => (
             <Route path="features" element={<Features />} />
             <Route path="contact" element={<Contact />} />
             
+            {/* Registration Routes */}
+            <Route path="register/student" element={<StudentRegister />} />
+            <Route path="register/teacher" element={<TeacherRegister />} />
+            
             {/* Protected Routes */}
             <Route 
               path="superadmin/dashboard" 
               element={
                 <ProtectedRoute allowedRoles={['superadmin']}>
                   <SuperAdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
+
+            <Route 
+              path="admin/approvals" 
+              element={
+                <ProtectedRoute allowedRoles={['superadmin']}>
+                  <UserApprovals />
+                </ProtectedRoute>
+              } 
+            />
+
+            <Route 
+              path="admin/exams" 
+              element={
+                <ProtectedRoute allowedRoles={['superadmin']}>
+                  <ExamManagement />
+                </ProtectedRoute>
+              } 
+            />
+
+            <Route 
+              path="admin/analytics" 
+              element={
+                <ProtectedRoute allowedRoles={['superadmin']}>
+                  <Analytics />
                 </ProtectedRoute>
               } 
             />
@@ -53,12 +99,30 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
+
+            <Route 
+              path="teacher/insights" 
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <StudentInsights />
+                </ProtectedRoute>
+              } 
+            />
             
             <Route 
               path="student/dashboard" 
               element={
                 <ProtectedRoute allowedRoles={['student']}>
                   <StudentDashboard />
+                </ProtectedRoute>
+              } 
+            />
+
+            <Route 
+              path="student/performance" 
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <Performance />
                 </ProtectedRoute>
               } 
             />

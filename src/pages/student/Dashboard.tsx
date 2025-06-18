@@ -1,213 +1,344 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, TrendingUp, Calendar, Bell, Award, Users, DollarSign, Brain, Target } from 'lucide-react';
-import GradeView from '@/components/student/GradeView';
-import AttendanceManager from '@/components/attendance/AttendanceManager';
-import TimetableManager from '@/components/schedule/TimetableManager';
-import NotificationCenter from '@/components/notifications/NotificationCenter';
-import PerformancePrediction from '@/components/ai/PerformancePrediction';
-import FeesManagement from '@/components/fees/FeesManagement';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
+import {
+  BookOpen,
+  Target,
+  Award,
+  TrendingUp,
+  Brain,
+  Calendar,
+  Eye,
+  BarChart3
+} from 'lucide-react';
 
 const StudentDashboard = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [stats, setStats] = useState({
+    totalExams: 0,
+    averageScore: 0,
+    highestScore: 0,
+    recentExams: 0
+  });
+  const [recentResults, setRecentResults] = useState([]);
+  const [insights, setInsights] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [studentProfile, setStudentProfile] = useState(null);
+  const { toast } = useToast();
 
-  const stats = [
-    { title: 'Overall Grade', value: '85.7%', icon: Award, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { title: 'Attendance', value: '94%', icon: Calendar, color: 'text-green-600', bg: 'bg-green-50' },
-    { title: 'Subjects', value: '6', icon: BookOpen, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { title: 'Rank', value: '#12', icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' }
+  useEffect(() => {
+    fetchStudentData();
+  }, []);
+
+  const fetchStudentData = async () => {
+    try {
+      const { data: currentUser } = await supabase.auth.getUser();
+      if (!currentUser.user) throw new Error('Not authenticated');
+
+      // Get student profile
+      const { data: profile, error: profileError } = await supabase
+        .from('student_profiles')
+        .select('*')
+        .eq('user_id', currentUser.user.id)
+        .single();
+
+      if (profileError) throw profileError;
+      setStudentProfile(profile);
+
+      // Get exam results
+      const { data: results, error: resultsError } = await supabase
+        .from('exam_results')
+        .select(`
+          *,
+          exams(
+            title,
+            max_marks,
+            exam_type,
+            subjects(name)
+          )
+        `)
+        .eq('student_id', profile.id)
+        .order('submitted_at', { ascending: false })
+        .limit(5);
+
+      if (resultsError) throw resultsError;
+      setRecentResults(results || []);
+
+      // Get AI insights
+      const { data: insightsData, error: insightsError } = await supabase
+        .from('student_insights')
+        .select(`
+          *,
+          subjects(name)
+        `)
+        .eq('student_id', profile.id);
+
+      if (insightsError) throw insightsError;
+      setInsights(insightsData || []);
+
+      // Calculate statistics
+      const allResults = results || [];
+      const scores = allResults.map(r => r.percentage || ((r.marks_obtained / (r.exams?.max_marks || 100)) * 100));
+      
+      setStats({
+        totalExams: allResults.length,
+        averageScore: scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0,
+        highestScore: scores.length > 0 ? Math.round(Math.max(...scores)) : 0,
+        recentExams: allResults.filter(r => {
+          const examDate = new Date(r.submitted_at);
+          const weekAgo = new Date();
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          return examDate >= weekAgo;
+        }).length
+      });
+    } catch (error) {
+      console.error('Error fetching student data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load dashboard data",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const quickActions = [
+    {
+      title: "View Performance",
+      description: "Detailed performance analysis and trends",
+      icon: BarChart3,
+      color: "text-blue-600",
+      bgColor: "bg-blue-50",
+      link: "/student/performance"
+    },
+    {
+      title: "AI Insights",
+      description: "Personalized learning recommendations",
+      icon: Brain,
+      color: "text-purple-600",
+      bgColor: "bg-purple-50",
+      link: "/student/performance"
+    },
+    {
+      title: "All Results",
+      description: "View complete exam history",
+      icon: Eye,
+      color: "text-green-600",
+      bgColor: "bg-green-50",
+      link: "/student/performance"
+    },
+    {
+      title: "Progress Tracking",
+      description: "Monitor your academic journey",
+      icon: TrendingUp,
+      color: "text-orange-600",
+      bgColor: "bg-orange-50",
+      link: "/student/performance"
+    }
   ];
 
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: TrendingUp },
-    { id: 'grades', label: 'My Grades', icon: Award },
-    { id: 'attendance', label: 'Attendance', icon: Calendar },
-    { id: 'timetable', label: 'Timetable', icon: BookOpen },
-    { id: 'ai-insights', label: 'Performance Insights', icon: Brain },
-    { id: 'fees', label: 'Fees & Payments', icon: DollarSign },
-    { id: 'notifications', label: 'Notifications', icon: Bell }
-  ];
-
-  const recentGrades = [
-    { subject: 'Mathematics', grade: 'A-', score: 88, date: '2024-01-15' },
-    { subject: 'Physics', grade: 'B+', score: 82, date: '2024-01-12' },
-    { subject: 'Chemistry', grade: 'A', score: 92, date: '2024-01-10' },
-    { subject: 'English', grade: 'B', score: 78, date: '2024-01-08' }
-  ];
-
-  const upcomingEvents = [
-    { title: 'Physics Test', date: '2024-01-20', type: 'exam' },
-    { title: 'Math Assignment Due', date: '2024-01-18', type: 'assignment' },
-    { title: 'Parent-Teacher Meeting', date: '2024-01-22', type: 'meeting' }
-  ];
+  if (loading) {
+    return <div className="flex justify-center p-8">Loading dashboard...</div>;
+  }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Student Dashboard</h1>
-          <p className="text-gray-600 mt-2">Track your academic progress with AI-powered insights</p>
+          <p className="text-gray-600">
+            Welcome back, {studentProfile?.full_name} • Class {studentProfile?.class_level}
+          </p>
         </div>
-        <div className="flex space-x-3">
-          <Button onClick={() => setActiveTab('ai-insights')}>
-            <Brain className="h-4 w-4 mr-2" />
-            View AI Insights
-          </Button>
-          <Button variant="outline" onClick={() => setActiveTab('grades')}>
-            <Award className="h-4 w-4 mr-2" />
-            View Grades
-          </Button>
-        </div>
+        <Badge className="bg-blue-100 text-blue-800">
+          Student
+        </Badge>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8 overflow-x-auto">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <tab.icon className="h-4 w-4" />
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </nav>
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Exams</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.totalExams}</p>
+              </div>
+              <BookOpen className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Average Score</p>
+                <p className="text-2xl font-bold text-green-600">{stats.averageScore}%</p>
+              </div>
+              <Target className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Highest Score</p>
+                <p className="text-2xl font-bold text-purple-600">{stats.highestScore}%</p>
+              </div>
+              <Award className="h-8 w-8 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Recent Exams</p>
+                <p className="text-2xl font-bold text-orange-600">{stats.recentExams}</p>
+              </div>
+              <Calendar className="h-8 w-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Tab Content */}
-      {activeTab === 'overview' && (
-        <div className="space-y-6">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {stats.map((stat, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                      <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Target className="h-5 w-5" />
+            Quick Actions
+          </CardTitle>
+          <CardDescription>
+            Track your academic progress and performance
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {quickActions.map((action, index) => (
+              <Link key={index} to={action.link}>
+                <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                  <CardContent className="p-4">
+                    <div className={`w-12 h-12 rounded-lg ${action.bgColor} flex items-center justify-center mb-3`}>
+                      <action.icon className={`h-6 w-6 ${action.color}`} />
                     </div>
-                    <div className={`p-3 rounded-full ${stat.bg}`}>
-                      <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    <h3 className="font-semibold text-gray-900 mb-1">{action.title}</h3>
+                    <p className="text-sm text-gray-600">{action.description}</p>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
+        </CardContent>
+      </Card>
 
-          {/* Main Content */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Grades</CardTitle>
-                  <CardDescription>Your latest academic performance</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {recentGrades.map((grade, index) => (
-                      <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div>
-                          <h4 className="font-medium text-gray-900">{grade.subject}</h4>
-                          <p className="text-sm text-gray-600">Score: {grade.score}%</p>
-                          <p className="text-xs text-gray-500">{grade.date}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-blue-600">{grade.grade}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>AI Performance Insights</CardTitle>
-                  <CardDescription>Personalized recommendations for improvement</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg">
-                    <Target className="h-8 w-8 text-blue-500" />
-                    <div>
-                      <h4 className="font-medium text-blue-900">Predicted Grade: A-</h4>
-                      <p className="text-sm text-blue-700">Keep up the excellent work in Mathematics!</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3 p-4 bg-yellow-50 rounded-lg">
-                    <Brain className="h-8 w-8 text-yellow-500" />
-                    <div>
-                      <h4 className="font-medium text-yellow-900">Study Recommendation</h4>
-                      <p className="text-sm text-yellow-700">Focus more on Physics concepts for better results</p>
-                    </div>
-                  </div>
-                  <Button className="w-full" onClick={() => setActiveTab('ai-insights')}>
-                    View Detailed AI Analysis
-                  </Button>
-                </CardContent>
-              </Card>
+      {/* Recent Results and AI Insights */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Results */}
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Recent Results
+              </CardTitle>
+              <Link to="/student/performance">
+                <Button variant="outline" size="sm">
+                  <Eye className="h-4 w-4 mr-2" />
+                  View All
+                </Button>
+              </Link>
             </div>
-
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Upcoming Events</CardTitle>
-                  <CardDescription>Important dates and deadlines</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {upcomingEvents.map((event, index) => (
-                    <div key={index} className="flex items-center space-x-3 p-3 border rounded-lg">
-                      <div className={`w-3 h-3 rounded-full ${
-                        event.type === 'exam' ? 'bg-red-500' :
-                        event.type === 'assignment' ? 'bg-yellow-500' : 'bg-blue-500'
-                      }`}></div>
+          </CardHeader>
+          <CardContent>
+            {recentResults.length > 0 ? (
+              <div className="space-y-3">
+                {recentResults.map((result) => (
+                  <div key={result.id} className="border rounded-lg p-3 bg-gray-50">
+                    <div className="flex justify-between items-center">
                       <div>
-                        <p className="font-medium text-gray-900">{event.title}</p>
-                        <p className="text-sm text-gray-500">{event.date}</p>
+                        <h4 className="font-medium">{result.exams?.title}</h4>
+                        <p className="text-sm text-gray-600">{result.exams?.subjects?.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(result.submitted_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-blue-600">
+                          {result.percentage ? Math.round(result.percentage) : Math.round((result.marks_obtained / (result.exams?.max_marks || 100)) * 100)}%
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {result.marks_obtained}/{result.exams?.max_marks}
+                        </div>
                       </div>
                     </div>
-                  ))}
-                </CardContent>
-              </Card>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-gray-500">
+                <Calendar className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                <p>No exam results yet</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('fees')}>
-                    <DollarSign className="h-4 w-4 mr-2" />
-                    Pay Fees Online
-                  </Button>
-                  <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('attendance')}>
-                    <Calendar className="h-4 w-4 mr-2" />
-                    View Attendance
-                  </Button>
-                  <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('timetable')}>
-                    <BookOpen className="h-4 w-4 mr-2" />
-                    Class Schedule
-                  </Button>
-                </CardContent>
-              </Card>
+        {/* AI Insights Preview */}
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle className="flex items-center gap-2">
+                <Brain className="h-5 w-5 text-purple-600" />
+                AI Insights
+              </CardTitle>
+              <Link to="/student/performance">
+                <Button variant="outline" size="sm">
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Details
+                </Button>
+              </Link>
             </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'grades' && <GradeView />}
-      {activeTab === 'attendance' && <AttendanceManager />}
-      {activeTab === 'timetable' && <TimetableManager />}
-      {activeTab === 'ai-insights' && <PerformancePrediction />}
-      {activeTab === 'fees' && <FeesManagement />}
-      {activeTab === 'notifications' && <NotificationCenter />}
+          </CardHeader>
+          <CardContent>
+            {insights.length > 0 ? (
+              <div className="space-y-3">
+                {insights.slice(0, 2).map((insight) => (
+                  <div key={insight.id} className="border rounded-lg p-3 bg-purple-50">
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="font-medium">{insight.subjects?.name}</h4>
+                      <Badge className={`text-xs ${
+                        insight.strength_level >= 4 ? 'bg-green-100 text-green-800' :
+                        insight.strength_level >= 3 ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        Level {insight.strength_level}/5
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-gray-700">
+                      {insight.ai_recommendations?.substring(0, 100)}...
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-gray-500">
+                <Brain className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                <p className="text-sm">AI insights will appear after exams</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string
+          id: string
+          profile_picture: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name: string
+          id?: string
+          profile_picture?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          profile_picture?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       analytics_cache: {
         Row: {
           date_range: string | null
@@ -35,6 +65,132 @@ export type Database = {
           metric_name?: string
         }
         Relationships: []
+      }
+      approval_logs: {
+        Row: {
+          action: string
+          approved_by: string | null
+          approved_user_id: string | null
+          created_at: string | null
+          id: string
+          reason: string | null
+          user_type: string
+        }
+        Insert: {
+          action: string
+          approved_by?: string | null
+          approved_user_id?: string | null
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+          user_type: string
+        }
+        Update: {
+          action?: string
+          approved_by?: string | null
+          approved_user_id?: string | null
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+          user_type?: string
+        }
+        Relationships: []
+      }
+      exam_results: {
+        Row: {
+          exam_id: string | null
+          id: string
+          marks_obtained: number
+          percentage: number | null
+          student_id: string | null
+          submitted_at: string | null
+        }
+        Insert: {
+          exam_id?: string | null
+          id?: string
+          marks_obtained: number
+          percentage?: number | null
+          student_id?: string | null
+          submitted_at?: string | null
+        }
+        Update: {
+          exam_id?: string | null
+          id?: string
+          marks_obtained?: number
+          percentage?: number | null
+          student_id?: string | null
+          submitted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_results_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_results_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exams: {
+        Row: {
+          class_level: number
+          created_at: string | null
+          created_by: string | null
+          exam_type: Database["public"]["Enums"]["exam_type"]
+          id: string
+          max_marks: number
+          subject_id: string | null
+          title: string
+          topic_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          class_level: number
+          created_at?: string | null
+          created_by?: string | null
+          exam_type: Database["public"]["Enums"]["exam_type"]
+          id?: string
+          max_marks?: number
+          subject_id?: string | null
+          title: string
+          topic_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          class_level?: number
+          created_at?: string | null
+          created_by?: string | null
+          exam_type?: Database["public"]["Enums"]["exam_type"]
+          id?: string
+          max_marks?: number
+          subject_id?: string | null
+          title?: string
+          topic_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exams_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exams_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fee_payments: {
         Row: {
@@ -266,6 +422,212 @@ export type Database = {
         }
         Relationships: []
       }
+      student_insights: {
+        Row: {
+          ai_recommendations: string | null
+          focus_topics: string[] | null
+          id: string
+          last_analyzed: string | null
+          performance_trend: string | null
+          strength_level: number | null
+          strong_areas: string[] | null
+          student_id: string | null
+          subject_id: string | null
+          weak_areas: string[] | null
+        }
+        Insert: {
+          ai_recommendations?: string | null
+          focus_topics?: string[] | null
+          id?: string
+          last_analyzed?: string | null
+          performance_trend?: string | null
+          strength_level?: number | null
+          strong_areas?: string[] | null
+          student_id?: string | null
+          subject_id?: string | null
+          weak_areas?: string[] | null
+        }
+        Update: {
+          ai_recommendations?: string | null
+          focus_topics?: string[] | null
+          id?: string
+          last_analyzed?: string | null
+          performance_trend?: string | null
+          strength_level?: number | null
+          strong_areas?: string[] | null
+          student_id?: string | null
+          subject_id?: string | null
+          weak_areas?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_insights_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_insights_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_profiles: {
+        Row: {
+          approval_date: string | null
+          approved_by: string | null
+          class_level: number | null
+          created_at: string | null
+          email: string
+          full_name: string
+          guardian_mobile: string | null
+          guardian_name: string | null
+          id: string
+          profile_picture: string | null
+          status: Database["public"]["Enums"]["approval_status"] | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          approval_date?: string | null
+          approved_by?: string | null
+          class_level?: number | null
+          created_at?: string | null
+          email: string
+          full_name: string
+          guardian_mobile?: string | null
+          guardian_name?: string | null
+          id?: string
+          profile_picture?: string | null
+          status?: Database["public"]["Enums"]["approval_status"] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          approval_date?: string | null
+          approved_by?: string | null
+          class_level?: number | null
+          created_at?: string | null
+          email?: string
+          full_name?: string
+          guardian_mobile?: string | null
+          guardian_name?: string | null
+          id?: string
+          profile_picture?: string | null
+          status?: Database["public"]["Enums"]["approval_status"] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      subjects: {
+        Row: {
+          class_level: number
+          created_at: string | null
+          id: string
+          name: Database["public"]["Enums"]["subject_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          class_level: number
+          created_at?: string | null
+          id?: string
+          name: Database["public"]["Enums"]["subject_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          class_level?: number
+          created_at?: string | null
+          id?: string
+          name?: Database["public"]["Enums"]["subject_type"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      teacher_profiles: {
+        Row: {
+          approval_date: string | null
+          approved_by: string | null
+          created_at: string | null
+          email: string
+          experience_years: number | null
+          full_name: string
+          id: string
+          profile_picture: string | null
+          status: Database["public"]["Enums"]["approval_status"] | null
+          subject_expertise: Database["public"]["Enums"]["subject_type"]
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          approval_date?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          email: string
+          experience_years?: number | null
+          full_name: string
+          id?: string
+          profile_picture?: string | null
+          status?: Database["public"]["Enums"]["approval_status"] | null
+          subject_expertise: Database["public"]["Enums"]["subject_type"]
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          approval_date?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          email?: string
+          experience_years?: number | null
+          full_name?: string
+          id?: string
+          profile_picture?: string | null
+          status?: Database["public"]["Enums"]["approval_status"] | null
+          subject_expertise?: Database["public"]["Enums"]["subject_type"]
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      topics: {
+        Row: {
+          chapter_number: number | null
+          created_at: string | null
+          id: string
+          name: string
+          subject_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          chapter_number?: number | null
+          created_at?: string | null
+          id?: string
+          name: string
+          subject_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          chapter_number?: number | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          subject_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topics_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -274,7 +636,15 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      approval_status: "PENDING" | "APPROVED" | "REJECTED"
+      exam_type: "JEE" | "NEET" | "CET" | "Boards"
+      subject_type:
+        | "Physics"
+        | "Chemistry"
+        | "Mathematics"
+        | "Biology"
+        | "English"
+        | "Other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -389,6 +759,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      approval_status: ["PENDING", "APPROVED", "REJECTED"],
+      exam_type: ["JEE", "NEET", "CET", "Boards"],
+      subject_type: [
+        "Physics",
+        "Chemistry",
+        "Mathematics",
+        "Biology",
+        "English",
+        "Other",
+      ],
+    },
   },
 } as const

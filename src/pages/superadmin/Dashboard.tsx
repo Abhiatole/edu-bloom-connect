@@ -1,180 +1,301 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, BookOpen, DollarSign, TrendingUp, UserPlus, Settings, BarChart3, Shield, Brain, Smartphone, UserCheck } from 'lucide-react';
-import UserManagement from '@/components/superadmin/UserManagement';
-import AttendanceManager from '@/components/attendance/AttendanceManager';
-import TimetableManager from '@/components/schedule/TimetableManager';
-import PDFReportGenerator from '@/components/reports/PDFReportGenerator';
-import NotificationCenter from '@/components/notifications/NotificationCenter';
-import AuditLogsViewer from '@/components/admin/AuditLogsViewer';
-import PerformancePrediction from '@/components/ai/PerformancePrediction';
-import FeesManagement from '@/components/fees/FeesManagement';
-import PushNotifications from '@/components/notifications/PushNotifications';
-import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
-import SecurityLogs from '@/components/security/SecurityLogs';
-import ParentPortal from '@/components/parent/ParentPortal';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
+import {
+  Users,
+  GraduationCap,
+  BookOpen,
+  TrendingUp,
+  Settings,
+  UserCheck,
+  FileText,
+  BarChart3,
+  Brain,
+  Clock,
+  Award,
+  AlertCircle
+} from 'lucide-react';
 
 const SuperAdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    totalTeachers: 0,
+    totalExams: 0,
+    pendingApprovals: 0,
+    approvedStudents: 0,
+    approvedTeachers: 0,
+    recentExams: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const stats = [
-    { title: 'Total Users', value: '1,247', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { title: 'Active Classes', value: '45', icon: BookOpen, color: 'text-green-600', bg: 'bg-green-50' },
-    { title: 'Revenue', value: '$456K', icon: DollarSign, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { title: 'Performance', value: '87%', icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' }
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
+
+  const fetchDashboardStats = async () => {
+    try {
+      const [
+        studentsResult,
+        teachersResult,
+        examsResult,
+        pendingStudentsResult,
+        pendingTeachersResult,
+        approvedStudentsResult,
+        approvedTeachersResult
+      ] = await Promise.all([
+        supabase.from('student_profiles').select('*', { count: 'exact' }),
+        supabase.from('teacher_profiles').select('*', { count: 'exact' }),
+        supabase.from('exams').select('*', { count: 'exact' }),
+        supabase.from('student_profiles').select('*', { count: 'exact' }).eq('status', 'PENDING'),
+        supabase.from('teacher_profiles').select('*', { count: 'exact' }).eq('status', 'PENDING'),
+        supabase.from('student_profiles').select('*', { count: 'exact' }).eq('status', 'APPROVED'),
+        supabase.from('teacher_profiles').select('*', { count: 'exact' }).eq('status', 'APPROVED')
+      ]);
+
+      // Get recent exams (last 7 days)
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      const { count: recentExamsCount } = await supabase
+        .from('exams')
+        .select('*', { count: 'exact' })
+        .gte('created_at', weekAgo.toISOString());
+
+      setStats({
+        totalStudents: studentsResult.count || 0,
+        totalTeachers: teachersResult.count || 0,
+        totalExams: examsResult.count || 0,
+        pendingApprovals: (pendingStudentsResult.count || 0) + (pendingTeachersResult.count || 0),
+        approvedStudents: approvedStudentsResult.count || 0,
+        approvedTeachers: approvedTeachersResult.count || 0,
+        recentExams: recentExamsCount || 0
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load dashboard statistics",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const quickActions = [
+    {
+      title: "User Approvals",
+      description: "Review and approve pending registrations",
+      icon: UserCheck,
+      color: "text-blue-600",
+      bgColor: "bg-blue-50",
+      link: "/admin/approvals",
+      count: stats.pendingApprovals
+    },
+    {
+      title: "Exam Management",
+      description: "Create and manage exams and results",
+      icon: BookOpen,
+      color: "text-green-600",
+      bgColor: "bg-green-50",
+      link: "/admin/exams",
+      count: stats.totalExams
+    },
+    {
+      title: "Analytics Dashboard",
+      description: "View comprehensive platform analytics",
+      icon: BarChart3,
+      color: "text-purple-600",
+      bgColor: "bg-purple-50",
+      link: "/admin/analytics",
+      count: null
+    },
+    {
+      title: "Student Insights",
+      description: "AI-powered student performance analysis",
+      icon: Brain,
+      color: "text-orange-600",
+      bgColor: "bg-orange-50",
+      link: "/teacher/insights",
+      count: null
+    }
   ];
 
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: TrendingUp },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'users', label: 'User Management', icon: Users },
-    { id: 'ai-insights', label: 'AI Insights', icon: Brain },
-    { id: 'fees', label: 'Fees Management', icon: DollarSign },
-    { id: 'parent-portal', label: 'Parent Portal', icon: UserCheck },
-    { id: 'attendance', label: 'Attendance', icon: UserPlus },
-    { id: 'timetable', label: 'Timetable', icon: BookOpen },
-    { id: 'push', label: 'Push Alerts', icon: Smartphone },
-    { id: 'notifications', label: 'Notifications', icon: Settings },
-    { id: 'audit', label: 'Audit Logs', icon: Shield },
-    { id: 'security', label: 'Security Logs', icon: Shield }
-  ];
-
-  const systemAlerts = [
-    { type: 'warning', message: 'Server maintenance scheduled for tonight', time: '2 hours ago' },
-    { type: 'info', message: 'New feature: AI Performance Prediction deployed', time: '1 day ago' },
-    { type: 'error', message: '3 failed login attempts detected', time: '3 hours ago' }
-  ];
+  if (loading) {
+    return <div className="flex justify-center p-8">Loading dashboard...</div>;
+  }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Super Admin Dashboard</h1>
-          <p className="text-gray-600 mt-2">Complete system control with AI-powered insights and analytics</p>
+          <p className="text-gray-600">Manage and monitor the entire EduGrowHub platform</p>
         </div>
-        <div className="flex space-x-3">
-          <Button onClick={() => setActiveTab('users')}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add User
-          </Button>
-          <Button variant="outline" onClick={() => setActiveTab('analytics')}>
-            <BarChart3 className="h-4 w-4 mr-2" />
-            View Analytics
-          </Button>
-        </div>
+        <Badge className="bg-red-100 text-red-800">
+          Super Admin
+        </Badge>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8 overflow-x-auto">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <tab.icon className="h-4 w-4" />
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </nav>
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Students</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.totalStudents}</p>
+                <p className="text-xs text-gray-500">{stats.approvedStudents} approved</p>
+              </div>
+              <Users className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Teachers</p>
+                <p className="text-2xl font-bold text-green-600">{stats.totalTeachers}</p>
+                <p className="text-xs text-gray-500">{stats.approvedTeachers} approved</p>
+              </div>
+              <GraduationCap className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Exams</p>
+                <p className="text-2xl font-bold text-purple-600">{stats.totalExams}</p>
+                <p className="text-xs text-gray-500">{stats.recentExams} this week</p>
+              </div>
+              <BookOpen className="h-8 w-8 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Pending Approvals</p>
+                <p className="text-2xl font-bold text-orange-600">{stats.pendingApprovals}</p>
+                <p className="text-xs text-gray-500">Require attention</p>
+              </div>
+              <Clock className="h-8 w-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Tab Content */}
-      {activeTab === 'overview' && (
-        <div className="space-y-6">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {stats.map((stat, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                      <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Quick Actions
+          </CardTitle>
+          <CardDescription>
+            Access key administrative functions
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {quickActions.map((action, index) => (
+              <Link key={index} to={action.link}>
+                <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                  <CardContent className="p-4">
+                    <div className={`w-12 h-12 rounded-lg ${action.bgColor} flex items-center justify-center mb-3`}>
+                      <action.icon className={`h-6 w-6 ${action.color}`} />
                     </div>
-                    <div className={`p-3 rounded-full ${stat.bg}`}>
-                      <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    <h3 className="font-semibold text-gray-900 mb-1">{action.title}</h3>
+                    <p className="text-sm text-gray-600 mb-2">{action.description}</p>
+                    {action.count !== null && (
+                      <Badge variant="outline" className="text-xs">
+                        {action.count} items
+                      </Badge>
+                    )}
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
+        </CardContent>
+      </Card>
 
-          {/* Quick Access and Alerts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Phase 3 Features</CardTitle>
-                <CardDescription>Access new intelligent capabilities</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('analytics')}>
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  Advanced Analytics Dashboard
-                </Button>
-                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('ai-insights')}>
-                  <Brain className="h-4 w-4 mr-2" />
-                  AI Performance Predictions
-                </Button>
-                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('parent-portal')}>
-                  <UserCheck className="h-4 w-4 mr-2" />
-                  Parent Portal Management
-                </Button>
-                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('fees')}>
-                  <DollarSign className="h-4 w-4 mr-2" />
-                  Online Fees Management
-                </Button>
-                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('security')}>
-                  <Shield className="h-4 w-4 mr-2" />
-                  Enhanced Security Logs
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>System Alerts</CardTitle>
-                <CardDescription>Recent system notifications and alerts</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {systemAlerts.map((alert, index) => (
-                    <div key={index} className="flex items-start space-x-3 p-3 border rounded-lg">
-                      <div className={`w-2 h-2 rounded-full mt-2 ${
-                        alert.type === 'error' ? 'bg-red-500' :
-                        alert.type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
-                      }`}></div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{alert.message}</p>
-                        <p className="text-xs text-gray-500">{alert.time}</p>
-                      </div>
-                    </div>
-                  ))}
+      {/* Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Pending Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {stats.pendingApprovals > 0 ? (
+                <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-orange-800">User Approvals Required</p>
+                    <p className="text-sm text-orange-600">{stats.pendingApprovals} users awaiting approval</p>
+                  </div>
+                  <Link to="/admin/approvals">
+                    <Button size="sm" className="bg-orange-600 hover:bg-orange-700">
+                      Review
+                    </Button>
+                  </Link>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      )}
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  No pending actions
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-      {activeTab === 'analytics' && <AnalyticsDashboard />}
-      {activeTab === 'users' && <UserManagement />}
-      {activeTab === 'ai-insights' && <PerformancePrediction />}
-      {activeTab === 'fees' && <FeesManagement />}
-      {activeTab === 'parent-portal' && <ParentPortal />}
-      {activeTab === 'attendance' && <AttendanceManager />}
-      {activeTab === 'timetable' && <TimetableManager />}
-      {activeTab === 'push' && <PushNotifications />}
-      {activeTab === 'notifications' && <NotificationCenter />}
-      {activeTab === 'audit' && <AuditLogsViewer />}
-      {activeTab === 'security' && <SecurityLogs />}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Platform Health
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Active Users</span>
+                <Badge className="bg-green-100 text-green-800">
+                  {stats.approvedStudents + stats.approvedTeachers}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Recent Exams</span>
+                <Badge className="bg-blue-100 text-blue-800">
+                  {stats.recentExams}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">System Status</span>
+                <Badge className="bg-green-100 text-green-800">
+                  Operational
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

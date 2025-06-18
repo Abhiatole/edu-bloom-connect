@@ -1,132 +1,209 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { GraduationCap, Mail, Lock, UserCheck } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate, Link } from 'react-router-dom';
+import { Mail, Lock, LogIn, GraduationCap } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !role) {
+    setLoading(true);
+
+    try {
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) throw authError;
+
+      if (authData.user) {
+        // Check user role and approval status
+        const userId = authData.user.id;
+        let userProfile = null;
+        let userRole = null;
+
+        // Check in student_profiles
+        const { data: studentProfile, error: studentError } = await supabase
+          .from('student_profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+
+        if (studentProfile && !studentError) {
+          userProfile = studentProfile;
+          userRole = 'student';
+        } else {
+          // Check in teacher_profiles
+          const { data: teacherProfile, error: teacherError } = await supabase
+            .from('teacher_profiles')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+
+          if (teacherProfile && !teacherError) {
+            userProfile = teacherProfile;
+            userRole = 'teacher';
+          } else {
+            // Check in admin_profiles
+            const { data: adminProfile, error: adminError } = await supabase
+              .from('admin_profiles')
+              .select('*')
+              .eq('user_id', userId)
+              .single();
+
+            if (adminProfile && !adminError) {
+              userProfile = adminProfile;
+              userRole = 'superadmin';
+            }
+          }
+        }
+
+        if (!userProfile || !userRole) {
+          throw new Error('User profile not found. Please contact administrator.');
+        }
+
+        // Check approval status for students and teachers
+        if ((userRole === 'student' || userRole === 'teacher') && userProfile.status !== 'APPROVED') {
+          await supabase.auth.signOut();
+          
+          const statusMessage = userProfile.status === 'PENDING' 
+            ? 'Your account is pending approval. Please wait for admin confirmation.'
+            : 'Your account has been rejected. Please contact administrator.';
+          
+          throw new Error(statusMessage);
+        }
+
+        // Store user role in localStorage
+        localStorage.setItem('userRole', userRole);
+        localStorage.setItem('userProfile', JSON.stringify(userProfile));
+
+        toast({
+          title: "Login Successful!",
+          description: `Welcome back, ${userProfile.full_name}!`,
+        });
+
+        // Navigate based on role
+        switch (userRole) {
+          case 'superadmin':
+            navigate('/superadmin/dashboard');
+            break;
+          case 'teacher':
+            navigate('/teacher/dashboard');
+            break;
+          case 'student':
+            navigate('/student/dashboard');
+            break;
+          default:
+            navigate('/');
+        }
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
       toast({
-        title: "Error",
-        description: "Please fill in all fields",
+        title: "Login Failed",
+        description: error.message || "Invalid email or password",
         variant: "destructive"
       });
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    setIsLoading(true);
-    
-    // Simulate authentication
-    setTimeout(() => {
-      localStorage.setItem('userRole', role);
-      localStorage.setItem('userEmail', email);
-      
-      toast({
-        title: "Login Successful",
-        description: `Welcome to EduGrowHub!`
-      });
-
-      // Navigate based on role
-      switch (role) {
-        case 'superadmin':
-          navigate('/superadmin/dashboard');
-          break;
-        case 'teacher':
-          navigate('/teacher/dashboard');
-          break;
-        case 'student':
-          navigate('/student/dashboard');
-          break;
-        default:
-          navigate('/');
-      }
-      setIsLoading(false);
-    }, 1000);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <GraduationCap className="h-12 w-12 text-blue-600" />
-          </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">EduGrowHub</CardTitle>
-          <CardDescription>Sign in to your account</CardDescription>
+          <CardTitle className="text-2xl font-bold text-gray-900 flex items-center justify-center gap-2">
+            <GraduationCap className="h-6 w-6 text-blue-600" />
+            Login to EduGrowHub
+          </CardTitle>
+          <CardDescription>
+            Access your personalized learning dashboard
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger>
-                  <UserCheck className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Select your role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="superadmin">Super Admin</SelectItem>
-                  <SelectItem value="teacher">Teacher</SelectItem>
-                  <SelectItem value="student">Student</SelectItem>
-                </SelectContent>
-              </Select>
+            <div>
+              <Label htmlFor="email" className="flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                required
+                className="mt-1"
+              />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+
+            <div>
+              <Label htmlFor="password" className="flex items-center gap-2">
+                <Lock className="h-4 w-4" />
+                Password
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                required
+                className="mt-1"
+              />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Sign In"}
+
+            <Button 
+              type="submit" 
+              className="w-full bg-blue-600 hover:bg-blue-700" 
+              disabled={loading}
+            >
+              {loading ? (
+                'Signing in...'
+              ) : (
+                <>
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Sign In
+                </>
+              )}
             </Button>
-            
-            <div className="text-center">
-              <Button 
-                variant="link" 
-                onClick={() => navigate('/forgot-password')}
-                className="text-sm text-blue-600"
+
+            <div className="text-center space-y-2">
+              <Link 
+                to="/forgot-password" 
+                className="text-sm text-blue-600 hover:underline block"
               >
                 Forgot your password?
-              </Button>
+              </Link>
+              
+              <div className="text-sm text-gray-600">
+                Don't have an account?
+              </div>
+              <div className="flex flex-col space-y-2">
+                <Link to="/register/student">
+                  <Button variant="outline" size="sm" className="w-full border-blue-600 text-blue-600 hover:bg-blue-50">
+                    Register as Student
+                  </Button>
+                </Link>
+                <Link to="/register/teacher">
+                  <Button variant="outline" size="sm" className="w-full border-green-600 text-green-600 hover:bg-green-50">
+                    Register as Teacher
+                  </Button>
+                </Link>
+              </div>
             </div>
           </form>
         </CardContent>

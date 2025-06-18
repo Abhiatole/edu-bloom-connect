@@ -1,167 +1,299 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, BookOpen, ClipboardCheck, TrendingUp, UserPlus, FileText, Calendar, Bell, BarChart3, Brain, DollarSign, Smartphone } from 'lucide-react';
-import StudentEnrollment from '@/components/teacher/StudentEnrollment';
-import AttendanceManager from '@/components/attendance/AttendanceManager';
-import TimetableManager from '@/components/schedule/TimetableManager';
-import PDFReportGenerator from '@/components/reports/PDFReportGenerator';
-import NotificationCenter from '@/components/notifications/NotificationCenter';
-import PerformancePrediction from '@/components/ai/PerformancePrediction';
-import FeesManagement from '@/components/fees/FeesManagement';
-import PushNotifications from '@/components/notifications/PushNotifications';
+import { Badge } from '@/components/ui/badge';
+import { useToast } = '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
+import {
+  Users,
+  BookOpen,
+  FileText,
+  Brain,
+  Award,
+  TrendingUp,
+  Plus,
+  Eye,
+  BarChart3
+} from 'lucide-react';
 
 const TeacherDashboard = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    myExams: 0,
+    recentResults: 0,
+    avgPerformance: 0
+  });
+  const [recentExams, setRecentExams] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [teacherProfile, setTeacherProfile] = useState(null);
+  const { toast } = useToast();
 
-  const stats = [
-    { title: 'My Students', value: '42', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { title: 'Subjects Teaching', value: '3', icon: BookOpen, color: 'text-green-600', bg: 'bg-green-50' },
-    { title: 'Tests Graded', value: '28', icon: ClipboardCheck, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { title: 'Avg Class Score', value: '87%', icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' }
+  useEffect(() => {
+    fetchTeacherData();
+  }, []);
+
+  const fetchTeacherData = async () => {
+    try {
+      const { data: currentUser } = await supabase.auth.getUser();
+      if (!currentUser.user) throw new Error('Not authenticated');
+
+      // Get teacher profile
+      const { data: profile, error: profileError } = await supabase
+        .from('teacher_profiles')
+        .select('*')
+        .eq('user_id', currentUser.user.id)
+        .single();
+
+      if (profileError) throw profileError;
+      setTeacherProfile(profile);
+
+      // Get teacher's exams
+      const { data: exams, error: examsError } = await supabase
+        .from('exams')
+        .select(`
+          *,
+          subjects(name),
+          topics(name)
+        `)
+        .eq('created_by', currentUser.user.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (examsError) throw examsError;
+      setRecentExams(exams || []);
+
+      // Get statistics
+      const [studentsResult, myExamsResult, resultsResult] = await Promise.all([
+        supabase.from('student_profiles').select('*', { count: 'exact' }).eq('status', 'APPROVED'),
+        supabase.from('exams').select('*', { count: 'exact' }).eq('created_by', currentUser.user.id),
+        supabase.from('exam_results').select(`
+          percentage,
+          exams(created_by)
+        `).eq('exams.created_by', currentUser.user.id)
+      ]);
+
+      // Calculate average performance for teacher's exams
+      const teacherResults = resultsResult.data?.filter(result => result.exams?.created_by === currentUser.user.id) || [];
+      const avgPerformance = teacherResults.length > 0 
+        ? Math.round(teacherResults.reduce((sum, result) => sum + (result.percentage || 0), 0) / teacherResults.length)
+        : 0;
+
+      setStats({
+        totalStudents: studentsResult.count || 0,
+        myExams: myExamsResult.count || 0,
+        recentResults: teacherResults.length,
+        avgPerformance
+      });
+    } catch (error) {
+      console.error('Error fetching teacher data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load dashboard data",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const quickActions = [
+    {
+      title: "Create New Exam",
+      description: "Set up a new exam for your students",
+      icon: Plus,
+      color: "text-blue-600",
+      bgColor: "bg-blue-50",
+      link: "/admin/exams"
+    },
+    {
+      title: "Student Insights",
+      description: "View AI-powered student performance analysis",
+      icon: Brain,
+      color: "text-purple-600",
+      bgColor: "bg-purple-50",
+      link: "/teacher/insights"
+    },
+    {
+      title: "View All Exams",
+      description: "Manage your existing exams and results",
+      icon: BookOpen,
+      color: "text-green-600",
+      bgColor: "bg-green-50",
+      link: "/admin/exams"
+    },
+    {
+      title: "Performance Analytics",
+      description: "Analyze class performance and trends",
+      icon: BarChart3,
+      color: "text-orange-600",
+      bgColor: "bg-orange-50",
+      link: "/admin/analytics"
+    }
   ];
 
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: TrendingUp },
-    { id: 'students', label: 'Student Management', icon: Users },
-    { id: 'attendance', label: 'Attendance', icon: ClipboardCheck },
-    { id: 'timetable', label: 'Timetable', icon: Calendar },
-    { id: 'ai-insights', label: 'AI Insights', icon: Brain },
-    { id: 'fees', label: 'Fees Management', icon: DollarSign },
-    { id: 'reports', label: 'Reports', icon: BarChart3 },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'push', label: 'Push Alerts', icon: Smartphone }
-  ];
-
-  const recentTests = [
-    { subject: 'Mathematics', test: 'Algebra Quiz', students: 15, avgScore: 85, date: '2024-01-15' },
-    { subject: 'Physics', test: 'Mechanics Test', students: 12, avgScore: 78, date: '2024-01-12' },
-    { subject: 'Mathematics', test: 'Geometry Assignment', students: 18, avgScore: 92, date: '2024-01-10' }
-  ];
+  if (loading) {
+    return <div className="flex justify-center p-8">Loading dashboard...</div>;
+  }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Teacher Dashboard</h1>
-          <p className="text-gray-600 mt-2">Manage your classes and students with AI-powered insights</p>
+          <p className="text-gray-600">
+            Welcome back, {teacherProfile?.full_name} • {teacherProfile?.subject_expertise}
+          </p>
         </div>
-        <div className="flex space-x-3">
-          <Button onClick={() => setActiveTab('students')}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Enroll Student
-          </Button>
-          <Button variant="outline" onClick={() => setActiveTab('reports')}>
-            <FileText className="h-4 w-4 mr-2" />
-            Generate Report
-          </Button>
-        </div>
+        <Badge className="bg-green-100 text-green-800">
+          Teacher
+        </Badge>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8 overflow-x-auto">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <tab.icon className="h-4 w-4" />
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </nav>
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Active Students</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.totalStudents}</p>
+              </div>
+              <Users className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">My Exams</p>
+                <p className="text-2xl font-bold text-green-600">{stats.myExams}</p>
+              </div>
+              <BookOpen className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Exam Results</p>
+                <p className="text-2xl font-bold text-purple-600">{stats.recentResults}</p>
+              </div>
+              <FileText className="h-8 w-8 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Avg Performance</p>
+                <p className="text-2xl font-bold text-orange-600">{stats.avgPerformance}%</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Tab Content */}
-      {activeTab === 'overview' && (
-        <div className="space-y-6">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {stats.map((stat, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                      <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Award className="h-5 w-5" />
+            Quick Actions
+          </CardTitle>
+          <CardDescription>
+            Common tasks for effective teaching management
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {quickActions.map((action, index) => (
+              <Link key={index} to={action.link}>
+                <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                  <CardContent className="p-4">
+                    <div className={`w-12 h-12 rounded-lg ${action.bgColor} flex items-center justify-center mb-3`}>
+                      <action.icon className={`h-6 w-6 ${action.color}`} />
                     </div>
-                    <div className={`p-3 rounded-full ${stat.bg}`}>
-                      <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    <h3 className="font-semibold text-gray-900 mb-1">{action.title}</h3>
+                    <p className="text-sm text-gray-600">{action.description}</p>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
+        </CardContent>
+      </Card>
 
-          {/* Recent Activity */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Test Results</CardTitle>
-                <CardDescription>Latest graded assessments</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentTests.map((test, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium text-gray-900">{test.test}</h4>
-                        <p className="text-sm text-gray-600">{test.subject}</p>
-                        <p className="text-xs text-gray-500">{test.date}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-blue-600">{test.avgScore}%</p>
-                        <p className="text-sm text-gray-500">{test.students} students</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>Access new Phase 3 features</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('ai-insights')}>
-                  <Brain className="h-4 w-4 mr-2" />
-                  AI Performance Insights
-                </Button>
-                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('fees')}>
-                  <DollarSign className="h-4 w-4 mr-2" />
-                  Fees Management
-                </Button>
-                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('push')}>
-                  <Smartphone className="h-4 w-4 mr-2" />
-                  Send Push Notifications
-                </Button>
-                <Button className="w-full justify-start" variant="outline" onClick={() => setActiveTab('attendance')}>
-                  <ClipboardCheck className="h-4 w-4 mr-2" />
-                  Mark Attendance
-                </Button>
-              </CardContent>
-            </Card>
+      {/* Recent Exams */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Recent Exams
+            </CardTitle>
+            <Link to="/admin/exams">
+              <Button variant="outline" size="sm">
+                <Eye className="h-4 w-4 mr-2" />
+                View All
+              </Button>
+            </Link>
           </div>
-        </div>
-      )}
-
-      {activeTab === 'students' && <StudentEnrollment />}
-      {activeTab === 'attendance' && <AttendanceManager />}
-      {activeTab === 'timetable' && <TimetableManager />}
-      {activeTab === 'ai-insights' && <PerformancePrediction />}
-      {activeTab === 'fees' && <FeesManagement />}
-      {activeTab === 'reports' && <PDFReportGenerator />}
-      {activeTab === 'notifications' && <NotificationCenter />}
-      {activeTab === 'push' && <PushNotifications />}
+        </CardHeader>
+        <CardContent>
+          {recentExams.length > 0 ? (
+            <div className="space-y-4">
+              {recentExams.map((exam) => (
+                <div key={exam.id} className="border rounded-lg p-4 bg-gray-50">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-semibold text-lg">{exam.title}</h3>
+                      <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                        <span>{exam.subjects?.name}</span>
+                        <span>•</span>
+                        <span>{exam.exam_type}</span>
+                        <span>•</span>
+                        <span>Class {exam.class_level}</span>
+                        <span>•</span>
+                        <span>{exam.max_marks} marks</span>
+                      </div>
+                      {exam.topics?.name && (
+                        <p className="text-sm text-gray-500 mt-1">Topic: {exam.topics.name}</p>
+                      )}
+                      <p className="text-xs text-gray-400 mt-2">
+                        Created: {new Date(exam.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <Badge variant="outline">
+                      {exam.exam_type}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <h3 className="text-lg font-semibold mb-2">No Exams Created Yet</h3>
+              <p className="mb-4">Start by creating your first exam for students.</p>
+              <Link to="/admin/exams">
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Exam
+                </Button>
+              </Link>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
