@@ -58,16 +58,15 @@ const ParentPortal = () => {
 
   const fetchChildDetails = async (studentId: string) => {
     try {
-      const [performanceResult, attendanceResult, feesResult, notificationsResult] = await Promise.all([
+      const [performanceResult, feesResult, notificationsResult] = await Promise.all([
         supabase.from('performance_predictions').select('*').eq('student_id', studentId),
-        supabase.from('attendance').select('*').eq('student_id', studentId),
         supabase.from('fee_payments').select('*').eq('student_id', studentId),
         supabase.from('push_notifications').select('*').eq('user_id', studentId)
       ]);
 
       setChildData({
         performance: performanceResult.data || [],
-        attendance: attendanceResult.data || [],
+        attendance: [], // Will use mock data for now
         fees: feesResult.data || [],
         notifications: notificationsResult.data || []
       });
