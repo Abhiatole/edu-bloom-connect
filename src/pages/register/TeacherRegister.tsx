@@ -23,9 +23,7 @@ const TeacherRegister = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const subjects = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English', 'Other'];
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const subjects = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English', 'Other'];  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
@@ -38,46 +36,81 @@ const TeacherRegister = () => {
         throw new Error('Password must be at least 6 characters long');
       }
 
-      // Create auth user
+      // Create auth user with profile data in metadata
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
           data: {
-            role: 'teacher'
+            role: 'teacher',
+            full_name: formData.fullName,
+            subject_expertise: formData.subjectExpertise,
+            experience_years: parseInt(formData.experienceYears)
           }
         }
       });
 
-      if (authError) throw authError;
-
-      if (authData.user) {
-        // Create teacher profile
-        const { error: profileError } = await supabase
-          .from('teacher_profiles')
-          .insert({
+      if (authError) throw authError;      if (authData.user) {
+        console.log('User signup data:', authData);
+        console.log('Has session:', !!authData.session);
+        console.log('User confirmed:', authData.user.email_confirmed_at);
+        
+        // Check if email confirmation is required
+        if (authData.session || authData.user.email_confirmed_at) {
+          // User is immediately confirmed or email confirmation is disabled - create profile directly
+          console.log('User is confirmed or email confirmation disabled, creating profile directly');
+          
+          const profileData = {
             user_id: authData.user.id,
             full_name: formData.fullName,
             email: formData.email,
-            subject_expertise: formData.subjectExpertise,
+            subject_expertise: formData.subjectExpertise as any,
             experience_years: parseInt(formData.experienceYears),
-            status: 'PENDING'
+            status: 'PENDING' as const
+          };
+          
+          const { error: profileError } = await supabase
+            .from('teacher_profiles')
+            .insert(profileData);
+
+          if (profileError) {
+            console.error('Profile creation error:', profileError);
+            throw new Error(`Profile creation failed: ${profileError.message}`);
+          }          toast({
+            title: "Registration Successful!",
+            description: "Your teacher account has been created and is pending admin approval. You'll be notified once approved.",
           });
-
-        if (profileError) throw profileError;
-
-        toast({
-          title: "Registration Successful!",
-          description: "Your account has been created and is pending approval from the admin.",
-        });
-
-        navigate('/login');
+          
+          navigate('/login');
+        } else {
+          // Email confirmation is required - redirect to success page
+          console.log('Email confirmation required, redirecting to success page');
+          
+          navigate('/register/success', {
+            state: {
+              email: formData.email,
+              userType: 'teacher'
+            }
+          });
+        }
+      } else {
+        throw new Error('User creation failed - no user data returned');
       }
     } catch (error: any) {
       console.error('Registration error:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = error.message || "An error occurred during registration";
+      
+      if (error.message?.includes('foreign key constraint')) {
+        errorMessage = "Registration temporarily unavailable. Please try again in a few moments or contact support.";
+      } else if (error.message?.includes('already registered')) {
+        errorMessage = "This email is already registered. Please use a different email or try logging in.";
+      }
+      
       toast({
         title: "Registration Failed",
-        description: error.message || "An error occurred during registration",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {

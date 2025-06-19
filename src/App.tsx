@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +20,9 @@ import NotFound from "./pages/NotFound";
 // New Registration Pages
 import StudentRegister from "./pages/register/StudentRegister";
 import TeacherRegister from "./pages/register/TeacherRegister";
+import EmailConfirmation from "./pages/EmailConfirmation";
+import RegistrationSuccess from "./pages/RegistrationSuccess";
+import AuthTest from "./pages/AuthTest";
 
 // New Admin Pages
 import UserApprovals from "./pages/admin/UserApprovals";
@@ -32,6 +34,12 @@ import StudentInsights from "./pages/teacher/StudentInsights";
 
 // New Student Pages
 import Performance from "./pages/student/Performance";
+import EmailTest from "./pages/EmailTest";
+import TeacherFlowTest from "./pages/TeacherFlowTest";
+
+// Import SuperAdminSetup component
+import SuperAdminSetup from "./pages/SuperAdminSetup";
+import QuickApprovalDashboard from "./pages/QuickApprovalDashboard";
 
 const queryClient = new QueryClient();
 
@@ -49,10 +57,12 @@ const App = () => (
             <Route path="about" element={<About />} />
             <Route path="features" element={<Features />} />
             <Route path="contact" element={<Contact />} />
-            
-            {/* Registration Routes */}
-            <Route path="register/student" element={<StudentRegister />} />
-            <Route path="register/teacher" element={<TeacherRegister />} />
+            <Route path="email-test" element={<EmailTest />} />
+              {/* Registration Routes */}
+            <Route path="register/student" element={<StudentRegister />} />            <Route path="register/teacher" element={<TeacherRegister />} />
+            <Route path="register/success" element={<RegistrationSuccess />} />
+            <Route path="auth/confirm" element={<EmailConfirmation />} />
+            <Route path="auth/test" element={<AuthTest />} />
             
             {/* Protected Routes */}
             <Route 
@@ -132,6 +142,29 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['parent']}>
                   <ParentPortal />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="setup-admin" 
+              element={<SuperAdminSetup />} 
+            />
+
+            <Route 
+              path="teacher/flow-test" 
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <TeacherFlowTest />
+                </ProtectedRoute>
+              } 
+            />
+
+            <Route 
+              path="quick-approvals" 
+              element={
+                <ProtectedRoute allowedRoles={['superadmin']}>
+                  <QuickApprovalDashboard />
                 </ProtectedRoute>
               } 
             />

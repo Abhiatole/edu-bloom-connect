@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, UserCheck, GraduationCap, Lock } from 'lucide-react';
 
-const StudentRegister = () => {
+const StudentRegisterTrigger = () => {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -22,7 +21,9 @@ const StudentRegister = () => {
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();  const handleSubmit = async (e: React.FormEvent) => {
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
@@ -35,9 +36,7 @@ const StudentRegister = () => {
         throw new Error('Password must be at least 6 characters long');
       }
 
-      // Create auth user with profile data in metadata
-      // This approach stores the profile data in user metadata
-      // so it can be used later when the user is confirmed
+      // Create auth user with all profile data in metadata
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -52,70 +51,44 @@ const StudentRegister = () => {
         }
       });
 
-      if (authError) throw authError;      if (authData.user) {
-        console.log('User signup data:', authData);
-        console.log('Has session:', !!authData.session);
-        console.log('User confirmed:', authData.user.email_confirmed_at);
-        
-        // Check if email confirmation is required
-        if (authData.session || authData.user.email_confirmed_at) {
-          // User is immediately confirmed or email confirmation is disabled - create profile directly
-          console.log('User is confirmed or email confirmation disabled, creating profile directly');
-          
-          const profileData = {
-            user_id: authData.user.id,
-            full_name: formData.fullName,
-            email: formData.email,
-            class_level: parseInt(formData.classLevel),
-            guardian_name: formData.guardianName,
-            guardian_mobile: formData.guardianMobile,
-            status: 'PENDING' as const
-          };
-          
-          const { error: profileError } = await supabase
-            .from('student_profiles')
-            .insert(profileData);
+      if (authError) throw authError;
 
-          if (profileError) {
-            console.error('Profile creation error:', profileError);
-            throw new Error(`Profile creation failed: ${profileError.message}`);
-          }
+      if (authData.user) {
+        // The trigger will automatically create the student profile
+        // We just need to update it with the additional details
+        setTimeout(async () => {
+          try {
+            const { error: updateError } = await supabase
+              .from('student_profiles')
+              .update({
+                class_level: parseInt(formData.classLevel),
+                guardian_name: formData.guardianName,
+                guardian_mobile: formData.guardianMobile
+              })
+              .eq('user_id', authData.user.id);
 
-          toast({
-            title: "Registration Successful!",
-            description: "Your account has been created and is pending approval from the admin.",
-          });
-          
-          navigate('/login');
-        } else {
-          // Email confirmation is required - redirect to success page
-          console.log('Email confirmation required, redirecting to success page');
-          
-          navigate('/register/success', {
-            state: {
-              email: formData.email,
-              userType: 'student'
+            if (updateError) {
+              console.error('Profile update error:', updateError);
             }
-          });
-        }
+          } catch (error) {
+            console.error('Profile update failed:', error);
+          }
+        }, 2000);
+
+        toast({
+          title: "Registration Successful!",
+          description: "Your account has been created and is pending approval from the admin.",
+        });
+
+        navigate('/login');
       } else {
         throw new Error('User creation failed - no user data returned');
       }
     } catch (error: any) {
       console.error('Registration error:', error);
-      
-      // Provide more specific error messages
-      let errorMessage = error.message || "An error occurred during registration";
-      
-      if (error.message?.includes('foreign key constraint')) {
-        errorMessage = "Registration temporarily unavailable. Please try again in a few moments or contact support.";
-      } else if (error.message?.includes('already registered')) {
-        errorMessage = "This email is already registered. Please use a different email or try logging in.";
-      }
-      
       toast({
         title: "Registration Failed",
-        description: errorMessage,
+        description: error.message || "An error occurred during registration",
         variant: "destructive"
       });
     } finally {
@@ -272,4 +245,4 @@ const StudentRegister = () => {
   );
 };
 
-export default StudentRegister;
+export default StudentRegisterTrigger;
