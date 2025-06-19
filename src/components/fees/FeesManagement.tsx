@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,7 +28,7 @@ const FeesManagement = () => {
     structure_id: '',
     amount_paid: '',
     payment_method: 'Cash',
-    status: 'PAID',
+    status: 'PAID' as 'PENDING' | 'PAID' | 'OVERDUE' | 'PARTIAL',
     transaction_id: '',
     payment_date: new Date().toISOString().split('T')[0]
   });

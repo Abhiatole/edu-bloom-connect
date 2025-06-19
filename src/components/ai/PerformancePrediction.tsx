@@ -43,9 +43,9 @@ const PerformancePrediction = () => {
       // Generate AI insight based on existing student performance
       const mockInsight = {
         student_id: studentId,
-        subject: subject,
+        subject: subject as 'Physics' | 'Chemistry' | 'Mathematics' | 'Biology' | 'English' | 'Computer Science' | 'Other',
         topic: 'General Performance',
-        performance_level: Math.random() > 0.7 ? 'Excellent' : Math.random() > 0.4 ? 'Good' : 'Average',
+        performance_level: Math.random() > 0.7 ? 'Excellent' : Math.random() > 0.4 ? 'Good' : 'Average' as 'Excellent' | 'Good' | 'Average' | 'Below Average' | 'Poor',
         strengths: ['Problem solving', 'Conceptual understanding'],
         weaknesses: ['Time management', 'Complex calculations'],
         ai_comment: 'Student shows consistent improvement in recent assessments.',
