@@ -13,6 +13,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import About from "./pages/About";
 import Features from "./pages/Features";
 import Contact from "./pages/Contact";
+import DeploymentDebug from "./pages/DeploymentDebug";
 
 // Enhanced Dashboards
 import ModernSuperAdminDashboard from "./pages/enhanced/ModernSuperAdminDashboard";
@@ -65,6 +66,7 @@ const App = () => (
               <Route path="features" element={<Features />} />
               <Route path="contact" element={<Contact />} />
               <Route path="email-test" element={<EmailTest />} />
+              <Route path="debug" element={<DeploymentDebug />} />
               
               {/* Registration Routes */}
               <Route path="register/student" element={<StudentRegister />} />
@@ -175,6 +177,15 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['superadmin']}>
                     <QuickApprovalDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="debug" 
+                element={
+                  <ProtectedRoute allowedRoles={['superadmin', 'teacher', 'student', 'parent']}>
+                    <DeploymentDebug />
                   </ProtectedRoute>
                 } 
               />
