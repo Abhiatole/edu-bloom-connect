@@ -9,119 +9,32 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      admin_profiles: {
-        Row: {
-          created_at: string
-          email: string
-          full_name: string
-          id: string
-          profile_picture: string | null
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          full_name: string
-          id?: string
-          profile_picture?: string | null
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          full_name?: string
-          id?: string
-          profile_picture?: string | null
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      analytics_cache: {
-        Row: {
-          date_range: string | null
-          expires_at: string | null
-          id: string
-          last_updated: string | null
-          metric_data: Json
-          metric_name: string
-        }
-        Insert: {
-          date_range?: string | null
-          expires_at?: string | null
-          id?: string
-          last_updated?: string | null
-          metric_data: Json
-          metric_name: string
-        }
-        Update: {
-          date_range?: string | null
-          expires_at?: string | null
-          id?: string
-          last_updated?: string | null
-          metric_data?: Json
-          metric_name?: string
-        }
-        Relationships: []
-      }
-      approval_logs: {
-        Row: {
-          action: string
-          approved_by: string | null
-          approved_user_id: string | null
-          created_at: string | null
-          id: string
-          reason: string | null
-          user_type: string
-        }
-        Insert: {
-          action: string
-          approved_by?: string | null
-          approved_user_id?: string | null
-          created_at?: string | null
-          id?: string
-          reason?: string | null
-          user_type: string
-        }
-        Update: {
-          action?: string
-          approved_by?: string | null
-          approved_user_id?: string | null
-          created_at?: string | null
-          id?: string
-          reason?: string | null
-          user_type?: string
-        }
-        Relationships: []
-      }
       exam_results: {
         Row: {
-          exam_id: string | null
+          exam_id: string
+          grade: string | null
           id: string
           marks_obtained: number
-          percentage: number | null
-          student_id: string | null
+          remarks: string | null
+          student_id: string
           submitted_at: string | null
         }
         Insert: {
-          exam_id?: string | null
+          exam_id: string
+          grade?: string | null
           id?: string
           marks_obtained: number
-          percentage?: number | null
-          student_id?: string | null
+          remarks?: string | null
+          student_id: string
           submitted_at?: string | null
         }
         Update: {
-          exam_id?: string | null
+          exam_id?: string
+          grade?: string | null
           id?: string
           marks_obtained?: number
-          percentage?: number | null
-          student_id?: string | null
+          remarks?: string | null
+          student_id?: string
           submitted_at?: string | null
         }
         Relationships: [
@@ -132,113 +45,91 @@ export type Database = {
             referencedRelation: "exams"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "exam_results_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "student_profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
       exams: {
         Row: {
           class_level: number
           created_at: string | null
-          created_by: string | null
+          created_by_teacher_id: string
+          duration_minutes: number | null
+          exam_date: string
           exam_type: Database["public"]["Enums"]["exam_type"]
           id: string
-          max_marks: number
-          subject_id: string | null
+          subject: Database["public"]["Enums"]["subject_type"]
           title: string
-          topic_id: string | null
+          total_marks: number
           updated_at: string | null
         }
         Insert: {
           class_level: number
           created_at?: string | null
-          created_by?: string | null
+          created_by_teacher_id: string
+          duration_minutes?: number | null
+          exam_date: string
           exam_type: Database["public"]["Enums"]["exam_type"]
           id?: string
-          max_marks?: number
-          subject_id?: string | null
+          subject: Database["public"]["Enums"]["subject_type"]
           title: string
-          topic_id?: string | null
+          total_marks?: number
           updated_at?: string | null
         }
         Update: {
           class_level?: number
           created_at?: string | null
-          created_by?: string | null
+          created_by_teacher_id?: string
+          duration_minutes?: number | null
+          exam_date?: string
           exam_type?: Database["public"]["Enums"]["exam_type"]
           id?: string
-          max_marks?: number
-          subject_id?: string | null
+          subject?: Database["public"]["Enums"]["subject_type"]
           title?: string
-          topic_id?: string | null
+          total_marks?: number
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "exams_subject_id_fkey"
-            columns: ["subject_id"]
-            isOneToOne: false
-            referencedRelation: "subjects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "exams_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "topics"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       fee_payments: {
         Row: {
           amount_paid: number
           created_at: string | null
-          fee_structure_id: string | null
           id: string
           payment_date: string | null
           payment_method: string | null
-          payment_status: string | null
-          receipt_url: string | null
-          student_id: string | null
+          receipt_number: string | null
+          status: Database["public"]["Enums"]["payment_status"] | null
+          structure_id: string
+          student_id: string
           transaction_id: string | null
-          updated_at: string | null
         }
         Insert: {
           amount_paid: number
           created_at?: string | null
-          fee_structure_id?: string | null
           id?: string
           payment_date?: string | null
           payment_method?: string | null
-          payment_status?: string | null
-          receipt_url?: string | null
-          student_id?: string | null
+          receipt_number?: string | null
+          status?: Database["public"]["Enums"]["payment_status"] | null
+          structure_id: string
+          student_id: string
           transaction_id?: string | null
-          updated_at?: string | null
         }
         Update: {
           amount_paid?: number
           created_at?: string | null
-          fee_structure_id?: string | null
           id?: string
           payment_date?: string | null
           payment_method?: string | null
-          payment_status?: string | null
-          receipt_url?: string | null
-          student_id?: string | null
+          receipt_number?: string | null
+          status?: Database["public"]["Enums"]["payment_status"] | null
+          structure_id?: string
+          student_id?: string
           transaction_id?: string | null
-          updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "fee_payments_fee_structure_id_fkey"
-            columns: ["fee_structure_id"]
+            foreignKeyName: "fee_payments_structure_id_fkey"
+            columns: ["structure_id"]
             isOneToOne: false
             referencedRelation: "fee_structures"
             referencedColumns: ["id"]
@@ -247,142 +138,70 @@ export type Database = {
       }
       fee_structures: {
         Row: {
+          academic_year: string
           amount: number
-          class_name: string
+          class_level: number
           created_at: string | null
-          created_by: string | null
           description: string | null
           due_date: string
+          fee_type: string
           id: string
-          semester: string
+          term: string
           updated_at: string | null
         }
         Insert: {
+          academic_year: string
           amount: number
-          class_name: string
+          class_level: number
           created_at?: string | null
-          created_by?: string | null
           description?: string | null
           due_date: string
+          fee_type: string
           id?: string
-          semester: string
+          term: string
           updated_at?: string | null
         }
         Update: {
+          academic_year?: string
           amount?: number
-          class_name?: string
+          class_level?: number
           created_at?: string | null
-          created_by?: string | null
           description?: string | null
           due_date?: string
+          fee_type?: string
           id?: string
-          semester?: string
+          term?: string
           updated_at?: string | null
         }
         Relationships: []
       }
-      parent_students: {
+      parent_links: {
         Row: {
-          created_at: string | null
           id: string
           is_primary: boolean | null
-          parent_id: string | null
+          linked_on: string | null
+          parent_email: string
+          parent_name: string | null
           relationship: string | null
-          student_id: string | null
+          student_id: string
         }
         Insert: {
-          created_at?: string | null
           id?: string
           is_primary?: boolean | null
-          parent_id?: string | null
+          linked_on?: string | null
+          parent_email: string
+          parent_name?: string | null
           relationship?: string | null
-          student_id?: string | null
+          student_id: string
         }
         Update: {
-          created_at?: string | null
           id?: string
           is_primary?: boolean | null
-          parent_id?: string | null
+          linked_on?: string | null
+          parent_email?: string
+          parent_name?: string | null
           relationship?: string | null
-          student_id?: string | null
-        }
-        Relationships: []
-      }
-      performance_predictions: {
-        Row: {
-          actual_grade: number | null
-          confidence_score: number | null
-          created_at: string | null
-          id: string
-          predicted_grade: number | null
-          prediction_date: string | null
-          risk_level: string | null
-          student_id: string | null
-          subject: string
-          updated_at: string | null
-        }
-        Insert: {
-          actual_grade?: number | null
-          confidence_score?: number | null
-          created_at?: string | null
-          id?: string
-          predicted_grade?: number | null
-          prediction_date?: string | null
-          risk_level?: string | null
-          student_id?: string | null
-          subject: string
-          updated_at?: string | null
-        }
-        Update: {
-          actual_grade?: number | null
-          confidence_score?: number | null
-          created_at?: string | null
-          id?: string
-          predicted_grade?: number | null
-          prediction_date?: string | null
-          risk_level?: string | null
-          student_id?: string | null
-          subject?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      push_notifications: {
-        Row: {
-          created_at: string | null
-          data: Json | null
-          expires_at: string | null
-          id: string
-          message: string
-          read_status: boolean | null
-          sent_at: string | null
-          title: string
-          type: string
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          data?: Json | null
-          expires_at?: string | null
-          id?: string
-          message: string
-          read_status?: boolean | null
-          sent_at?: string | null
-          title: string
-          type: string
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          data?: Json | null
-          expires_at?: string | null
-          id?: string
-          message?: string
-          read_status?: boolean | null
-          sent_at?: string | null
-          title?: string
-          type?: string
-          user_id?: string | null
+          student_id?: string
         }
         Relationships: []
       }
@@ -390,10 +209,10 @@ export type Database = {
         Row: {
           action: string
           created_at: string | null
+          device_info: string | null
           error_message: string | null
           id: string
           ip_address: unknown | null
-          metadata: Json | null
           resource: string | null
           success: boolean | null
           user_agent: string | null
@@ -402,10 +221,10 @@ export type Database = {
         Insert: {
           action: string
           created_at?: string | null
+          device_info?: string | null
           error_message?: string | null
           id?: string
           ip_address?: unknown | null
-          metadata?: Json | null
           resource?: string | null
           success?: boolean | null
           user_agent?: string | null
@@ -414,10 +233,10 @@ export type Database = {
         Update: {
           action?: string
           created_at?: string | null
+          device_info?: string | null
           error_message?: string | null
           id?: string
           ip_address?: unknown | null
-          metadata?: Json | null
           resource?: string | null
           success?: boolean | null
           user_agent?: string | null
@@ -427,340 +246,274 @@ export type Database = {
       }
       student_insights: {
         Row: {
-          ai_recommendations: string | null
-          focus_topics: string[] | null
+          ai_comment: string | null
+          created_at: string | null
           id: string
           last_analyzed: string | null
-          performance_trend: string | null
-          strength_level: number | null
-          strong_areas: string[] | null
-          student_id: string | null
-          subject_id: string | null
-          weak_areas: string[] | null
+          performance_level: Database["public"]["Enums"]["performance_level"]
+          recommendations: string | null
+          strengths: string[] | null
+          student_id: string
+          subject: Database["public"]["Enums"]["subject_type"]
+          topic: string | null
+          weaknesses: string[] | null
         }
         Insert: {
-          ai_recommendations?: string | null
-          focus_topics?: string[] | null
+          ai_comment?: string | null
+          created_at?: string | null
           id?: string
           last_analyzed?: string | null
-          performance_trend?: string | null
-          strength_level?: number | null
-          strong_areas?: string[] | null
-          student_id?: string | null
-          subject_id?: string | null
-          weak_areas?: string[] | null
+          performance_level: Database["public"]["Enums"]["performance_level"]
+          recommendations?: string | null
+          strengths?: string[] | null
+          student_id: string
+          subject: Database["public"]["Enums"]["subject_type"]
+          topic?: string | null
+          weaknesses?: string[] | null
         }
         Update: {
-          ai_recommendations?: string | null
-          focus_topics?: string[] | null
+          ai_comment?: string | null
+          created_at?: string | null
           id?: string
           last_analyzed?: string | null
-          performance_trend?: string | null
-          strength_level?: number | null
-          strong_areas?: string[] | null
-          student_id?: string | null
-          subject_id?: string | null
-          weak_areas?: string[] | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "student_insights_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "student_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "student_insights_subject_id_fkey"
-            columns: ["subject_id"]
-            isOneToOne: false
-            referencedRelation: "subjects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      student_profiles: {
-        Row: {
-          approval_date: string | null
-          approved_by: string | null
-          class_level: number | null
-          created_at: string | null
-          email: string
-          full_name: string
-          guardian_mobile: string | null
-          guardian_name: string | null
-          id: string
-          profile_picture: string | null
-          status: Database["public"]["Enums"]["approval_status"] | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          approval_date?: string | null
-          approved_by?: string | null
-          class_level?: number | null
-          created_at?: string | null
-          email: string
-          full_name: string
-          guardian_mobile?: string | null
-          guardian_name?: string | null
-          id?: string
-          profile_picture?: string | null
-          status?: Database["public"]["Enums"]["approval_status"] | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          approval_date?: string | null
-          approved_by?: string | null
-          class_level?: number | null
-          created_at?: string | null
-          email?: string
-          full_name?: string
-          guardian_mobile?: string | null
-          guardian_name?: string | null
-          id?: string
-          profile_picture?: string | null
-          status?: Database["public"]["Enums"]["approval_status"] | null
-          updated_at?: string | null
-          user_id?: string | null
+          performance_level?: Database["public"]["Enums"]["performance_level"]
+          recommendations?: string | null
+          strengths?: string[] | null
+          student_id?: string
+          subject?: Database["public"]["Enums"]["subject_type"]
+          topic?: string | null
+          weaknesses?: string[] | null
         }
         Relationships: []
       }
-      subjects: {
+      student_profiles: {
         Row: {
+          address: string | null
+          approval_date: string | null
+          approved_by_teacher_id: string | null
           class_level: number
           created_at: string | null
+          date_of_birth: string | null
+          enrollment_no: string
           id: string
-          name: Database["public"]["Enums"]["subject_type"]
+          parent_email: string | null
+          parent_phone: string | null
+          section: string | null
           updated_at: string | null
+          user_id: string
         }
         Insert: {
+          address?: string | null
+          approval_date?: string | null
+          approved_by_teacher_id?: string | null
           class_level: number
           created_at?: string | null
+          date_of_birth?: string | null
+          enrollment_no: string
           id?: string
-          name: Database["public"]["Enums"]["subject_type"]
+          parent_email?: string | null
+          parent_phone?: string | null
+          section?: string | null
           updated_at?: string | null
+          user_id: string
         }
         Update: {
+          address?: string | null
+          approval_date?: string | null
+          approved_by_teacher_id?: string | null
           class_level?: number
           created_at?: string | null
+          date_of_birth?: string | null
+          enrollment_no?: string
           id?: string
-          name?: Database["public"]["Enums"]["subject_type"]
+          parent_email?: string | null
+          parent_phone?: string | null
+          section?: string | null
           updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
       teacher_profiles: {
         Row: {
           approval_date: string | null
-          approved_by: string | null
+          approved_by_admin_id: string | null
           created_at: string | null
-          email: string
+          department: string
+          designation: string | null
+          employee_id: string
           experience_years: number | null
-          full_name: string
           id: string
-          profile_picture: string | null
-          status: Database["public"]["Enums"]["approval_status"] | null
+          qualification: string | null
           subject_expertise: Database["public"]["Enums"]["subject_type"]
           updated_at: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           approval_date?: string | null
-          approved_by?: string | null
+          approved_by_admin_id?: string | null
           created_at?: string | null
-          email: string
+          department: string
+          designation?: string | null
+          employee_id: string
           experience_years?: number | null
-          full_name: string
           id?: string
-          profile_picture?: string | null
-          status?: Database["public"]["Enums"]["approval_status"] | null
+          qualification?: string | null
           subject_expertise: Database["public"]["Enums"]["subject_type"]
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           approval_date?: string | null
-          approved_by?: string | null
+          approved_by_admin_id?: string | null
           created_at?: string | null
-          email?: string
+          department?: string
+          designation?: string | null
+          employee_id?: string
           experience_years?: number | null
-          full_name?: string
           id?: string
-          profile_picture?: string | null
-          status?: Database["public"]["Enums"]["approval_status"] | null
+          qualification?: string | null
           subject_expertise?: Database["public"]["Enums"]["subject_type"]
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
-      topics: {
+      timetables: {
         Row: {
-          chapter_number: number | null
+          class_level: number
           created_at: string | null
+          day_of_week: number | null
+          end_time: string
           id: string
-          name: string
-          subject_id: string | null
+          room_number: string | null
+          section: string | null
+          start_time: string
+          subject: Database["public"]["Enums"]["subject_type"]
+          teacher_id: string
           updated_at: string | null
         }
         Insert: {
-          chapter_number?: number | null
+          class_level: number
           created_at?: string | null
+          day_of_week?: number | null
+          end_time: string
           id?: string
-          name: string
-          subject_id?: string | null
+          room_number?: string | null
+          section?: string | null
+          start_time: string
+          subject: Database["public"]["Enums"]["subject_type"]
+          teacher_id: string
           updated_at?: string | null
         }
         Update: {
-          chapter_number?: number | null
+          class_level?: number
           created_at?: string | null
+          day_of_week?: number | null
+          end_time?: string
           id?: string
-          name?: string
-          subject_id?: string | null
+          room_number?: string | null
+          section?: string | null
+          start_time?: string
+          subject?: Database["public"]["Enums"]["subject_type"]
+          teacher_id?: string
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "topics_subject_id_fkey"
-            columns: ["subject_id"]
-            isOneToOne: false
-            referencedRelation: "subjects"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_profiles: {
         Row: {
-          approval_date: string | null
-          approval_status: Database["public"]["Enums"]["approval_status"] | null
-          approved_by: string | null
-          class_level: number | null
           created_at: string | null
           email: string
-          experience_years: number | null
           full_name: string
-          guardian_mobile: string | null
-          guardian_name: string | null
           id: string
+          phone: string | null
           profile_picture: string | null
           role: Database["public"]["Enums"]["user_role"]
-          subject_expertise: Database["public"]["Enums"]["subject_type"] | null
+          status: Database["public"]["Enums"]["approval_status"] | null
           updated_at: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
-          approval_date?: string | null
-          approval_status?:
-            | Database["public"]["Enums"]["approval_status"]
-            | null
-          approved_by?: string | null
-          class_level?: number | null
           created_at?: string | null
           email: string
-          experience_years?: number | null
           full_name: string
-          guardian_mobile?: string | null
-          guardian_name?: string | null
           id?: string
+          phone?: string | null
           profile_picture?: string | null
           role: Database["public"]["Enums"]["user_role"]
-          subject_expertise?: Database["public"]["Enums"]["subject_type"] | null
+          status?: Database["public"]["Enums"]["approval_status"] | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
-          approval_date?: string | null
-          approval_status?:
-            | Database["public"]["Enums"]["approval_status"]
-            | null
-          approved_by?: string | null
-          class_level?: number | null
           created_at?: string | null
           email?: string
-          experience_years?: number | null
           full_name?: string
-          guardian_mobile?: string | null
-          guardian_name?: string | null
           id?: string
+          phone?: string | null
           profile_picture?: string | null
           role?: Database["public"]["Enums"]["user_role"]
-          subject_expertise?: Database["public"]["Enums"]["subject_type"] | null
+          status?: Database["public"]["Enums"]["approval_status"] | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
     }
     Views: {
-      admin_profiles_safe: {
+      exam_results_with_percentage: {
         Row: {
-          created_at: string | null
-          email: string | null
-          full_name: string | null
+          exam_id: string | null
+          grade: string | null
           id: string | null
-          profile_picture: string | null
-          status: string | null
-          updated_at: string | null
-          user_id: string | null
+          marks_obtained: number | null
+          percentage: number | null
+          remarks: string | null
+          student_id: string | null
+          submitted_at: string | null
         }
-        Insert: {
-          created_at?: string | null
-          email?: string | null
-          full_name?: string | null
-          id?: string | null
-          profile_picture?: never
-          status?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          email?: string | null
-          full_name?: string | null
-          id?: string | null
-          profile_picture?: never
-          status?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      profile_summary: {
-        Row: {
-          approval_status: Database["public"]["Enums"]["approval_status"] | null
-          count: number | null
-          role: Database["public"]["Enums"]["user_role"] | null
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "exam_results_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
-      is_valid_admin_email: {
-        Args: { email_address: string }
-        Returns: boolean
-      }
-      map_subject_to_enum: {
-        Args: { subject_text: string }
-        Returns: Database["public"]["Enums"]["subject_type"]
-      }
-      migrate_existing_profiles: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      [_ in never]: never
     }
     Enums: {
       approval_status: "PENDING" | "APPROVED" | "REJECTED"
-      exam_type: "JEE" | "NEET" | "CET" | "Boards"
+      exam_type:
+        | "JEE"
+        | "NEET"
+        | "CET"
+        | "Boards"
+        | "Internal"
+        | "Quarterly"
+        | "Half Yearly"
+        | "Annual"
+      payment_status: "PENDING" | "PAID" | "OVERDUE" | "PARTIAL"
+      performance_level:
+        | "Excellent"
+        | "Good"
+        | "Average"
+        | "Below Average"
+        | "Poor"
       subject_type:
         | "Physics"
         | "Chemistry"
         | "Mathematics"
         | "Biology"
         | "English"
+        | "Computer Science"
         | "Other"
-      user_role: "STUDENT" | "TEACHER" | "ADMIN" | "SUPER_ADMIN" | "PARENT"
+      user_role: "ADMIN" | "TEACHER" | "STUDENT" | "PARENT"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -877,16 +630,34 @@ export const Constants = {
   public: {
     Enums: {
       approval_status: ["PENDING", "APPROVED", "REJECTED"],
-      exam_type: ["JEE", "NEET", "CET", "Boards"],
+      exam_type: [
+        "JEE",
+        "NEET",
+        "CET",
+        "Boards",
+        "Internal",
+        "Quarterly",
+        "Half Yearly",
+        "Annual",
+      ],
+      payment_status: ["PENDING", "PAID", "OVERDUE", "PARTIAL"],
+      performance_level: [
+        "Excellent",
+        "Good",
+        "Average",
+        "Below Average",
+        "Poor",
+      ],
       subject_type: [
         "Physics",
         "Chemistry",
         "Mathematics",
         "Biology",
         "English",
+        "Computer Science",
         "Other",
       ],
-      user_role: ["STUDENT", "TEACHER", "ADMIN", "SUPER_ADMIN", "PARENT"],
+      user_role: ["ADMIN", "TEACHER", "STUDENT", "PARENT"],
     },
   },
 } as const
