@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { GraduationCap, LogOut, User, Bell, Home, Menu, X } from 'lucide-react';
+import { GraduationCap, LogOut, User, Bell, Home, Menu, X, Shield } from 'lucide-react';
 import { useState } from 'react';
 
 const ModernLayout = () => {
@@ -182,6 +181,22 @@ const ModernLayout = () => {
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Outlet />
       </main>
+
+      {/* Floating Admin Access Button - Only show on home page */}
+      {location.pathname === '/' && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <Link to="/register/admin">
+            <Button 
+              size="sm" 
+              className="bg-purple-600 hover:bg-purple-700 text-white shadow-lg rounded-full px-4 py-2"
+              title="Admin Registration"
+            >
+              <Shield className="h-4 w-4 mr-2" />
+              Admin
+            </Button>
+          </Link>
+        </div>
+      )}
     </div>
   );
 };

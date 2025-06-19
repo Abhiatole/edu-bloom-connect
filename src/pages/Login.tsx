@@ -53,13 +53,13 @@ const Login = () => {
 
           if (teacherProfile && !teacherError) {
             userProfile = teacherProfile;
-            userRole = 'teacher';
-          } else {
-            // Check in admin_profiles
+            userRole = 'teacher';          } else {
+            // Check in user_profiles for admin role
             const { data: adminProfile, error: adminError } = await supabase
-              .from('admin_profiles')
+              .from('user_profiles')
               .select('*')
               .eq('user_id', userId)
+              .eq('role', 'ADMIN')
               .single();
 
             if (adminProfile && !adminError) {
@@ -191,8 +191,7 @@ const Login = () => {
               
               <div className="text-sm text-gray-600">
                 Don't have an account?
-              </div>
-              <div className="flex flex-col space-y-2">
+              </div>              <div className="flex flex-col space-y-2">
                 <Link to="/register/student">
                   <Button variant="outline" size="sm" className="w-full border-blue-600 text-blue-600 hover:bg-blue-50">
                     Register as Student
@@ -201,6 +200,11 @@ const Login = () => {
                 <Link to="/register/teacher">
                   <Button variant="outline" size="sm" className="w-full border-green-600 text-green-600 hover:bg-green-50">
                     Register as Teacher
+                  </Button>
+                </Link>
+                <Link to="/register/admin">
+                  <Button variant="outline" size="sm" className="w-full border-purple-600 text-purple-600 hover:bg-purple-50">
+                    Register as Administrator
                   </Button>
                 </Link>
               </div>

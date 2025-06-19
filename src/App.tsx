@@ -23,6 +23,7 @@ import ModernStudentDashboard from "./pages/enhanced/ModernStudentDashboard";
 // Registration Pages
 import StudentRegister from "./pages/register/StudentRegister";
 import TeacherRegister from "./pages/register/TeacherRegister";
+import AdminRegister from "./pages/register/AdminRegister";
 import EmailConfirmation from "./pages/EmailConfirmation";
 import EmailConfirmationSuccess from "./pages/EmailConfirmationSuccess";
 import RegistrationSuccess from "./pages/RegistrationSuccess";
@@ -71,6 +72,7 @@ const App = () => (
               {/* Registration Routes */}
               <Route path="register/student" element={<StudentRegister />} />
               <Route path="register/teacher" element={<TeacherRegister />} />
+              <Route path="register/admin" element={<AdminRegister />} />
               <Route path="register/success" element={<RegistrationSuccess />} />
               <Route path="auth/confirm" element={<EmailConfirmation />} />
               <Route path="auth/success" element={<EmailConfirmationSuccess />} />

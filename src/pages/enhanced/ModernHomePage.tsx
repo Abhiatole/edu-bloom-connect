@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -255,6 +254,41 @@ const ModernHomePage = () => {
               </div>
             </CardContent>
           </Card>
+        </div>
+      </section>
+
+      {/* Admin Access Section */}
+      <section className="py-8 bg-gray-50 dark:bg-gray-900 border-t">
+        <div className="container mx-auto px-4 text-center">
+          <div className="max-w-md mx-auto">
+            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">
+              System Administration
+            </h3>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link to="/register/admin">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="border-purple-600 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950"
+                >
+                  <Shield className="h-4 w-4 mr-2" />
+                  Admin Registration
+                </Button>
+              </Link>
+              <Link to="/debug">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="border-gray-600 text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-950"
+                >
+                  System Debug
+                </Button>
+              </Link>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Administrative access for authorized personnel only
+            </p>
+          </div>
         </div>
       </section>
     </div>
