@@ -14,15 +14,10 @@ interface StudentResult {
   student_id: string;
   marks_obtained: number;
   percentage: number;
-  student_profiles: {
-    full_name: string;
-    class_level: number;
-  };
-  exams: {
-    title: string;
-    max_marks: number;
-    subjects: { name: string };
-  };
+  student_name: string;
+  class_level: number;
+  exam_title: string;
+  max_marks: number;
 }
 
 const StudentCategorization = () => {
@@ -54,11 +49,8 @@ const StudentCategorization = () => {
 
       const { data, error } = await supabase
         .from('exams')
-        .select(`
-          *,
-          subjects(name)
-        `)
-        .eq('created_by', currentUser.user.id)
+        .select('*')
+        .eq('created_by_teacher_id', currentUser.user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -70,20 +62,48 @@ const StudentCategorization = () => {
 
   const fetchResults = async () => {
     try {
-      const { data, error } = await supabase
+      // Get exam results and calculate percentage manually
+      const { data: examData, error: examError } = await supabase
+        .from('exams')
+        .select('title, total_marks')
+        .eq('id', selectedExam)
+        .single();
+      
+      if (examError) throw examError;
+
+      const { data: resultsData, error: resultsError } = await supabase
         .from('exam_results')
         .select(`
           *,
-          student_profiles(full_name, class_level),
-          exams(title, max_marks, subjects(name))
+          student_profiles!inner(id, class_level)
         `)
-        .eq('exam_id', selectedExam)
-        .order('percentage', { ascending: false });
+        .eq('exam_id', selectedExam);
 
-      if (error) throw error;
-      setResults(data || []);
+      if (resultsError) throw resultsError;
+
+      // Transform the data to match our interface
+      const transformedResults = resultsData.map(result => ({
+        id: result.id,
+        student_id: result.student_id,
+        marks_obtained: result.marks_obtained,
+        percentage: (result.marks_obtained / examData.total_marks) * 100,
+        student_name: `Student ${result.student_id.substring(0, 8)}`, // Mock name since we don't have full_name
+        class_level: result.student_profiles?.class_level || 0,
+        exam_title: examData.title,
+        max_marks: examData.total_marks
+      }));
+
+      // Sort by percentage descending
+      transformedResults.sort((a, b) => b.percentage - a.percentage);
+      
+      setResults(transformedResults);
     } catch (error) {
       console.error('Error fetching results:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load exam results",
+        variant: "destructive"
+      });
     }
   };
 
@@ -125,10 +145,10 @@ const StudentCategorization = () => {
 
     const headers = ['Student Name', 'Class', 'Marks Obtained', 'Max Marks', 'Percentage', 'Category'];
     const csvData = filteredResults.map(result => [
-      result.student_profiles?.full_name || 'N/A',
-      result.student_profiles?.class_level || 'N/A',
+      result.student_name,
+      result.class_level,
       result.marks_obtained,
-      result.exams?.max_marks || 100,
+      result.max_marks,
       result.percentage.toFixed(2) + '%',
       getPerformanceCategory(result.percentage)
     ]);
@@ -194,7 +214,7 @@ const StudentCategorization = () => {
                 <SelectContent>
                   {exams.map(exam => (
                     <SelectItem key={exam.id} value={exam.id}>
-                      {exam.title} - {exam.subjects?.name}
+                      {exam.title} - Class {exam.class_level}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -249,10 +269,10 @@ const StudentCategorization = () => {
                     {filteredResults.map((result, index) => (
                       <TableRow key={result.id}>
                         <TableCell className="font-medium">#{index + 1}</TableCell>
-                        <TableCell>{result.student_profiles?.full_name}</TableCell>
-                        <TableCell>{result.student_profiles?.class_level}</TableCell>
+                        <TableCell>{result.student_name}</TableCell>
+                        <TableCell>{result.class_level}</TableCell>
                         <TableCell>
-                          {result.marks_obtained}/{result.exams?.max_marks}
+                          {result.marks_obtained}/{result.max_marks}
                         </TableCell>
                         <TableCell>{result.percentage.toFixed(1)}%</TableCell>
                         <TableCell>{getPerformanceBadge(result.percentage)}</TableCell>

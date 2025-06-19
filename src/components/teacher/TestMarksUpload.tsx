@@ -12,16 +12,15 @@ import { Upload, Save, Users } from 'lucide-react';
 
 interface Student {
   id: string;
-  full_name: string;
   class_level: number;
 }
 
 interface Exam {
   id: string;
   title: string;
-  max_marks: number;
-  subject_id: string;
-  subjects: { name: string };
+  total_marks: number;
+  class_level: number;
+  subject: string;
 }
 
 const TestMarksUpload = () => {
@@ -50,11 +49,8 @@ const TestMarksUpload = () => {
 
       const { data, error } = await supabase
         .from('exams')
-        .select(`
-          *,
-          subjects(name)
-        `)
-        .eq('created_by', currentUser.user.id)
+        .select('*')
+        .eq('created_by_teacher_id', currentUser.user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -68,10 +64,9 @@ const TestMarksUpload = () => {
     try {
       const { data, error } = await supabase
         .from('student_profiles')
-        .select('id, full_name, class_level')
+        .select('id, class_level')
         .eq('class_level', parseInt(selectedClass))
-        .eq('status', 'APPROVED')
-        .order('full_name');
+        .order('id');
 
       if (error) throw error;
       setStudents(data || []);
@@ -106,7 +101,7 @@ const TestMarksUpload = () => {
           exam_id: selectedExam,
           student_id: student.id,
           marks_obtained: marks[student.id],
-          percentage: (marks[student.id] / selectedExamData.max_marks) * 100
+          grade: getGrade((marks[student.id] / selectedExamData.total_marks) * 100)
         }));
 
       if (resultsToInsert.length === 0) {
@@ -145,6 +140,17 @@ const TestMarksUpload = () => {
     }
   };
 
+  const getGrade = (percentage: number): string => {
+    if (percentage >= 90) return 'A+';
+    if (percentage >= 80) return 'A';
+    if (percentage >= 70) return 'B+';
+    if (percentage >= 60) return 'B';
+    if (percentage >= 50) return 'C+';
+    if (percentage >= 40) return 'C';
+    if (percentage >= 35) return 'D';
+    return 'F';
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -178,7 +184,7 @@ const TestMarksUpload = () => {
                 <SelectContent>
                   {exams.map(exam => (
                     <SelectItem key={exam.id} value={exam.id}>
-                      {exam.title} - {exam.subjects?.name} (Max: {exam.max_marks})
+                      {exam.title} - {exam.subject} (Max: {exam.total_marks})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -203,7 +209,7 @@ const TestMarksUpload = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Student Name</TableHead>
+                      <TableHead>Student ID</TableHead>
                       <TableHead>Class</TableHead>
                       <TableHead>Marks</TableHead>
                     </TableRow>
@@ -211,13 +217,15 @@ const TestMarksUpload = () => {
                   <TableBody>
                     {students.map(student => (
                       <TableRow key={student.id}>
-                        <TableCell className="font-medium">{student.full_name}</TableCell>
+                        <TableCell className="font-medium font-mono text-sm">
+                          {student.id.substring(0, 8)}...
+                        </TableCell>
                         <TableCell>{student.class_level}</TableCell>
                         <TableCell>
                           <Input
                             type="number"
                             min="0"
-                            max={exams.find(e => e.id === selectedExam)?.max_marks || 100}
+                            max={exams.find(e => e.id === selectedExam)?.total_marks || 100}
                             value={marks[student.id] || ''}
                             onChange={(e) => handleMarkChange(student.id, e.target.value)}
                             placeholder="Enter marks"

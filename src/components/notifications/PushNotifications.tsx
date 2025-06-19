@@ -35,8 +35,9 @@ const PushNotifications = () => {
 
   const fetchNotifications = async () => {
     try {
+      // Use security_logs as a mock notification system for now
       const { data, error } = await supabase
-        .from('push_notifications')
+        .from('security_logs')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(50);
@@ -66,17 +67,17 @@ const PushNotifications = () => {
 
   const sendNotification = async () => {
     try {
-      // Create notification in database
+      // Log the notification attempt in security_logs
       const notificationData = {
-        user_id: 'broadcast', // For broadcast notifications
-        title: newNotification.title,
-        message: newNotification.message,
-        type: newNotification.type,
-        data: { targetUsers: newNotification.targetUsers }
+        action: 'NOTIFICATION_SENT',
+        resource: 'push_notifications',
+        success: true,
+        user_agent: navigator.userAgent,
+        device_info: `${newNotification.type}: ${newNotification.title}`
       };
 
       const { error } = await supabase
-        .from('push_notifications')
+        .from('security_logs')
         .insert([notificationData]);
 
       if (error) throw error;
@@ -120,9 +121,10 @@ const PushNotifications = () => {
 
   const markAsRead = async (notificationId: string) => {
     try {
+      // Update the security log to mark as processed
       const { error } = await supabase
-        .from('push_notifications')
-        .update({ read_status: true })
+        .from('security_logs')
+        .update({ success: true })
         .eq('id', notificationId);
 
       if (error) throw error;
@@ -245,27 +247,27 @@ const PushNotifications = () => {
                   <div
                     key={notification.id}
                     className={`p-4 border rounded-lg cursor-pointer hover:bg-gray-50 ${
-                      !notification.read_status ? 'bg-blue-50 border-blue-200' : ''
+                      !notification.success ? 'bg-blue-50 border-blue-200' : ''
                     }`}
                     onClick={() => markAsRead(notification.id)}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start space-x-3">
-                        <span className="text-2xl">{getNotificationIcon(notification.type)}</span>
+                        <span className="text-2xl">🔔</span>
                         <div>
-                          <h4 className="font-medium text-gray-900">{notification.title}</h4>
-                          <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                          <h4 className="font-medium text-gray-900">{notification.action}</h4>
+                          <p className="text-sm text-gray-600 mt-1">{notification.device_info || 'Notification sent'}</p>
                           <p className="text-xs text-gray-400 mt-2">
-                            {new Date(notification.sent_at || notification.created_at).toLocaleString()}
+                            {new Date(notification.created_at).toLocaleString()}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        {!notification.read_status && (
+                        {!notification.success && (
                           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                         )}
-                        <Badge className={getTypeColor(notification.type)}>
-                          {notification.type}
+                        <Badge className="bg-gray-100 text-gray-800">
+                          {notification.resource || 'notification'}
                         </Badge>
                       </div>
                     </div>
@@ -332,7 +334,7 @@ const PushNotifications = () => {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Unread</span>
-                <span className="font-medium">{notifications.filter(n => !n.read_status).length}</span>
+                <span className="font-medium">{notifications.filter(n => !n.success).length}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Today</span>

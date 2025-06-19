@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,18 +34,19 @@ const AdminChecker = () => {
   const checkAdminStatus = async () => {
     setLoading(true);
     try {
-      // Check for admin profiles
+      // Check for admin users in user_profiles
       const { data: adminProfiles, error: adminError } = await supabase
-        .from('admin_profiles')
+        .from('user_profiles')
         .select('*')
+        .eq('role', 'ADMIN')
         .order('created_at', { ascending: false });
 
       if (adminError) throw adminError;
 
       // Check pending users
       const [pendingStudentsResult, pendingTeachersResult] = await Promise.all([
-        supabase.from('student_profiles').select('*', { count: 'exact' }).eq('status', 'PENDING'),
-        supabase.from('teacher_profiles').select('*', { count: 'exact' }).eq('status', 'PENDING')
+        supabase.from('user_profiles').select('*', { count: 'exact' }).eq('status', 'PENDING').eq('role', 'STUDENT'),
+        supabase.from('user_profiles').select('*', { count: 'exact' }).eq('status', 'PENDING').eq('role', 'TEACHER')
       ]);
 
       const pendingStudents = pendingStudentsResult.count || 0;
@@ -87,9 +89,10 @@ const AdminChecker = () => {
 
       // Check if current user is admin
       const { data: adminProfile } = await supabase
-        .from('admin_profiles')
+        .from('user_profiles')
         .select('*')
         .eq('user_id', currentUser.user.id)
+        .eq('role', 'ADMIN')
         .single();
 
       if (!adminProfile) {
@@ -100,25 +103,23 @@ const AdminChecker = () => {
 
       if (status.pendingStudents > 0) {
         updates.push(
-          supabase.from('student_profiles')
+          supabase.from('user_profiles')
             .update({
-              status: 'APPROVED',
-              approved_by: currentUser.user.id,
-              approval_date: new Date().toISOString()
+              status: 'APPROVED'
             })
             .eq('status', 'PENDING')
+            .eq('role', 'STUDENT')
         );
       }
 
       if (status.pendingTeachers > 0) {
         updates.push(
-          supabase.from('teacher_profiles')
+          supabase.from('user_profiles')
             .update({
-              status: 'APPROVED',
-              approved_by: currentUser.user.id,
-              approval_date: new Date().toISOString()
+              status: 'APPROVED'
             })
             .eq('status', 'PENDING')
+            .eq('role', 'TEACHER')
         );
       }
 
