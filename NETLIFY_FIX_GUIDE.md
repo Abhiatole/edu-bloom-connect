@@ -16,11 +16,9 @@ The Supabase API keys are hardcoded in your source code, but Netlify deployments
 
 2. **Add Environment Variables**
    - Go to **Site settings** → **Environment variables**
-   - Click **Add variable** and add these two variables:
-
-   ```
+   - Click **Add variable** and add these two variables:   ```
    VITE_SUPABASE_URL = https://pgwgtronuluhwuiaqkcc.supabase.co
-   VITE_SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnd2d0cm9udWx1aHd1aWFxa2NjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxOTUxMzQsImV4cCI6MjA2NTc3MTEzNH0.hhxmy4IiSVS0R_ZwnjN75Too4MqLVFYkxhfew39z0Mk
+   VITE_SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnd2d0cm9udWx1aHd1aWFxa2NjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzMzE0NTksImV4cCI6MjA2NTkwNzQ1OX0.mTbLF5dSjKbIt6p1jyR7DhNGuLGLAuqAkEiGVVUiZ0I
    ```
 
    **⚠️ Important**: Variable names must start with `VITE_` for Vite to recognize them!
