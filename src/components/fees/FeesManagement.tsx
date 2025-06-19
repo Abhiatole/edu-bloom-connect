@@ -4,50 +4,58 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { CreditCard, Download, DollarSign, Calendar, Plus, FileText } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { DollarSign, Plus, CreditCard } from 'lucide-react';
 
 const FeesManagement = () => {
   const [feeStructures, setFeeStructures] = useState([]);
-  const [payments, setPayments] = useState([]);
+  const [feePayments, setFeePayments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const { toast } = useToast();
-
-  const [newFee, setNewFee] = useState({
-    class_name: '',
-    semester: '',
+  const [newStructure, setNewStructure] = useState({
+    class_level: '',
+    fee_type: '',
     amount: '',
+    term: '',
     due_date: '',
+    academic_year: '2024-2025',
     description: ''
   });
+  const [newPayment, setNewPayment] = useState({
+    student_id: '',
+    structure_id: '',
+    amount_paid: '',
+    payment_method: 'Cash',
+    status: 'PAID',
+    transaction_id: '',
+    payment_date: new Date().toISOString().split('T')[0]
+  });
+  const { toast } = useToast();
 
   useEffect(() => {
-    fetchFeesData();
+    fetchData();
   }, []);
 
-  const fetchFeesData = async () => {
+  const fetchData = async () => {
     try {
-      const [feesResult, paymentsResult] = await Promise.all([
-        supabase.from('fee_structures').select('*').order('created_at', { ascending: false }),
+      const [structuresResponse, paymentsResponse] = await Promise.all([
+        supabase.from('fee_structures').select('*').order('class_level'),
         supabase.from('fee_payments').select('*').order('created_at', { ascending: false })
       ]);
 
-      if (feesResult.error) throw feesResult.error;
-      if (paymentsResult.error) throw paymentsResult.error;
+      if (structuresResponse.error) throw structuresResponse.error;
+      if (paymentsResponse.error) throw paymentsResponse.error;
 
-      setFeeStructures(feesResult.data || []);
-      setPayments(paymentsResult.data || []);
+      setFeeStructures(structuresResponse.data || []);
+      setFeePayments(paymentsResponse.data || []);
     } catch (error) {
-      console.error('Error fetching fees data:', error);
+      console.error('Error fetching fee data:', error);
       toast({
         title: "Error",
-        description: "Failed to load fees data",
+        description: "Failed to load fee data",
         variant: "destructive"
       });
     } finally {
@@ -55,14 +63,19 @@ const FeesManagement = () => {
     }
   };
 
-  const createFeeStructure = async () => {
+  const handleCreateStructure = async (e) => {
+    e.preventDefault();
     try {
       const { error } = await supabase
         .from('fee_structures')
         .insert([{
-          ...newFee,
-          amount: parseFloat(newFee.amount),
-          created_by: 'current-user-id' // In real app, get from auth
+          class_level: parseInt(newStructure.class_level),
+          fee_type: newStructure.fee_type,
+          amount: parseFloat(newStructure.amount),
+          term: newStructure.term,
+          due_date: newStructure.due_date,
+          academic_year: newStructure.academic_year,
+          description: newStructure.description
         }]);
 
       if (error) throw error;
@@ -72,9 +85,17 @@ const FeesManagement = () => {
         description: "Fee structure created successfully"
       });
 
-      setShowCreateDialog(false);
-      setNewFee({ class_name: '', semester: '', amount: '', due_date: '', description: '' });
-      fetchFeesData();
+      setNewStructure({
+        class_level: '',
+        fee_type: '',
+        amount: '',
+        term: '',
+        due_date: '',
+        academic_year: '2024-2025',
+        description: ''
+      });
+      
+      fetchData();
     } catch (error) {
       console.error('Error creating fee structure:', error);
       toast({
@@ -85,247 +106,312 @@ const FeesManagement = () => {
     }
   };
 
-  const processPayment = async (feeStructureId: string, amount: number) => {
+  const handleRecordPayment = async (e) => {
+    e.preventDefault();
     try {
-      // Mock payment processing - in real app integrate with Razorpay/Stripe
-      const mockPayment = {
-        student_id: 'current-student-id', // In real app, get from auth
-        fee_structure_id: feeStructureId,
-        amount_paid: amount,
-        payment_method: 'credit_card',
-        payment_status: 'completed',
-        transaction_id: `TXN_${Date.now()}`,
-        payment_date: new Date().toISOString()
-      };
-
       const { error } = await supabase
         .from('fee_payments')
-        .insert([mockPayment]);
+        .insert([{
+          student_id: newPayment.student_id,
+          structure_id: newPayment.structure_id,
+          amount_paid: parseFloat(newPayment.amount_paid),
+          payment_method: newPayment.payment_method,
+          status: newPayment.status,
+          transaction_id: newPayment.transaction_id,
+          payment_date: newPayment.payment_date
+        }]);
 
       if (error) throw error;
 
       toast({
-        title: "Payment Successful",
-        description: "Fee payment processed successfully"
+        title: "Success",
+        description: "Payment recorded successfully"
       });
 
-      fetchFeesData();
+      setNewPayment({
+        student_id: '',
+        structure_id: '',
+        amount_paid: '',
+        payment_method: 'Cash',
+        status: 'PAID',
+        transaction_id: '',
+        payment_date: new Date().toISOString().split('T')[0]
+      });
+      
+      fetchData();
     } catch (error) {
-      console.error('Error processing payment:', error);
+      console.error('Error recording payment:', error);
       toast({
-        title: "Payment Failed",
-        description: "Failed to process payment",
+        title: "Error",
+        description: "Failed to record payment",
         variant: "destructive"
       });
     }
   };
 
-  const getPaymentStatus = (status: string) => {
+  const getStatusColor = (status) => {
     switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800 border-green-200';
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'failed': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'PAID': return 'bg-green-100 text-green-800';
+      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
+      case 'OVERDUE': return 'bg-red-100 text-red-800';
+      case 'PARTIAL': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const totalCollected = payments
-    .filter(p => p.payment_status === 'completed')
-    .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
-
   if (loading) {
-    return <div className="flex justify-center p-8">Loading fees data...</div>;
+    return <div className="flex justify-center p-8">Loading fee data...</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Fees Management</h2>
-          <p className="text-gray-600">Manage fee structures and track payments</p>
+          <h2 className="text-2xl font-bold text-gray-900">Fee Management</h2>
+          <p className="text-gray-600">Manage fee structures and payments</p>
         </div>
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Create Fee Structure */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
               Create Fee Structure
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Fee Structure</DialogTitle>
-              <DialogDescription>Set up fees for a class and semester</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="class_name">Class Name</Label>
-                <Input
-                  id="class_name"
-                  value={newFee.class_name}
-                  onChange={(e) => setNewFee({ ...newFee, class_name: e.target.value })}
-                  placeholder="e.g., Grade 10 Science"
-                />
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleCreateStructure} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="class_level">Class Level</Label>
+                  <Select value={newStructure.class_level} onValueChange={(value) => setNewStructure({...newStructure, class_level: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select class" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[...Array(12)].map((_, i) => (
+                        <SelectItem key={i + 1} value={(i + 1).toString()}>Class {i + 1}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="fee_type">Fee Type</Label>
+                  <Input
+                    id="fee_type"
+                    value={newStructure.fee_type}
+                    onChange={(e) => setNewStructure({...newStructure, fee_type: e.target.value})}
+                    placeholder="Tuition, Library, Lab..."
+                    required
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="semester">Semester</Label>
-                <Select onValueChange={(value) => setNewFee({ ...newFee, semester: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select semester" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fall">Fall 2024</SelectItem>
-                    <SelectItem value="spring">Spring 2024</SelectItem>
-                    <SelectItem value="summer">Summer 2024</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="amount">Amount ($)</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  value={newFee.amount}
-                  onChange={(e) => setNewFee({ ...newFee, amount: e.target.value })}
-                  placeholder="500.00"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="amount">Amount</Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    value={newStructure.amount}
+                    onChange={(e) => setNewStructure({...newStructure, amount: e.target.value})}
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="term">Term</Label>
+                  <Select value={newStructure.term} onValueChange={(value) => setNewStructure({...newStructure, term: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select term" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Monthly">Monthly</SelectItem>
+                      <SelectItem value="Quarterly">Quarterly</SelectItem>
+                      <SelectItem value="Annual">Annual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div>
                 <Label htmlFor="due_date">Due Date</Label>
                 <Input
                   id="due_date"
                   type="date"
-                  value={newFee.due_date}
-                  onChange={(e) => setNewFee({ ...newFee, due_date: e.target.value })}
+                  value={newStructure.due_date}
+                  onChange={(e) => setNewStructure({...newStructure, due_date: e.target.value})}
+                  required
                 />
               </div>
               <div>
                 <Label htmlFor="description">Description</Label>
-                <Textarea
+                <Input
                   id="description"
-                  value={newFee.description}
-                  onChange={(e) => setNewFee({ ...newFee, description: e.target.value })}
-                  placeholder="Semester fees including tuition and materials"
+                  value={newStructure.description}
+                  onChange={(e) => setNewStructure({...newStructure, description: e.target.value})}
+                  placeholder="Optional description"
                 />
               </div>
-              <Button onClick={createFeeStructure} className="w-full">
-                Create Fee Structure
+              <Button type="submit" className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Structure
               </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total Collected</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-2">
-              <DollarSign className="h-8 w-8 text-green-500" />
-              <div>
-                <p className="text-2xl font-bold text-gray-900">${totalCollected.toLocaleString()}</p>
-                <p className="text-sm text-gray-500">This semester</p>
-              </div>
-            </div>
+            </form>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Pending Payments</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-8 w-8 text-yellow-500" />
-              <div>
-                <p className="text-2xl font-bold text-gray-900">
-                  {payments.filter(p => p.payment_status === 'pending').length}
-                </p>
-                <p className="text-sm text-gray-500">Outstanding</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Fee Structures</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-2">
-              <FileText className="h-8 w-8 text-blue-500" />
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{feeStructures.length}</p>
-                <p className="text-sm text-gray-500">Active structures</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Record Payment */}
         <Card>
           <CardHeader>
-            <CardTitle>Fee Structures</CardTitle>
-            <CardDescription>Current semester fee structures</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Record Payment
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {feeStructures.slice(0, 5).map((fee) => (
-                <div key={fee.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <h4 className="font-medium text-gray-900">{fee.class_name}</h4>
-                    <p className="text-sm text-gray-500">{fee.semester} • Due: {new Date(fee.due_date).toLocaleDateString()}</p>
-                    <p className="text-sm text-gray-600">{fee.description}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-gray-900">${fee.amount}</p>
-                    <Button 
-                      size="sm" 
-                      onClick={() => processPayment(fee.id, fee.amount)}
-                      className="mt-2"
-                    >
-                      <CreditCard className="h-4 w-4 mr-1" />
-                      Pay Now
-                    </Button>
-                  </div>
+            <form onSubmit={handleRecordPayment} className="space-y-4">
+              <div>
+                <Label htmlFor="student_id">Student ID</Label>
+                <Input
+                  id="student_id"
+                  value={newPayment.student_id}
+                  onChange={(e) => setNewPayment({...newPayment, student_id: e.target.value})}
+                  placeholder="Student UUID"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="structure_id">Fee Structure</Label>
+                <Select value={newPayment.structure_id} onValueChange={(value) => setNewPayment({...newPayment, structure_id: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select fee structure" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {feeStructures.map((structure) => (
+                      <SelectItem key={structure.id} value={structure.id}>
+                        Class {structure.class_level} - {structure.fee_type} (${structure.amount})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="amount_paid">Amount Paid</Label>
+                  <Input
+                    id="amount_paid"
+                    type="number"
+                    value={newPayment.amount_paid}
+                    onChange={(e) => setNewPayment({...newPayment, amount_paid: e.target.value})}
+                    placeholder="0.00"
+                    required
+                  />
                 </div>
-              ))}
-            </div>
+                <div>
+                  <Label htmlFor="payment_method">Payment Method</Label>
+                  <Select value={newPayment.payment_method} onValueChange={(value) => setNewPayment({...newPayment, payment_method: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                      <SelectItem value="Card">Card</SelectItem>
+                      <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="UPI">UPI</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="transaction_id">Transaction ID</Label>
+                <Input
+                  id="transaction_id"
+                  value={newPayment.transaction_id}
+                  onChange={(e) => setNewPayment({...newPayment, transaction_id: e.target.value})}
+                  placeholder="Optional transaction reference"
+                />
+              </div>
+              <Button type="submit" className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                Record Payment
+              </Button>
+            </form>
           </CardContent>
         </Card>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Payments</CardTitle>
-            <CardDescription>Latest payment transactions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {payments.slice(0, 5).map((payment) => (
-                <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <p className="font-medium text-gray-900">${payment.amount_paid}</p>
-                    <p className="text-sm text-gray-500">
-                      {payment.transaction_id} • {new Date(payment.created_at).toLocaleDateString()}
-                    </p>
-                    <p className="text-sm text-gray-600">{payment.payment_method}</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge className={getPaymentStatus(payment.payment_status)}>
-                      {payment.payment_status?.toUpperCase()}
+      {/* Fee Structures Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Fee Structures</CardTitle>
+          <CardDescription>Manage fee structures for different classes</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Class</TableHead>
+                <TableHead>Fee Type</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Term</TableHead>
+                <TableHead>Due Date</TableHead>
+                <TableHead>Academic Year</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {feeStructures.map((structure) => (
+                <TableRow key={structure.id}>
+                  <TableCell>Class {structure.class_level}</TableCell>
+                  <TableCell>{structure.fee_type}</TableCell>
+                  <TableCell>${structure.amount}</TableCell>
+                  <TableCell>{structure.term}</TableCell>
+                  <TableCell>{new Date(structure.due_date).toLocaleDateString()}</TableCell>
+                  <TableCell>{structure.academic_year}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Recent Payments */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Payments</CardTitle>
+          <CardDescription>Latest payment records</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Student ID</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Method</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Transaction ID</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {feePayments.slice(0, 10).map((payment) => (
+                <TableRow key={payment.id}>
+                  <TableCell className="font-mono text-xs">{payment.student_id.substring(0, 8)}...</TableCell>
+                  <TableCell>${payment.amount_paid}</TableCell>
+                  <TableCell>{payment.payment_method}</TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(payment.status)}>
+                      {payment.status}
                     </Badge>
-                    <Button size="sm" variant="outline">
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                  </TableCell>
+                  <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
+                  <TableCell className="font-mono text-xs">{payment.transaction_id || 'N/A'}</TableCell>
+                </TableRow>
               ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };

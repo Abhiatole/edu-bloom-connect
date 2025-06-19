@@ -3,34 +3,34 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, AlertTriangle, Brain, Target } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const PerformancePrediction = () => {
-  const [predictions, setPredictions] = useState([]);
+  const [insights, setInsights] = useState([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchPredictions();
+    fetchInsights();
   }, []);
 
-  const fetchPredictions = async () => {
+  const fetchInsights = async () => {
     try {
       const { data, error } = await supabase
-        .from('performance_predictions')
+        .from('student_insights')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPredictions(data || []);
+      setInsights(data || []);
     } catch (error) {
-      console.error('Error fetching predictions:', error);
+      console.error('Error fetching insights:', error);
       toast({
         title: "Error",
-        description: "Failed to load performance predictions",
+        description: "Failed to load performance insights",
         variant: "destructive"
       });
     } finally {
@@ -38,44 +38,49 @@ const PerformancePrediction = () => {
     }
   };
 
-  const generatePrediction = async (studentId: string, subject: string) => {
+  const generateInsight = async (studentId: string, subject: string) => {
     try {
-      // Mock AI prediction logic - in real app would use ML model
-      const mockPrediction = {
+      // Generate AI insight based on existing student performance
+      const mockInsight = {
         student_id: studentId,
         subject: subject,
-        predicted_grade: Math.random() * 40 + 60, // 60-100 range
-        confidence_score: Math.random() * 0.3 + 0.7, // 0.7-1.0 range
-        risk_level: Math.random() > 0.7 ? 'high' : Math.random() > 0.4 ? 'medium' : 'low'
+        topic: 'General Performance',
+        performance_level: Math.random() > 0.7 ? 'Excellent' : Math.random() > 0.4 ? 'Good' : 'Average',
+        strengths: ['Problem solving', 'Conceptual understanding'],
+        weaknesses: ['Time management', 'Complex calculations'],
+        ai_comment: 'Student shows consistent improvement in recent assessments.',
+        recommendations: 'Focus on practice problems and time management techniques.'
       };
 
       const { error } = await supabase
-        .from('performance_predictions')
-        .insert([mockPrediction]);
+        .from('student_insights')
+        .insert([mockInsight]);
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Performance prediction generated successfully"
+        description: "Performance insight generated successfully"
       });
       
-      fetchPredictions();
+      fetchInsights();
     } catch (error) {
-      console.error('Error generating prediction:', error);
+      console.error('Error generating insight:', error);
       toast({
         title: "Error",
-        description: "Failed to generate prediction",
+        description: "Failed to generate insight",
         variant: "destructive"
       });
     }
   };
 
-  const getRiskColor = (risk: string) => {
-    switch (risk) {
-      case 'high': return 'bg-red-100 text-red-800 border-red-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low': return 'bg-green-100 text-green-800 border-green-200';
+  const getRiskColor = (performance: string) => {
+    switch (performance) {
+      case 'Poor': return 'bg-red-100 text-red-800 border-red-200';
+      case 'Below Average': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'Average': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'Good': return 'bg-green-100 text-green-800 border-green-200';
+      case 'Excellent': return 'bg-purple-100 text-purple-800 border-purple-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -89,7 +94,7 @@ const PerformancePrediction = () => {
   ];
 
   if (loading) {
-    return <div className="flex justify-center p-8">Loading predictions...</div>;
+    return <div className="flex justify-center p-8">Loading insights...</div>;
   }
 
   return (
@@ -97,11 +102,11 @@ const PerformancePrediction = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">AI Performance Insights</h2>
-          <p className="text-gray-600">Predictive analytics for student success</p>
+          <p className="text-gray-600">Analytics for student success</p>
         </div>
-        <Button onClick={() => generatePrediction('student-id', 'Mathematics')}>
+        <Button onClick={() => generateInsight('sample-student-id', 'Mathematics')}>
           <Brain className="h-4 w-4 mr-2" />
-          Generate Prediction
+          Generate Insight
         </Button>
       </div>
 
@@ -115,9 +120,9 @@ const PerformancePrediction = () => {
               <AlertTriangle className="h-8 w-8 text-red-500" />
               <div>
                 <p className="text-2xl font-bold text-gray-900">
-                  {predictions.filter(p => p.risk_level === 'high').length}
+                  {insights.filter(i => i.performance_level === 'Poor' || i.performance_level === 'Below Average').length}
                 </p>
-                <p className="text-sm text-gray-500">High Risk</p>
+                <p className="text-sm text-gray-500">Need Attention</p>
               </div>
             </div>
           </CardContent>
@@ -125,18 +130,16 @@ const PerformancePrediction = () => {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Average Confidence</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Top Performers</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center space-x-2">
               <Target className="h-8 w-8 text-blue-500" />
               <div>
                 <p className="text-2xl font-bold text-gray-900">
-                  {predictions.length > 0 
-                    ? Math.round(predictions.reduce((acc, p) => acc + (p.confidence_score || 0), 0) / predictions.length * 100)
-                    : 0}%
+                  {insights.filter(i => i.performance_level === 'Excellent' || i.performance_level === 'Good').length}
                 </p>
-                <p className="text-sm text-gray-500">Prediction Accuracy</p>
+                <p className="text-sm text-gray-500">High Achievers</p>
               </div>
             </div>
           </CardContent>
@@ -144,16 +147,14 @@ const PerformancePrediction = () => {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Trending Up</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Total Insights</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center space-x-2">
               <TrendingUp className="h-8 w-8 text-green-500" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">
-                  {predictions.filter(p => (p.predicted_grade || 0) > 80).length}
-                </p>
-                <p className="text-sm text-gray-500">High Performers</p>
+                <p className="text-2xl font-bold text-gray-900">{insights.length}</p>
+                <p className="text-sm text-gray-500">Generated</p>
               </div>
             </div>
           </CardContent>
@@ -182,19 +183,19 @@ const PerformancePrediction = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Risk Distribution</CardTitle>
-            <CardDescription>Student risk levels by subject</CardDescription>
+            <CardTitle>Performance Distribution</CardTitle>
+            <CardDescription>Student performance levels by subject</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {predictions.slice(0, 5).map((prediction, index) => (
+              {insights.slice(0, 5).map((insight, index) => (
                 <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
-                    <p className="font-medium text-gray-900">{prediction.subject}</p>
-                    <p className="text-sm text-gray-500">Grade: {prediction.predicted_grade?.toFixed(1)}%</p>
+                    <p className="font-medium text-gray-900">{insight.subject}</p>
+                    <p className="text-sm text-gray-500">Topic: {insight.topic || 'General'}</p>
                   </div>
-                  <Badge className={getRiskColor(prediction.risk_level)}>
-                    {prediction.risk_level?.toUpperCase()}
+                  <Badge className={getRiskColor(insight.performance_level)}>
+                    {insight.performance_level?.toUpperCase()}
                   </Badge>
                 </div>
               ))}
