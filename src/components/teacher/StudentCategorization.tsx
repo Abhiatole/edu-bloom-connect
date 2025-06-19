@@ -1,0 +1,272 @@
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Filter, Download, Users, TrendingDown, TrendingUp, Award } from 'lucide-react';
+
+interface StudentResult {
+  id: string;
+  student_id: string;
+  marks_obtained: number;
+  percentage: number;
+  student_profiles: {
+    full_name: string;
+    class_level: number;
+  };
+  exams: {
+    title: string;
+    max_marks: number;
+    subjects: { name: string };
+  };
+}
+
+const StudentCategorization = () => {
+  const [results, setResults] = useState<StudentResult[]>([]);
+  const [filteredResults, setFilteredResults] = useState<StudentResult[]>([]);
+  const [selectedExam, setSelectedExam] = useState<string>('');
+  const [selectedFilter, setSelectedFilter] = useState<string>('all');
+  const [exams, setExams] = useState<any[]>([]);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchExams();
+  }, []);
+
+  useEffect(() => {
+    if (selectedExam) {
+      fetchResults();
+    }
+  }, [selectedExam]);
+
+  useEffect(() => {
+    applyFilter();
+  }, [results, selectedFilter]);
+
+  const fetchExams = async () => {
+    try {
+      const { data: currentUser } = await supabase.auth.getUser();
+      if (!currentUser.user) return;
+
+      const { data, error } = await supabase
+        .from('exams')
+        .select(`
+          *,
+          subjects(name)
+        `)
+        .eq('created_by', currentUser.user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setExams(data || []);
+    } catch (error) {
+      console.error('Error fetching exams:', error);
+    }
+  };
+
+  const fetchResults = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('exam_results')
+        .select(`
+          *,
+          student_profiles(full_name, class_level),
+          exams(title, max_marks, subjects(name))
+        `)
+        .eq('exam_id', selectedExam)
+        .order('percentage', { ascending: false });
+
+      if (error) throw error;
+      setResults(data || []);
+    } catch (error) {
+      console.error('Error fetching results:', error);
+    }
+  };
+
+  const applyFilter = () => {
+    let filtered = [...results];
+
+    switch (selectedFilter) {
+      case 'below30':
+        filtered = results.filter(r => r.percentage < 30);
+        break;
+      case 'below50':
+        filtered = results.filter(r => r.percentage < 50);
+        break;
+      case 'below60':
+        filtered = results.filter(r => r.percentage < 60);
+        break;
+      case 'top3':
+        filtered = results.slice(0, 3);
+        break;
+      case 'top10':
+        filtered = results.slice(0, 10);
+        break;
+      default:
+        filtered = results;
+    }
+
+    setFilteredResults(filtered);
+  };
+
+  const downloadCSV = () => {
+    if (filteredResults.length === 0) {
+      toast({
+        title: "Warning",
+        description: "No data to export",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const headers = ['Student Name', 'Class', 'Marks Obtained', 'Max Marks', 'Percentage', 'Category'];
+    const csvData = filteredResults.map(result => [
+      result.student_profiles?.full_name || 'N/A',
+      result.student_profiles?.class_level || 'N/A',
+      result.marks_obtained,
+      result.exams?.max_marks || 100,
+      result.percentage.toFixed(2) + '%',
+      getPerformanceCategory(result.percentage)
+    ]);
+
+    const csvContent = [headers, ...csvData].map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `student_results_${selectedFilter}_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Success",
+      description: `Exported ${filteredResults.length} student results`
+    });
+  };
+
+  const getPerformanceCategory = (percentage: number) => {
+    if (percentage >= 90) return 'Excellent';
+    if (percentage >= 75) return 'Good';
+    if (percentage >= 60) return 'Average';
+    if (percentage >= 50) return 'Below Average';
+    if (percentage >= 30) return 'Poor';
+    return 'Very Poor';
+  };
+
+  const getPerformanceBadge = (percentage: number) => {
+    if (percentage >= 90) return <Badge className="bg-green-600">Excellent</Badge>;
+    if (percentage >= 75) return <Badge className="bg-blue-600">Good</Badge>;
+    if (percentage >= 60) return <Badge className="bg-yellow-600">Average</Badge>;
+    if (percentage >= 50) return <Badge className="bg-orange-600">Below Average</Badge>;
+    if (percentage >= 30) return <Badge className="bg-red-600">Poor</Badge>;
+    return <Badge className="bg-gray-600">Very Poor</Badge>;
+  };
+
+  const filterOptions = [
+    { value: 'all', label: 'All Students', icon: Users },
+    { value: 'below30', label: 'Below 30%', icon: TrendingDown },
+    { value: 'below50', label: 'Below 50%', icon: TrendingDown },
+    { value: 'below60', label: 'Below 60%', icon: TrendingDown },
+    { value: 'top3', label: 'Top 3 Performers', icon: Award },
+    { value: 'top10', label: 'Top 10 Performers', icon: TrendingUp }
+  ];
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Student Performance Analysis
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <Select value={selectedExam} onValueChange={setSelectedExam}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Exam" />
+                </SelectTrigger>
+                <SelectContent>
+                  {exams.map(exam => (
+                    <SelectItem key={exam.id} value={exam.id}>
+                      {exam.title} - {exam.subjects?.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Select value={selectedFilter} onValueChange={setSelectedFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {filterOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button onClick={downloadCSV} disabled={filteredResults.length === 0}>
+              <Download className="h-4 w-4 mr-2" />
+              Download CSV
+            </Button>
+          </div>
+
+          {filteredResults.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">
+                  Results ({filteredResults.length} students)
+                </h3>
+                <div className="text-sm text-gray-600">
+                  Average: {(filteredResults.reduce((sum, r) => sum + r.percentage, 0) / filteredResults.length).toFixed(1)}%
+                </div>
+              </div>
+
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Rank</TableHead>
+                      <TableHead>Student Name</TableHead>
+                      <TableHead>Class</TableHead>
+                      <TableHead>Marks</TableHead>
+                      <TableHead>Percentage</TableHead>
+                      <TableHead>Performance</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredResults.map((result, index) => (
+                      <TableRow key={result.id}>
+                        <TableCell className="font-medium">#{index + 1}</TableCell>
+                        <TableCell>{result.student_profiles?.full_name}</TableCell>
+                        <TableCell>{result.student_profiles?.class_level}</TableCell>
+                        <TableCell>
+                          {result.marks_obtained}/{result.exams?.max_marks}
+                        </TableCell>
+                        <TableCell>{result.percentage.toFixed(1)}%</TableCell>
+                        <TableCell>{getPerformanceBadge(result.percentage)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default StudentCategorization;

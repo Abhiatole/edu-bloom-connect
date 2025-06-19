@@ -11,31 +11,34 @@ export type Database = {
     Tables: {
       admin_profiles: {
         Row: {
-          created_at: string | null
+          created_at: string
           email: string
           full_name: string
           id: string
           profile_picture: string | null
-          updated_at: string | null
-          user_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           email: string
           full_name: string
           id?: string
           profile_picture?: string | null
-          updated_at?: string | null
-          user_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           email?: string
           full_name?: string
           id?: string
           profile_picture?: string | null
-          updated_at?: string | null
-          user_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -628,12 +631,124 @@ export type Database = {
           },
         ]
       }
+      user_profiles: {
+        Row: {
+          approval_date: string | null
+          approval_status: Database["public"]["Enums"]["approval_status"] | null
+          approved_by: string | null
+          class_level: number | null
+          created_at: string | null
+          email: string
+          experience_years: number | null
+          full_name: string
+          guardian_mobile: string | null
+          guardian_name: string | null
+          id: string
+          profile_picture: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          subject_expertise: Database["public"]["Enums"]["subject_type"] | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          approval_date?: string | null
+          approval_status?:
+            | Database["public"]["Enums"]["approval_status"]
+            | null
+          approved_by?: string | null
+          class_level?: number | null
+          created_at?: string | null
+          email: string
+          experience_years?: number | null
+          full_name: string
+          guardian_mobile?: string | null
+          guardian_name?: string | null
+          id?: string
+          profile_picture?: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          subject_expertise?: Database["public"]["Enums"]["subject_type"] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          approval_date?: string | null
+          approval_status?:
+            | Database["public"]["Enums"]["approval_status"]
+            | null
+          approved_by?: string | null
+          class_level?: number | null
+          created_at?: string | null
+          email?: string
+          experience_years?: number | null
+          full_name?: string
+          guardian_mobile?: string | null
+          guardian_name?: string | null
+          id?: string
+          profile_picture?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          subject_expertise?: Database["public"]["Enums"]["subject_type"] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      admin_profiles_safe: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string | null
+          profile_picture: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string | null
+          profile_picture?: never
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string | null
+          profile_picture?: never
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profile_summary: {
+        Row: {
+          approval_status: Database["public"]["Enums"]["approval_status"] | null
+          count: number | null
+          role: Database["public"]["Enums"]["user_role"] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      is_valid_admin_email: {
+        Args: { email_address: string }
+        Returns: boolean
+      }
+      map_subject_to_enum: {
+        Args: { subject_text: string }
+        Returns: Database["public"]["Enums"]["subject_type"]
+      }
+      migrate_existing_profiles: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       approval_status: "PENDING" | "APPROVED" | "REJECTED"
@@ -645,6 +760,7 @@ export type Database = {
         | "Biology"
         | "English"
         | "Other"
+      user_role: "STUDENT" | "TEACHER" | "ADMIN" | "SUPER_ADMIN" | "PARENT"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -770,6 +886,7 @@ export const Constants = {
         "English",
         "Other",
       ],
+      user_role: ["STUDENT", "TEACHER", "ADMIN", "SUPER_ADMIN", "PARENT"],
     },
   },
 } as const
