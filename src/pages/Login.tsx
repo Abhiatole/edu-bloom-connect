@@ -14,12 +14,16 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      // Debug logging
+      console.log('🔍 Login Debug:');
+      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+      console.log('Using email:', email);
+      
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -27,40 +31,45 @@ const Login = () => {
 
       if (authError) throw authError;
 
-      if (authData.user) {
-        // Check user role and approval status
+      if (authData.user) {        // Check user role and approval status
         const userId = authData.user.id;
+        console.log('🔍 Checking profiles for user:', userId);
         let userProfile = null;
         let userRole = null;
 
         // Check in student_profiles
+        console.log('Checking student_profiles...');
         const { data: studentProfile, error: studentError } = await supabase
           .from('student_profiles')
           .select('*')
           .eq('user_id', userId)
           .single();
 
-        if (studentProfile && !studentError) {
+        console.log('Student profile result:', { studentProfile, studentError });        if (studentProfile && !studentError) {
           userProfile = studentProfile;
           userRole = 'student';
         } else {
           // Check in teacher_profiles
+          console.log('Checking teacher_profiles...');
           const { data: teacherProfile, error: teacherError } = await supabase
             .from('teacher_profiles')
             .select('*')
             .eq('user_id', userId)
             .single();
 
-          if (teacherProfile && !teacherError) {
+          console.log('Teacher profile result:', { teacherProfile, teacherError });          if (teacherProfile && !teacherError) {
             userProfile = teacherProfile;
             userRole = 'teacher';          } else {
             // Check in user_profiles for admin role
+            console.log('Checking user_profiles for admin...');
             const { data: adminProfile, error: adminError } = await supabase
               .from('user_profiles')
               .select('*')
               .eq('user_id', userId)
               .eq('role', 'ADMIN')
               .single();
+
+            console.log('Admin profile result:', { adminProfile, adminError });
 
             if (adminProfile && !adminError) {
               userProfile = adminProfile;
