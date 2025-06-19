@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,6 +39,8 @@ interface Student {
   class_level: number;
 }
 
+type ExamType = 'JEE' | 'NEET' | 'CET' | 'Boards';
+
 const ExamManagement = () => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -55,13 +56,13 @@ const ExamManagement = () => {
     title: '',
     subjectId: '',
     topicId: '',
-    examType: '',
+    examType: '' as ExamType | '',
     classLevel: '11',
     maxMarks: '100'
   });
 
   const { toast } = useToast();
-  const examTypes = ['JEE', 'NEET', 'CET', 'Boards'];
+  const examTypes: ExamType[] = ['JEE', 'NEET', 'CET', 'Boards'];
 
   useEffect(() => {
     fetchData();
@@ -124,11 +125,20 @@ const ExamManagement = () => {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error('Not authenticated');
 
+      if (!examForm.examType) {
+        toast({
+          title: "Error",
+          description: "Please select an exam type",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const { error } = await supabase.from('exams').insert({
         title: examForm.title,
         subject_id: examForm.subjectId,
         topic_id: examForm.topicId || null,
-        exam_type: examForm.examType,
+        exam_type: examForm.examType as ExamType,
         class_level: parseInt(examForm.classLevel),
         max_marks: parseInt(examForm.maxMarks),
         created_by: currentUser.user.id
@@ -325,7 +335,7 @@ const ExamManagement = () => {
 
                 <div>
                   <Label htmlFor="examType">Exam Type *</Label>
-                  <Select value={examForm.examType} onValueChange={(value) => setExamForm(prev => ({ ...prev, examType: value }))}>
+                  <Select value={examForm.examType} onValueChange={(value: ExamType) => setExamForm(prev => ({ ...prev, examType: value }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select exam type" />
                     </SelectTrigger>

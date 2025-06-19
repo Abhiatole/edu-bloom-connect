@@ -36,6 +36,7 @@ interface StudentInsight {
   focus_topics: string[];
   performance_trend: string;
   ai_recommendations: string;
+  last_analyzed: string;
   subjects: {
     name: string;
   };
@@ -430,7 +431,7 @@ const StudentInsights = () => {
                     </div>
 
                     <div className="text-xs text-gray-500">
-                      Last analyzed: {new Date(insight.last_analyzed || '').toLocaleDateString()}
+                      Last analyzed: {insight.last_analyzed ? new Date(insight.last_analyzed).toLocaleDateString() : 'Not available'}
                     </div>
                   </CardContent>
                 </Card>
