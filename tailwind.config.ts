@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -84,11 +85,57 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in': {
+					'0%': {
+						opacity: '0',
+						transform: 'translateY(10px)'
+					},
+					'100%': {
+						opacity: '1',
+						transform: 'translateY(0)'
+					}
+				},
+				'slide-in-from-bottom': {
+					'0%': {
+						transform: 'translateY(100%)',
+						opacity: '0'
+					},
+					'100%': {
+						transform: 'translateY(0)',
+						opacity: '1'
+					}
+				},
+				'slide-in-from-top': {
+					'0%': {
+						transform: 'translateY(-100%)',
+						opacity: '0'
+					},
+					'100%': {
+						transform: 'translateY(0)',
+						opacity: '1'
+					}
+				},
+				shimmer: {
+					'0%': {
+						backgroundPosition: '-1000px 0'
+					},
+					'100%': {
+						backgroundPosition: '1000px 0'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.5s ease-out',
+				'slide-in-from-bottom': 'slide-in-from-bottom 0.3s ease-out',
+				'slide-in-from-top': 'slide-in-from-top 0.3s ease-out',
+				shimmer: 'shimmer 2s infinite linear'
+			},
+			backgroundImage: {
+				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+				'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))'
 			}
 		}
 	},
