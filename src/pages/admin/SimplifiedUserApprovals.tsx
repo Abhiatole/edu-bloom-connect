@@ -11,8 +11,15 @@ import { Users, UserCheck, UserX, Clock, GraduationCap, BookOpen, RefreshCw, Che
 interface StudentProfile {
   id: string;
   user_id: string;
+  enrollment_no: string;
   class_level: number;
+  section: string | null;
+  parent_email: string | null;
+  parent_phone: string | null;
+  address: string | null;
+  date_of_birth: string | null;
   approval_date: string | null;
+  approved_by_teacher_id: string | null;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -22,9 +29,12 @@ interface TeacherProfile {
   user_id: string;
   employee_id: string;
   department: string;
+  designation: string | null;
+  qualification: string | null;
   experience_years: number | null;
   subject_expertise: string;
   approval_date: string | null;
+  approved_by_admin_id: string | null;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -87,14 +97,14 @@ const SimplifiedUserApprovals = () => {
       ]);
 
       if (studentsResponse.error) throw studentsResponse.error;
-      if (teachersResponse.error) throw teachersResponse.error;
-
-      // Combine and normalize the data
+      if (teachersResponse.error) throw teachersResponse.error;      // Combine and normalize the data
       const allUsersData: UserWithProfile[] = [
         ...(studentsResponse.data || []).map(student => ({
           id: student.id,
-          user_id: student.user_id,          display_name: `Student (Class ${student.class_level})`,
-          email: 'Email not available',role: 'STUDENT' as const,
+          user_id: student.user_id,
+          display_name: `Student ${student.enrollment_no} (Class ${student.class_level})`,
+          email: student.parent_email || 'Email not available',
+          role: 'STUDENT' as const,
           is_approved: !!student.approval_date,
           approval_date: student.approval_date,
           created_at: student.created_at,
@@ -102,8 +112,10 @@ const SimplifiedUserApprovals = () => {
         })),
         ...(teachersResponse.data || []).map(teacher => ({
           id: teacher.id,
-          user_id: teacher.user_id,          display_name: `Teacher (${teacher.department})`,
-          email: 'Email not available',role: 'TEACHER' as const,
+          user_id: teacher.user_id,
+          display_name: `Teacher ${teacher.employee_id} (${teacher.department})`,
+          email: 'Email not available',
+          role: 'TEACHER' as const,
           is_approved: !!teacher.approval_date,
           approval_date: teacher.approval_date,
           created_at: teacher.created_at,
@@ -116,21 +128,23 @@ const SimplifiedUserApprovals = () => {
       console.error('Error fetching users:', error);
       throw error;
     }
-  };
-
-  const handleApproval = async (userId: string, action: 'approve' | 'reject') => {
+  };  const handleApproval = async (userId: string, action: 'approve' | 'reject') => {
     setActionLoading(userId);
     try {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error('Not authenticated');
 
       const userToUpdate = allUsers.find(u => u.user_id === userId);
-      if (!userToUpdate) throw new Error('User not found');      const approvalDate = action === 'approve' ? new Date().toISOString() : null;
+      if (!userToUpdate) throw new Error('User not found');
+
+      const approvalDate = action === 'approve' ? new Date().toISOString() : null;
 
       // Update the appropriate table based on user role
       let updateError;
+      let updateResult;
+      
       if (userToUpdate.role === 'STUDENT') {
-        const { error } = await supabase
+        const { data, error, count } = await supabase
           .from('student_profiles')
           .update({ 
             approval_date: approvalDate,
@@ -138,8 +152,9 @@ const SimplifiedUserApprovals = () => {
           })
           .eq('user_id', userId);
         updateError = error;
+        updateResult = { data, count };
       } else if (userToUpdate.role === 'TEACHER') {
-        const { error } = await supabase
+        const { data, error, count } = await supabase
           .from('teacher_profiles')
           .update({ 
             approval_date: approvalDate,
@@ -147,22 +162,37 @@ const SimplifiedUserApprovals = () => {
           })
           .eq('user_id', userId);
         updateError = error;
+        updateResult = { data, count };
       }
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        throw updateError;
+      }
 
-      toast({
+      if (updateResult && updateResult.count === 0) {
+        throw new Error('No rows were updated. This might be due to RLS policies preventing admin updates. Please run the RLS fix script.');
+      }toast({
         title: `${action === 'approve' ? 'Approved' : 'Rejected'}!`,
         description: `${userToUpdate.display_name} has been ${action}d successfully.`,
-      });
+      });      console.log('✅ Approval successful! Refreshing data...');
 
       // Refresh data
       await fetchAllData();
     } catch (error: any) {
-      console.error('Approval error:', error);
+      console.error('❌ Approval error:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = error.message || `Failed to ${action} user`;
+      
+      if (error.message && error.message.includes('No rows were updated')) {
+        errorMessage = `Approval blocked: Please run the RLS fix script in Supabase to allow admin updates. See ADMIN_APPROVAL_ROOT_CAUSE_SOLUTION.md for details.`;
+      } else if (error.message && error.message.includes('policy')) {
+        errorMessage = 'Permission denied: Database policies prevent admin approval. Please check RLS policies.';
+      }
+      
       toast({
-        title: "Error", 
-        description: error.message || `Failed to ${action} user`,
+        title: "Approval Failed", 
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -275,18 +305,16 @@ const SimplifiedUserApprovals = () => {
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh
         </Button>
-      </div>
-
-      {/* Database Schema Notice */}
-      <Card className="border-yellow-200 bg-yellow-50">
+      </div>      {/* Admin Approval Setup Notice */}
+      <Card className="border-orange-200 bg-orange-50">
         <CardContent className="p-4">
-          <div className="flex items-center gap-2 text-yellow-800">
+          <div className="flex items-center gap-2 text-orange-800">
             <AlertTriangle className="h-5 w-5" />
             <div>
-              <p className="font-medium">Database Schema Notice</p>
+              <p className="font-medium">Admin Approval Setup Required</p>
               <p className="text-sm">
-                This is a simplified version. The database schema differs from expected. 
-                Run DIAGNOSE_DATABASE.sql to check the actual structure, then SETUP_APPROVAL_SYSTEM.sql for full features.
+                If the "Approve" button doesn't work, you need to run the RLS policy fix in Supabase SQL Editor. 
+                See <code>APPLY_ADMIN_APPROVAL_FIX.md</code> for step-by-step instructions.
               </p>
             </div>
           </div>
@@ -375,8 +403,7 @@ const SimplifiedUserApprovals = () => {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </TabsContent>      </Tabs>
 
       <AlertDialog open={confirmDialog?.isOpen} onOpenChange={() => setConfirmDialog(null)}>
         <AlertDialogContent>
