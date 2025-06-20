@@ -34,10 +34,7 @@ interface ExamData {
   created_at: string;
   subjects?: {
     name: string;
-  };
-  topics?: {
-    name: string;
-  };
+  } | null;
 }
 
 interface TeacherProfile {
@@ -77,7 +74,7 @@ const TeacherDashboard = () => {
       if (profileError) throw profileError;
       setTeacherProfile(profile);
 
-      // Get teacher's exams
+      // Get teacher's exams with subject information
       const { data: exams, error: examsError } = await supabase
         .from('exams')
         .select(`
@@ -87,8 +84,7 @@ const TeacherDashboard = () => {
           class_level,
           max_marks,
           created_at,
-          subjects(name),
-          topics(name)
+          subjects!exams_subject_id_fkey(name)
         `)
         .eq('created_by_teacher_id', currentUser.user.id)
         .order('created_at', { ascending: false })
@@ -98,7 +94,12 @@ const TeacherDashboard = () => {
         console.error('Error fetching exams:', examsError);
         setRecentExams([]);
       } else {
-        setRecentExams(exams || []);
+        // Transform the data to match expected structure
+        const transformedExams = exams?.map(exam => ({
+          ...exam,
+          subjects: exam.subjects || null
+        })) || [];
+        setRecentExams(transformedExams);
       }
 
       // Get statistics
@@ -107,19 +108,27 @@ const TeacherDashboard = () => {
         supabase.from('exams').select('*', { count: 'exact' }).eq('created_by_teacher_id', currentUser.user.id)
       ]);
 
-      // Get exam results for teacher's exams
+      // Get exam results for teacher's exams with proper calculation
       const { data: resultsData } = await supabase
         .from('exam_results')
         .select(`
-          percentage,
+          marks_obtained,
           exam_id,
-          exams!inner(created_by_teacher_id)
+          exams!inner(
+            created_by_teacher_id,
+            max_marks
+          )
         `)
         .eq('exams.created_by_teacher_id', currentUser.user.id);
 
       const teacherResults = resultsData || [];
       const avgPerformance = teacherResults.length > 0 
-        ? Math.round(teacherResults.reduce((sum, result) => sum + (result.percentage || 0), 0) / teacherResults.length)
+        ? Math.round(teacherResults.reduce((sum, result) => {
+            const percentage = result.exams?.max_marks 
+              ? (result.marks_obtained / result.exams.max_marks) * 100 
+              : 0;
+            return sum + percentage;
+          }, 0) / teacherResults.length)
         : 0;
 
       setStats({
@@ -300,7 +309,7 @@ const TeacherDashboard = () => {
                     <div>
                       <h3 className="font-semibold text-lg">{exam.title}</h3>
                       <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                        <span>{exam.subjects?.name}</span>
+                        <span>{exam.subjects?.name || 'Unknown Subject'}</span>
                         <span>•</span>
                         <span>{exam.exam_type}</span>
                         <span>•</span>
@@ -308,9 +317,6 @@ const TeacherDashboard = () => {
                         <span>•</span>
                         <span>{exam.max_marks} marks</span>
                       </div>
-                      {exam.topics?.name && (
-                        <p className="text-sm text-gray-500 mt-1">Topic: {exam.topics.name}</p>
-                      )}
                       <p className="text-xs text-gray-400 mt-2">
                         Created: {new Date(exam.created_at).toLocaleDateString()}
                       </p>

@@ -140,7 +140,7 @@ const StudentInsights = () => {
         .eq('student_id', selectedStudent);
 
       if (selectedSubject !== 'all') {
-        resultsQuery = resultsQuery.eq('exams.subject', selectedSubject);
+        resultsQuery = resultsQuery.eq('exams.subject', selectedSubject as any);
       }
 
       const { data: results, error: resultsError } = await resultsQuery;
@@ -164,7 +164,7 @@ const StudentInsights = () => {
         .eq('student_id', selectedStudent);
 
       if (selectedSubject !== 'all') {
-        insightsQuery = insightsQuery.eq('subject', selectedSubject);
+        insightsQuery = insightsQuery.eq('subject', selectedSubject as any);
       }
 
       const { data: insightsData, error: insightsError } = await insightsQuery;
