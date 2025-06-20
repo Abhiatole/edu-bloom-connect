@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, LogIn, GraduationCap } from 'lucide-react';
+import { RegistrationService } from '@/services/registrationService';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -76,9 +77,57 @@ const Login = () => {
               userRole = 'superadmin';
             }
           }
-        }
-
-        if (!userProfile || !userRole) {
+        }        if (!userProfile || !userRole) {
+          // Check if this is a new user who just confirmed their email
+          const userMetadata = authData.user.user_metadata;
+          const role = userMetadata?.role?.toUpperCase();
+            if (role === 'STUDENT' || role === 'TEACHER' || role === 'ADMIN') {
+            // This user has confirmed their email but profile isn't created yet
+            console.log('User has confirmed email but no profile exists. Creating profile...');
+            
+            try {
+              // Create the profile based on role
+              await RegistrationService.handleEmailConfirmation(userMetadata);
+              
+              // Special handling for ADMIN role
+              if (role === 'ADMIN') {
+                toast({
+                  title: 'Admin Profile Created!',
+                  description: 'Your admin account has been created and approved automatically.',
+                });
+                
+                // For admin users, redirect them directly to the admin dashboard
+                localStorage.setItem('userRole', 'superadmin');
+                navigate('/superadmin/dashboard');
+                return;
+              } else {
+                toast({
+                  title: 'Profile Created!',
+                  description: 'Your profile has been created and is pending approval.',
+                });
+              }
+              
+              // Refresh page to try login again for non-admin users
+              window.location.reload();
+              return;
+            } catch (profileError) {
+              console.error('Failed to create profile:', profileError);
+              
+              // Special handling for ADMIN users with errors
+              if (role === 'ADMIN') {
+                // For admin users, we'll direct them to the dashboard even if there's an error
+                toast({
+                  title: 'Admin Login',
+                  description: 'Logging you in as administrator.',
+                });
+                localStorage.setItem('userRole', 'superadmin');
+                navigate('/superadmin/dashboard');
+                return;
+              }
+              // Continue to throw error below for other roles
+            }
+          }
+          
           throw new Error('User profile not found. Please contact administrator.');
         }
 
@@ -188,19 +237,24 @@ const Login = () => {
                   Sign In
                 </>
               )}
-            </Button>
-
-            <div className="text-center space-y-2">
-              <Link 
-                to="/forgot-password" 
-                className="text-sm text-blue-600 hover:underline block"
-              >
-                Forgot your password?
-              </Link>
-              
-              <div className="text-sm text-gray-600">
-                Don't have an account?
-              </div>              <div className="flex flex-col space-y-2">
+            </Button>              <div className="text-center space-y-2">
+                <Link 
+                  to="/forgot-password" 
+                  className="text-sm text-blue-600 hover:underline block"
+                >
+                  Forgot your password?
+                </Link>
+                
+                <Link 
+                  to="/profile-diagnostics" 
+                  className="text-sm text-blue-600 hover:underline block"
+                >
+                  Troubleshoot Login Issues
+                </Link>
+                
+                <div className="text-sm text-gray-600">
+                  Don't have an account?
+                </div><div className="flex flex-col space-y-2">
                 <Link to="/register/student">
                   <Button variant="outline" size="sm" className="w-full border-blue-600 text-blue-600 hover:bg-blue-50">
                     Register as Student

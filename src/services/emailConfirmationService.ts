@@ -22,7 +22,7 @@ export class EmailConfirmationService {
    * Get the confirmation redirect URL
    */
   static getConfirmationUrl(): string {
-    return `${this.getCurrentDomain()}/auth/confirm`;
+    return `${this.getCurrentDomain()}/email-confirmed`;
   }
 
   /**
@@ -55,15 +55,13 @@ export class EmailConfirmationService {
   /**
    * Verify email confirmation token
    */
-  static async verifyEmailConfirmation(token: string): Promise<EmailConfirmationResult> {
+  static async verifyEmailConfirmation(token: string, type: string): Promise<EmailConfirmationResult> {
     try {
       const { data, error } = await supabase.auth.verifyOtp({
         token_hash: token,
-        type: 'signup'
+        type: type as 'signup' | 'email'
       });
-
       if (error) throw error;
-
       return {
         success: true,
         message: 'Email confirmed successfully!',
@@ -169,16 +167,12 @@ export class EmailConfirmationService {
     searchParams: URLSearchParams
   ): Promise<EmailConfirmationResult> {
     try {
-      // Accept both 'token' and 'access_token' (Supabase may use either)
       const token = searchParams.get('token') || searchParams.get('access_token');
       const type = searchParams.get('type');
-
-      // Accept both 'signup' and 'email' as valid confirmation types
       if (!token || (type !== 'signup' && type !== 'email')) {
         throw new Error('Invalid confirmation link');
       }
-
-      return await this.verifyEmailConfirmation(token);
+      return await this.verifyEmailConfirmation(token, type);
     } catch (error: any) {
       return {
         success: false,

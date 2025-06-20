@@ -48,6 +48,8 @@ import EmailTest from "./pages/EmailTest";
 import TeacherFlowTest from "./pages/TeacherFlowTest";
 import SuperAdminSetup from "./pages/SuperAdminSetup";
 import QuickApprovalDashboard from "./pages/QuickApprovalDashboard";
+import ProfileDiagnostics from "./pages/ProfileDiagnostics";
+import DatabaseDiagnostics from "./pages/superadmin/DatabaseDiagnostics";
 
 const queryClient = new QueryClient();
 
@@ -72,10 +74,11 @@ const App = () => (
               {/* Registration Routes */}
               <Route path="register/student" element={<StudentRegister />} />
               <Route path="register/teacher" element={<TeacherRegister />} />
-              <Route path="register/admin" element={<AdminRegister />} />
-              <Route path="register/success" element={<RegistrationSuccess />} />
+              <Route path="register/admin" element={<AdminRegister />} />              <Route path="register/success" element={<RegistrationSuccess />} />
               <Route path="auth/confirm" element={<EmailConfirmation />} />
               <Route path="auth/success" element={<EmailConfirmationSuccess />} />
+              <Route path="email-confirmed" element={<EmailConfirmationSuccess />} />
+              <Route path="profile-diagnostics" element={<ProfileDiagnostics />} />
               <Route path="auth/test" element={<AuthTest />} />
               
               {/* Protected Routes */}
@@ -86,13 +89,20 @@ const App = () => (
                     <ModernSuperAdminDashboard />
                   </ProtectedRoute>
                 } 
-              />
-
-              <Route 
+              />              <Route 
                 path="admin/approvals" 
                 element={
                   <ProtectedRoute allowedRoles={['superadmin']}>
                     <UserApprovals />
+                  </ProtectedRoute>
+                } 
+              />
+
+              <Route 
+                path="superadmin/database-diagnostics" 
+                element={
+                  <ProtectedRoute allowedRoles={['superadmin']}>
+                    <DatabaseDiagnostics />
                   </ProtectedRoute>
                 } 
               />
@@ -188,6 +198,15 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['superadmin', 'teacher', 'student', 'parent']}>
                     <DeploymentDebug />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="superadmin/database-diagnostics" 
+                element={
+                  <ProtectedRoute allowedRoles={['superadmin']}>
+                    <DatabaseDiagnostics />
                   </ProtectedRoute>
                 } 
               />

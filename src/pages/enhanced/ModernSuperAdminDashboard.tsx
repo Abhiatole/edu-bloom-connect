@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ModernDashboardCard } from '@/components/enhanced/ModernDashboardCard';
 import { ModernActionCard } from '@/components/enhanced/ModernActionCard';
+import RLSError from '@/components/RLSError';
 import {
   Users,
   GraduationCap,
@@ -26,8 +27,7 @@ import {
 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area, BarChart, Bar } from 'recharts';
 
-const ModernSuperAdminDashboard = () => {
-  const [stats, setStats] = useState({
+const ModernSuperAdminDashboard = () => {  const [stats, setStats] = useState({
     totalStudents: 0,
     totalTeachers: 0,
     totalExams: 0,
@@ -39,6 +39,7 @@ const ModernSuperAdminDashboard = () => {
   });
   const [growthData, setGrowthData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hasRLSError, setHasRLSError] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -82,8 +83,7 @@ const ModernSuperAdminDashboard = () => {
           users: Math.floor(Math.random() * 20) + (approvedStudentsResult.count || 0) + (approvedTeachersResult.count || 0) - 50 + i * 8,
           exams: Math.floor(Math.random() * 10) + i * 2
         };
-      });
-      setGrowthData(mockGrowthData);
+      });      setGrowthData(mockGrowthData);
 
       setStats({
         totalStudents: studentsResult.count || 0,
@@ -95,8 +95,23 @@ const ModernSuperAdminDashboard = () => {
         recentExams: recentExamsCount || 0,
         systemHealth: Math.floor(Math.random() * 5) + 95
       });
+      
+      // Check if any of the results had RLS errors
+      const hasError = [
+        studentsResult.error, 
+        teachersResult.error, 
+        pendingStudentsResult.error, 
+        pendingTeachersResult.error
+      ].some(error => error && error.code === 'PGRST116');
+      
+      setHasRLSError(hasError);
+      
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
+      // Check if it's an RLS error
+      if (error?.message?.includes('policy')) {
+        setHasRLSError(true);
+      }
       toast({
         title: "Error",
         description: "Failed to load dashboard statistics",
@@ -106,7 +121,6 @@ const ModernSuperAdminDashboard = () => {
       setLoading(false);
     }
   };
-
   const quickActions = [
     {
       title: "User Approvals",
@@ -132,6 +146,13 @@ const ModernSuperAdminDashboard = () => {
       link: "/admin/analytics"
     },
     {
+      title: "Database Diagnostics",
+      description: "Troubleshoot database access and RLS",
+      icon: Shield,
+      gradient: "from-red-500 to-red-600",
+      link: "/superadmin/database-diagnostics"
+    },
+    {
       title: "AI Insights Engine",
       description: "Monitor AI performance analysis",
       icon: Brain,
@@ -147,9 +168,14 @@ const ModernSuperAdminDashboard = () => {
       </div>
     );
   }
-
   return (
     <div className="space-y-8">
+      {hasRLSError && (
+        <div className="mb-6">
+          <RLSError message="Database policies are preventing data access. Please run the RLS fix script in Supabase to resolve this issue." />
+        </div>
+      )}
+      
       {/* Welcome Header */}
       <div className="text-center space-y-4">
         <div className="flex items-center justify-center space-x-2">

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +29,10 @@ const TeacherRegister = () => {
     try {
       // Enhanced validation with better debugging
       console.log('Form data:', {
+        fullName: formData.fullName,
+        email: formData.email,
+        subjectExpertise: formData.subjectExpertise,
+        experienceYears: formData.experienceYears,
         password: formData.password ? `[${formData.password.length} chars]` : 'empty',
         confirmPassword: formData.confirmPassword ? `[${formData.confirmPassword.length} chars]` : 'empty',
         passwordsMatch: formData.password === formData.confirmPassword
@@ -59,12 +62,12 @@ const TeacherRegister = () => {
         password: formData.password,
         options: {
           data: {
-            role: 'teacher',
+            role: 'TEACHER',
             full_name: formData.fullName,
             subject_expertise: formData.subjectExpertise,
             experience_years: parseInt(formData.experienceYears)
           },
-          emailRedirectTo: `${currentDomain}/auth/confirm`
+          emailRedirectTo: `${currentDomain}/email-confirmed`
         }
       });
 

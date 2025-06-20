@@ -90,12 +90,21 @@ export class RegistrationService {
   static async registerTeacher(data: TeacherRegistrationData) {
     try {
       const currentDomain = window.location.origin;
+      // Validate teacher fields
+      if (!data.fullName || !data.subjectExpertise || typeof data.experienceYears !== 'number') {
+        throw new Error('All fields are required and experience years must be a number');
+      }
+      // Only allow valid enum values for subject_expertise
+      const validSubjects = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English', 'Other'];
+      if (!validSubjects.includes(data.subjectExpertise)) {
+        throw new Error('Invalid subject expertise');
+      }
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
           data: {
-            role: 'teacher',
+            role: 'TEACHER',
             full_name: data.fullName,
             subject_expertise: data.subjectExpertise,
             experience_years: data.experienceYears
@@ -146,28 +155,28 @@ export class RegistrationService {
   static async registerAdmin(data: AdminRegistrationData) {
     try {
       const currentDomain = window.location.origin;
+      if (!data.fullName) {
+        throw new Error('Full name is required');
+      }
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
-        options: {
-          data: {
-            role: 'admin',
-            full_name: data.fullName,
-            department: data.department || ''
+        options: {          data: {
+            role: 'ADMIN',
+            full_name: data.fullName
+            // Remove department field as it doesn't exist in the schema
           },
           emailRedirectTo: `${currentDomain}/email-confirmed`
         }
       });
       if (authError) throw authError;
       if (authData.user) {
-        if (authData.session || authData.user.email_confirmed_at) {
-          const profileData = {
+        if (authData.session || authData.user.email_confirmed_at) {          const profileData = {
             user_id: authData.user.id,
             full_name: data.fullName,
             email: data.email,
-            department: data.department || '',
             role: 'ADMIN' as const,
-            status: 'PENDING' as const
+            status: 'APPROVED' as const  // Auto-approve admins
           };
           const { error: profileError } = await supabase
             .from('user_profiles')
@@ -188,26 +197,29 @@ export class RegistrationService {
       throw error;
     }
   }
-
   /**
    * Handle email confirmation and create profile
    */
   static async handleEmailConfirmation(userMetadata: any) {
     try {
+      // Get auth user data
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error('Not authenticated');
 
-      const role = userMetadata.role;
-      const userId = currentUser.user.id;      if (role === 'student') {
+      // Normalize role to uppercase for consistency
+      const role = (userMetadata.role || '').toUpperCase();
+      const userId = currentUser.user.id;
+      
+      if (role === 'STUDENT') {
         // Generate enrollment number
         const enrollmentNo = `ENR${Date.now()}`;
           const profileData = {
           user_id: userId,
           enrollment_no: enrollmentNo,
-          class_level: userMetadata.class_level,
+          class_level: userMetadata.class_level || 1,
           parent_email: currentUser.user.email,
-          parent_phone: userMetadata.guardian_mobile,
-          address: `Guardian: ${userMetadata.guardian_name}`,
+          parent_phone: userMetadata.guardian_mobile || '',
+          address: userMetadata.guardian_name ? `Guardian: ${userMetadata.guardian_name}` : '',
           status: 'PENDING' as const
         };
 
@@ -215,13 +227,14 @@ export class RegistrationService {
           .from('student_profiles')
           .insert(profileData);
 
-        if (error) throw error;      } else if (role === 'teacher') {
+        if (error) throw error;
+      } else if (role === 'TEACHER') {
         const profileData = {
           user_id: userId,
-          full_name: userMetadata.full_name || 'Teacher Name',
+          full_name: userMetadata.full_name || 'Teacher',
           email: userMetadata.email || currentUser.user.email,
-          subject_expertise: userMetadata.subject_expertise,
-          experience_years: userMetadata.experience_years,
+          subject_expertise: userMetadata.subject_expertise || 'Other',
+          experience_years: userMetadata.experience_years || 0,
           status: 'PENDING' as const
         };
 
@@ -229,20 +242,20 @@ export class RegistrationService {
           .from('teacher_profiles')
           .insert(profileData);
 
-        if (error) throw error;
-      } else if (role === 'admin') {
+        if (error) throw error;      } else if (role === 'ADMIN') {
         const profileData = {
           user_id: userId,
-          full_name: userMetadata.full_name,
+          full_name: userMetadata.full_name || 'Admin',
           email: currentUser.user.email,
-          department: userMetadata.department || '',
           role: 'ADMIN' as const,
-          status: 'PENDING' as const
+          status: 'APPROVED' as const  // Auto-approve admins
         };
         const { error } = await supabase
           .from('user_profiles')
           .insert(profileData);
         if (error) throw error;
+      } else {
+        throw new Error(`Unknown role: ${role}`);
       }
 
       return { success: true };

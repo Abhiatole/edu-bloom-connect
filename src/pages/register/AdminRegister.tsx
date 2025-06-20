@@ -48,10 +48,10 @@ const AdminRegister = () => {
         password: formData.password,
         options: {
           data: {
-            role: 'admin',
+            role: 'ADMIN',
             full_name: formData.fullName,
           },
-          emailRedirectTo: `${currentDomain}/auth/confirm`
+          emailRedirectTo: `${currentDomain}/email-confirmed`
         }
       });
 
@@ -65,12 +65,12 @@ const AdminRegister = () => {
         // Check if email confirmation is required
         if (authData.session || authData.user.email_confirmed_at) {
           // User is immediately confirmed or email confirmation is disabled - create profile directly
-          console.log('Admin is confirmed or email confirmation disabled, creating profile directly');
-            const profileData = {
+          console.log('Admin is confirmed or email confirmation disabled, creating profile directly');            const profileData = {
             user_id: authData.user.id,
             full_name: formData.fullName,
             email: formData.email,
-            role: 'ADMIN' as const
+            role: 'ADMIN' as const,
+            status: 'APPROVED' as const  // Auto-approve admins
           };
           
           const { error: profileError } = await supabase

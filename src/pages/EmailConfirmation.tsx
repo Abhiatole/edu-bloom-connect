@@ -25,11 +25,9 @@ const EmailConfirmation = () => {
           toast({
             title: "Email Confirmed!",
             description: "Your account is now verified and pending approval.",
-          });
-
-          // Redirect to success page after a short delay
+          });          // Redirect to success page after a short delay
           setTimeout(() => {
-            navigate('/auth/success');
+            navigate('/email-confirmed');
           }, 2000);
         } else {
           throw new Error(result.message);
