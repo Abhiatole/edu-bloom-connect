@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { useExamManagement } from '@/hooks/useExamManagement';
+import { supabase } from '@/integrations/supabase/client';
 import { Upload, Save, Users } from 'lucide-react';
 
 interface Student {
@@ -15,9 +15,7 @@ interface Student {
   user_id: string;
   full_name: string;
   email: string;
-  student_profiles?: {
-    class_level: number;
-  };
+  class_level?: number;
 }
 
 interface Exam {
@@ -34,8 +32,8 @@ const TestMarksUpload = () => {
   const [selectedExam, setSelectedExam] = useState<string>('');
   const [selectedClass, setSelectedClass] = useState<string>('11');
   const [marks, setMarks] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { fetchExams, fetchStudents, uploadResults, loading } = useExamManagement();
 
   useEffect(() => {
     loadExams();
@@ -49,9 +47,17 @@ const TestMarksUpload = () => {
 
   const loadExams = async () => {
     try {
-      const examsData = await fetchExams();
-      console.log('Loaded exams:', examsData);
-      setExams(examsData || []);
+      const { data, error } = await supabase
+        .from('exams')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading exams:', error);
+        return;
+      }
+
+      setExams(data || []);
     } catch (error) {
       console.error('Error loading exams:', error);
     }
@@ -59,19 +65,43 @@ const TestMarksUpload = () => {
 
   const loadStudents = async () => {
     try {
-      const studentsData = await fetchStudents(parseInt(selectedClass));
-      console.log('Loaded students:', studentsData);
-      
-      // Transform the data to match our interface
-      const transformedStudents = studentsData.map(student => ({
-        id: student.id,
-        user_id: student.user_id,
-        full_name: student.full_name,
-        email: student.email,
-        student_profiles: student.student_profiles
-      }));
-      
-      setStudents(transformedStudents);
+      // Get students from user_profiles with student role
+      const { data: userProfiles, error: userError } = await supabase
+        .from('user_profiles')
+        .select('id, user_id, full_name, email')
+        .eq('role', 'STUDENT')
+        .eq('status', 'APPROVED');
+
+      if (userError) {
+        console.error('Error loading students:', userError);
+        return;
+      }
+
+      // Get student profile data
+      const { data: studentProfiles, error: studentError } = await supabase
+        .from('student_profiles')
+        .select('user_id, class_level')
+        .eq('class_level', parseInt(selectedClass));
+
+      if (studentError) {
+        console.error('Error loading student profiles:', studentError);
+        return;
+      }
+
+      // Merge data
+      const mergedStudents = userProfiles
+        ?.filter(user => 
+          studentProfiles?.some(profile => profile.user_id === user.user_id)
+        )
+        .map(user => {
+          const profile = studentProfiles?.find(p => p.user_id === user.user_id);
+          return {
+            ...user,
+            class_level: profile?.class_level || parseInt(selectedClass)
+          };
+        }) || [];
+
+      setStudents(mergedStudents);
     } catch (error) {
       console.error('Error loading students:', error);
     }
@@ -80,6 +110,18 @@ const TestMarksUpload = () => {
   const handleMarkChange = (studentUserId: string, mark: string) => {
     const numMark = parseInt(mark) || 0;
     setMarks(prev => ({ ...prev, [studentUserId]: numMark }));
+  };
+
+  const calculateGrade = (marks: number, totalMarks: number): string => {
+    const percentage = (marks / totalMarks) * 100;
+    if (percentage >= 90) return 'A+';
+    if (percentage >= 80) return 'A';
+    if (percentage >= 70) return 'B+';
+    if (percentage >= 60) return 'B';
+    if (percentage >= 50) return 'C+';
+    if (percentage >= 40) return 'C';
+    if (percentage >= 35) return 'D';
+    return 'F';
   };
 
   const handleSaveMarks = async () => {
@@ -102,28 +144,52 @@ const TestMarksUpload = () => {
       return;
     }
 
-    try {
-      const resultsToUpload = students
-        .filter(student => marks[student.user_id] !== undefined)
-        .map(student => ({
-          exam_id: selectedExam,
-          student_id: student.user_id,
-          marks_obtained: marks[student.user_id]
-        }));
+    const resultsToUpload = students
+      .filter(student => marks[student.user_id] !== undefined)
+      .map(student => ({
+        exam_id: selectedExam,
+        student_id: student.user_id,
+        marks_obtained: marks[student.user_id],
+        grade: calculateGrade(marks[student.user_id], selectedExamData.total_marks)
+      }));
 
-      if (resultsToUpload.length === 0) {
-        toast({
-          title: "Warning",
-          description: "No marks entered to save",
-          variant: "destructive"
+    if (resultsToUpload.length === 0) {
+      toast({
+        title: "Warning",
+        description: "No marks entered to save",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('exam_results')
+        .upsert(resultsToUpload, { 
+          onConflict: 'exam_id,student_id' 
         });
-        return;
+
+      if (error) {
+        console.error('Error saving marks:', error);
+        throw error;
       }
 
-      await uploadResults(resultsToUpload);
+      toast({
+        title: "Success",
+        description: `${resultsToUpload.length} exam results saved successfully`
+      });
+
       setMarks({}); // Clear marks after successful upload
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving marks:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save marks",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -203,7 +269,7 @@ const TestMarksUpload = () => {
                           {student.email}
                         </TableCell>
                         <TableCell>
-                          {student.student_profiles?.class_level || selectedClass}
+                          {student.class_level || selectedClass}
                         </TableCell>
                         <TableCell>
                           <Input

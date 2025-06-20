@@ -11,7 +11,6 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 
 // Admin pages
-import AdminDashboard from "./pages/admin/Dashboard";
 import UserApprovals from "./pages/admin/UserApprovals";
 import ExamManagement from "./pages/admin/ExamManagement";
 import QuickApprovalDashboard from "./pages/QuickApprovalDashboard";
@@ -27,6 +26,11 @@ import StudentDashboard from "./pages/student/Dashboard";
 import SuperAdminDashboard from "./pages/superadmin/Dashboard";
 import UserManagement from "./components/superadmin/UserManagement";
 
+// Registration pages
+import StudentRegister from "./pages/register/StudentRegister";
+import TeacherRegister from "./pages/register/TeacherRegister";
+import AdminRegister from "./pages/register/AdminRegister";
+
 const queryClient = new QueryClient();
 
 function App() {
@@ -40,6 +44,9 @@ function App() {
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/register/student" element={<StudentRegister />} />
+              <Route path="/register/teacher" element={<TeacherRegister />} />
+              <Route path="/register/admin" element={<AdminRegister />} />
               
               {/* Dashboard route - redirects based on role */}
               <Route 
@@ -56,7 +63,7 @@ function App() {
                 path="/admin/dashboard" 
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN']} requireApproval={false}>
-                    <AdminDashboard />
+                    <UserApprovals />
                   </ProtectedRoute>
                 } 
               />

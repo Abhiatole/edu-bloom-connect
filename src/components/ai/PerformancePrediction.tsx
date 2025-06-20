@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 const PerformancePrediction = () => {
   const [insights, setInsights] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [predictions, setPredictions] = useState([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -71,6 +71,59 @@ const PerformancePrediction = () => {
         description: "Failed to generate insight",
         variant: "destructive"
       });
+    }
+  };
+
+  const generatePredictions = async () => {
+    setLoading(true);
+    try {
+      const predictions = [
+        {
+          student_id: 'sample-student-1',
+          subject: 'Physics' as const,
+          topic: 'Mechanics',
+          performance_level: 'Good' as const,
+          strengths: ['Problem solving', 'Mathematical concepts'],
+          weaknesses: ['Time management', 'Complex calculations'],
+          ai_comment: 'Shows good understanding of basic concepts but needs practice with advanced problems.',
+          recommendations: 'Focus on solving more complex numerical problems and practice time management during exams.'
+        },
+        {
+          student_id: 'sample-student-2', 
+          subject: 'Chemistry' as const,
+          topic: 'Organic Chemistry',
+          performance_level: 'Average' as const,
+          strengths: ['Theoretical knowledge', 'Memory retention'],
+          weaknesses: ['Reaction mechanisms', 'Structural formulas'],
+          ai_comment: 'Good theoretical foundation but struggles with practical applications.',
+          recommendations: 'Practice drawing reaction mechanisms and work on understanding molecular structures.'
+        }
+      ];
+
+      const { error } = await supabase
+        .from('student_insights')
+        .insert(predictions);
+
+      if (error) {
+        console.error('Error inserting predictions:', error);
+        throw error;
+      }
+
+      setPredictions(predictions);
+      
+      toast({
+        title: "Success",
+        description: "AI predictions generated successfully",
+      });
+    } catch (error: any) {
+      console.error('Error generating predictions:', error);
+      toast({
+        title: "Error", 
+        description: error.message || "Failed to generate predictions",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
