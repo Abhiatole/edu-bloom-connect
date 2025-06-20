@@ -9,6 +9,69 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string
+          id: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name: string
+          id?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      approval_logs: {
+        Row: {
+          action: string
+          approved_by: string
+          approved_by_name: string | null
+          approved_user_id: string
+          created_at: string | null
+          id: string
+          reason: string | null
+          user_name: string | null
+          user_type: string
+        }
+        Insert: {
+          action: string
+          approved_by: string
+          approved_by_name?: string | null
+          approved_user_id: string
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+          user_name?: string | null
+          user_type: string
+        }
+        Update: {
+          action?: string
+          approved_by?: string
+          approved_by_name?: string | null
+          approved_user_id?: string
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+          user_name?: string | null
+          user_type?: string
+        }
+        Relationships: []
+      }
       exam_results: {
         Row: {
           exam_id: string
@@ -126,15 +189,7 @@ export type Database = {
           student_id?: string
           transaction_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "fee_payments_structure_id_fkey"
-            columns: ["structure_id"]
-            isOneToOne: false
-            referencedRelation: "fee_structures"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       fee_structures: {
         Row: {
@@ -288,94 +343,88 @@ export type Database = {
       }
       student_profiles: {
         Row: {
-          address: string | null
           approval_date: string | null
-          approved_by_teacher_id: string | null
-          class_level: number
+          approved_by: string | null
+          class_level: number | null
           created_at: string | null
-          date_of_birth: string | null
-          enrollment_no: string
+          email: string
+          full_name: string
+          guardian_mobile: string | null
+          guardian_name: string | null
           id: string
-          parent_email: string | null
-          parent_phone: string | null
-          section: string | null
+          status: Database["public"]["Enums"]["approval_status"] | null
           updated_at: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
-          address?: string | null
           approval_date?: string | null
-          approved_by_teacher_id?: string | null
-          class_level: number
+          approved_by?: string | null
+          class_level?: number | null
           created_at?: string | null
-          date_of_birth?: string | null
-          enrollment_no: string
+          email: string
+          full_name: string
+          guardian_mobile?: string | null
+          guardian_name?: string | null
           id?: string
-          parent_email?: string | null
-          parent_phone?: string | null
-          section?: string | null
+          status?: Database["public"]["Enums"]["approval_status"] | null
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
-          address?: string | null
           approval_date?: string | null
-          approved_by_teacher_id?: string | null
-          class_level?: number
+          approved_by?: string | null
+          class_level?: number | null
           created_at?: string | null
-          date_of_birth?: string | null
-          enrollment_no?: string
+          email?: string
+          full_name?: string
+          guardian_mobile?: string | null
+          guardian_name?: string | null
           id?: string
-          parent_email?: string | null
-          parent_phone?: string | null
-          section?: string | null
+          status?: Database["public"]["Enums"]["approval_status"] | null
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
       teacher_profiles: {
         Row: {
           approval_date: string | null
-          approved_by_admin_id: string | null
+          approved_by: string | null
           created_at: string | null
-          department: string
-          designation: string | null
-          employee_id: string
+          email: string
           experience_years: number | null
+          full_name: string
           id: string
-          qualification: string | null
-          subject_expertise: Database["public"]["Enums"]["subject_type"]
+          status: Database["public"]["Enums"]["approval_status"] | null
+          subject_expertise: Database["public"]["Enums"]["subject_type"] | null
           updated_at: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           approval_date?: string | null
-          approved_by_admin_id?: string | null
+          approved_by?: string | null
           created_at?: string | null
-          department: string
-          designation?: string | null
-          employee_id: string
+          email: string
           experience_years?: number | null
+          full_name: string
           id?: string
-          qualification?: string | null
-          subject_expertise: Database["public"]["Enums"]["subject_type"]
+          status?: Database["public"]["Enums"]["approval_status"] | null
+          subject_expertise?: Database["public"]["Enums"]["subject_type"] | null
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           approval_date?: string | null
-          approved_by_admin_id?: string | null
+          approved_by?: string | null
           created_at?: string | null
-          department?: string
-          designation?: string | null
-          employee_id?: string
+          email?: string
           experience_years?: number | null
+          full_name?: string
           id?: string
-          qualification?: string | null
-          subject_expertise?: Database["public"]["Enums"]["subject_type"]
+          status?: Database["public"]["Enums"]["approval_status"] | null
+          subject_expertise?: Database["public"]["Enums"]["subject_type"] | null
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -462,6 +511,68 @@ export type Database = {
       }
     }
     Views: {
+      all_users_view: {
+        Row: {
+          approval_date: string | null
+          approved_by: string | null
+          class_level: number | null
+          created_at: string | null
+          id: string | null
+          identifier: string | null
+          role: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+          user_type: string | null
+        }
+        Relationships: []
+      }
+      approval_history: {
+        Row: {
+          action: string | null
+          approval_date: string | null
+          approved_by_name: string | null
+          approved_user_id: string | null
+          id: string | null
+          reason: string | null
+          user_name: string | null
+          user_type: string | null
+        }
+        Insert: {
+          action?: string | null
+          approval_date?: string | null
+          approved_by_name?: string | null
+          approved_user_id?: string | null
+          id?: string | null
+          reason?: string | null
+          user_name?: string | null
+          user_type?: string | null
+        }
+        Update: {
+          action?: string | null
+          approval_date?: string | null
+          approved_by_name?: string | null
+          approved_user_id?: string | null
+          id?: string | null
+          reason?: string | null
+          user_name?: string | null
+          user_type?: string | null
+        }
+        Relationships: []
+      }
+      approved_users: {
+        Row: {
+          approval_date: string | null
+          approved_by: string | null
+          class_level: number | null
+          created_at: string | null
+          id: string | null
+          identifier: string | null
+          user_id: string | null
+          user_type: string | null
+        }
+        Relationships: []
+      }
       exam_results_with_percentage: {
         Row: {
           exam_id: string | null
@@ -483,9 +594,29 @@ export type Database = {
           },
         ]
       }
+      pending_users: {
+        Row: {
+          class_level: number | null
+          created_at: string | null
+          id: string | null
+          identifier: string | null
+          user_id: string | null
+          user_type: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      handle_user_approval: {
+        Args: {
+          p_user_id: string
+          p_user_type: string
+          p_action: string
+          p_approved_by: string
+          p_reason?: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       approval_status: "PENDING" | "APPROVED" | "REJECTED"
@@ -511,7 +642,6 @@ export type Database = {
         | "Mathematics"
         | "Biology"
         | "English"
-        | "Computer Science"
         | "Other"
       user_role: "ADMIN" | "TEACHER" | "STUDENT" | "PARENT"
     }
@@ -654,7 +784,6 @@ export const Constants = {
         "Mathematics",
         "Biology",
         "English",
-        "Computer Science",
         "Other",
       ],
       user_role: ["ADMIN", "TEACHER", "STUDENT", "PARENT"],

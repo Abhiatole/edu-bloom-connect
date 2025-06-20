@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,29 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useUserApprovals } from '@/hooks/useUserApprovals';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, UserCheck, UserX, Clock, GraduationCap, BookOpen, RefreshCw, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
-
-interface StudentProfile {
-  id: string;
-  user_id: string;
-  class_level: number;
-  approval_date: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-}
-
-interface TeacherProfile {
-  id: string;
-  user_id: string;
-  employee_id: string;
-  department: string;
-  experience_years: number | null;
-  subject_expertise: string;
-  approval_date: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-}
+import { Users, UserCheck, UserX, Clock, GraduationCap, RefreshCw, CheckCircle, AlertTriangle } from 'lucide-react';
 
 interface UserWithProfile {
   id: string;
@@ -38,20 +19,22 @@ interface UserWithProfile {
   is_approved: boolean;
   approval_date: string | null;
   created_at: string | null;
-  profile_data: StudentProfile | TeacherProfile;
+  profile_data: any;
 }
 
 const SimplifiedUserApprovals = () => {
   const [allUsers, setAllUsers] = useState<UserWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     type: 'approve' | 'reject';
     userId: string;
     userName: string;
+    userType: 'STUDENT' | 'TEACHER';
   } | null>(null);
+  
   const { toast } = useToast();
+  const { approveUser, rejectUser, loading: actionLoading } = useUserApprovals();
 
   useEffect(() => {
     fetchAllData();
@@ -72,45 +55,37 @@ const SimplifiedUserApprovals = () => {
       setLoading(false);
     }
   };
+
   const fetchUsers = async () => {
     try {
-      // Fetch students and teachers
-      const [studentsResponse, teachersResponse] = await Promise.all([
-        supabase
-          .from('student_profiles')
-          .select('*')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('teacher_profiles')
-          .select('*')
-          .order('created_at', { ascending: false })
-      ]);
+      // Fetch from user_profiles table which should have all users
+      const { data: userProfiles, error: userProfilesError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .in('role', ['STUDENT', 'TEACHER'])
+        .order('created_at', { ascending: false });
 
-      if (studentsResponse.error) throw studentsResponse.error;
-      if (teachersResponse.error) throw teachersResponse.error;
+      if (userProfilesError) {
+        console.error('Error fetching user profiles:', userProfilesError);
+        throw userProfilesError;
+      }
 
-      // Combine and normalize the data
-      const allUsersData: UserWithProfile[] = [
-        ...(studentsResponse.data || []).map(student => ({
-          id: student.id,
-          user_id: student.user_id,          display_name: `Student (Class ${student.class_level})`,
-          email: 'Email not available',role: 'STUDENT' as const,
-          is_approved: !!student.approval_date,
-          approval_date: student.approval_date,
-          created_at: student.created_at,
-          profile_data: student
-        })),
-        ...(teachersResponse.data || []).map(teacher => ({
-          id: teacher.id,
-          user_id: teacher.user_id,          display_name: `Teacher (${teacher.department})`,
-          email: 'Email not available',role: 'TEACHER' as const,
-          is_approved: !!teacher.approval_date,
-          approval_date: teacher.approval_date,
-          created_at: teacher.created_at,
-          profile_data: teacher
-        }))
-      ];
+      console.log('Fetched user profiles:', userProfiles);
 
+      // Transform the data
+      const allUsersData: UserWithProfile[] = (userProfiles || []).map(profile => ({
+        id: profile.id,
+        user_id: profile.user_id,
+        display_name: profile.full_name || 'Unknown User',
+        email: profile.email,
+        role: profile.role as 'STUDENT' | 'TEACHER',
+        is_approved: profile.status === 'APPROVED',
+        approval_date: profile.updated_at,
+        created_at: profile.created_at,
+        profile_data: profile
+      }));
+
+      console.log('Transformed users data:', allUsersData);
       setAllUsers(allUsersData);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -118,61 +93,33 @@ const SimplifiedUserApprovals = () => {
     }
   };
 
-  const handleApproval = async (userId: string, action: 'approve' | 'reject') => {
-    setActionLoading(userId);
+  const handleApproval = async (userId: string, userType: 'STUDENT' | 'TEACHER', action: 'approve' | 'reject') => {
     try {
-      const { data: currentUser } = await supabase.auth.getUser();
-      if (!currentUser.user) throw new Error('Not authenticated');
-
-      const userToUpdate = allUsers.find(u => u.user_id === userId);
-      if (!userToUpdate) throw new Error('User not found');      const approvalDate = action === 'approve' ? new Date().toISOString() : null;
-
-      // Update the appropriate table based on user role
-      let updateError;
-      if (userToUpdate.role === 'STUDENT') {
-        const { error } = await supabase
-          .from('student_profiles')
-          .update({ 
-            approval_date: approvalDate,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', userId);
-        updateError = error;
-      } else if (userToUpdate.role === 'TEACHER') {
-        const { error } = await supabase
-          .from('teacher_profiles')
-          .update({ 
-            approval_date: approvalDate,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', userId);
-        updateError = error;
+      let success = false;
+      
+      if (action === 'approve') {
+        success = await approveUser(userId, userType);
+      } else {
+        success = await rejectUser(userId, userType);
       }
 
-      if (updateError) throw updateError;
-
-      toast({
-        title: `${action === 'approve' ? 'Approved' : 'Rejected'}!`,
-        description: `${userToUpdate.display_name} has been ${action}d successfully.`,
-      });
-
-      // Refresh data
-      await fetchAllData();
+      if (success) {
+        await fetchAllData(); // Refresh the data
+      }
     } catch (error: any) {
-      console.error('Approval error:', error);
+      console.error('Approval/Rejection error:', error);
       toast({
-        title: "Error", 
+        title: "Error",
         description: error.message || `Failed to ${action} user`,
         variant: "destructive"
       });
     } finally {
-      setActionLoading(null);
       setConfirmDialog(null);
     }
   };
 
-  const openConfirmDialog = (type: 'approve' | 'reject', userId: string, userName: string) => {
-    setConfirmDialog({ isOpen: true, type, userId, userName });
+  const openConfirmDialog = (type: 'approve' | 'reject', userId: string, userName: string, userType: 'STUDENT' | 'TEACHER') => {
+    setConfirmDialog({ isOpen: true, type, userId, userName, userType });
   };
 
   const getStatusBadge = (user: UserWithProfile) => {
@@ -205,22 +152,12 @@ const SimplifiedUserApprovals = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
             <div><strong>Email:</strong> {user.email}</div>
-            <div><strong>Role:</strong> {user.role}</div>            {user.role === 'STUDENT' && (
-              <>
-                <div><strong>Class:</strong> {(user.profile_data as StudentProfile).class_level}</div>
-                <div><strong>Student ID:</strong> {user.id}</div>
-              </>
-            )}
-            {user.role === 'TEACHER' && (
-              <>
-                <div><strong>Department:</strong> {(user.profile_data as TeacherProfile).department}</div>
-                <div><strong>Employee ID:</strong> {(user.profile_data as TeacherProfile).employee_id}</div>
-              </>
-            )}
+            <div><strong>Role:</strong> {user.role}</div>
+            <div><strong>User ID:</strong> {user.user_id.substring(0, 8)}...</div>
           </div>
           <div className="text-xs text-gray-500">
             <div>Registered: {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}</div>
-            {user.approval_date && (
+            {user.approval_date && user.is_approved && (
               <div>Approved: {new Date(user.approval_date).toLocaleDateString()}</div>
             )}
           </div>
@@ -230,17 +167,17 @@ const SimplifiedUserApprovals = () => {
             <Button
               size="sm"
               className="bg-green-600 hover:bg-green-700"
-              onClick={() => openConfirmDialog('approve', user.user_id, user.display_name)}
-              disabled={actionLoading === user.user_id}
+              onClick={() => openConfirmDialog('approve', user.user_id, user.display_name, user.role)}
+              disabled={actionLoading}
             >
               <UserCheck className="h-4 w-4 mr-1" />
-              {actionLoading === user.user_id ? 'Processing...' : 'Approve'}
+              {actionLoading ? 'Processing...' : 'Approve'}
             </Button>
             <Button
               size="sm"
               variant="destructive"
-              onClick={() => openConfirmDialog('reject', user.user_id, user.display_name)}
-              disabled={actionLoading === user.user_id}
+              onClick={() => openConfirmDialog('reject', user.user_id, user.display_name, user.role)}
+              disabled={actionLoading}
             >
               <UserX className="h-4 w-4 mr-1" />
               Reject
@@ -269,29 +206,13 @@ const SimplifiedUserApprovals = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">User Management Dashboard</h2>
-          <p className="text-gray-600">Manage user approvals (Simplified Version)</p>
+          <p className="text-gray-600">Manage user approvals</p>
         </div>
-        <Button onClick={fetchAllData} variant="outline" size="sm">
-          <RefreshCw className="h-4 w-4 mr-2" />
+        <Button onClick={fetchAllData} variant="outline" size="sm" disabled={loading}>
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
       </div>
-
-      {/* Database Schema Notice */}
-      <Card className="border-yellow-200 bg-yellow-50">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 text-yellow-800">
-            <AlertTriangle className="h-5 w-5" />
-            <div>
-              <p className="font-medium">Database Schema Notice</p>
-              <p className="text-sm">
-                This is a simplified version. The database schema differs from expected. 
-                Run DIAGNOSE_DATABASE.sql to check the actual structure, then SETUP_APPROVAL_SYSTEM.sql for full features.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Statistics */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -396,7 +317,7 @@ const SimplifiedUserApprovals = () => {
             <AlertDialogAction
               onClick={() => {
                 if (confirmDialog) {
-                  handleApproval(confirmDialog.userId, confirmDialog.type);
+                  handleApproval(confirmDialog.userId, confirmDialog.userType, confirmDialog.type);
                 }
               }}
               className={confirmDialog?.type === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}

@@ -7,12 +7,17 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useExamManagement } from '@/hooks/useExamManagement';
 import { Upload, Save, Users } from 'lucide-react';
 
 interface Student {
   id: string;
-  class_level: number;
+  user_id: string;
+  full_name: string;
+  email: string;
+  student_profiles?: {
+    class_level: number;
+  };
 }
 
 interface Exam {
@@ -29,55 +34,52 @@ const TestMarksUpload = () => {
   const [selectedExam, setSelectedExam] = useState<string>('');
   const [selectedClass, setSelectedClass] = useState<string>('11');
   const [marks, setMarks] = useState<Record<string, number>>({});
-  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { fetchExams, fetchStudents, uploadResults, loading } = useExamManagement();
 
   useEffect(() => {
-    fetchExams();
+    loadExams();
   }, []);
 
   useEffect(() => {
     if (selectedClass) {
-      fetchStudents();
+      loadStudents();
     }
   }, [selectedClass]);
 
-  const fetchExams = async () => {
+  const loadExams = async () => {
     try {
-      const { data: currentUser } = await supabase.auth.getUser();
-      if (!currentUser.user) return;
-
-      const { data, error } = await supabase
-        .from('exams')
-        .select('*')
-        .eq('created_by_teacher_id', currentUser.user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setExams(data || []);
+      const examsData = await fetchExams();
+      console.log('Loaded exams:', examsData);
+      setExams(examsData || []);
     } catch (error) {
-      console.error('Error fetching exams:', error);
+      console.error('Error loading exams:', error);
     }
   };
 
-  const fetchStudents = async () => {
+  const loadStudents = async () => {
     try {
-      const { data, error } = await supabase
-        .from('student_profiles')
-        .select('id, class_level')
-        .eq('class_level', parseInt(selectedClass))
-        .order('id');
-
-      if (error) throw error;
-      setStudents(data || []);
+      const studentsData = await fetchStudents(parseInt(selectedClass));
+      console.log('Loaded students:', studentsData);
+      
+      // Transform the data to match our interface
+      const transformedStudents = studentsData.map(student => ({
+        id: student.id,
+        user_id: student.user_id,
+        full_name: student.full_name,
+        email: student.email,
+        student_profiles: student.student_profiles
+      }));
+      
+      setStudents(transformedStudents);
     } catch (error) {
-      console.error('Error fetching students:', error);
+      console.error('Error loading students:', error);
     }
   };
 
-  const handleMarkChange = (studentId: string, mark: string) => {
+  const handleMarkChange = (studentUserId: string, mark: string) => {
     const numMark = parseInt(mark) || 0;
-    setMarks(prev => ({ ...prev, [studentId]: numMark }));
+    setMarks(prev => ({ ...prev, [studentUserId]: numMark }));
   };
 
   const handleSaveMarks = async () => {
@@ -91,20 +93,25 @@ const TestMarksUpload = () => {
     }
 
     const selectedExamData = exams.find(e => e.id === selectedExam);
-    if (!selectedExamData) return;
+    if (!selectedExamData) {
+      toast({
+        title: "Error",
+        description: "Selected exam not found",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    setLoading(true);
     try {
-      const resultsToInsert = students
-        .filter(student => marks[student.id] !== undefined)
+      const resultsToUpload = students
+        .filter(student => marks[student.user_id] !== undefined)
         .map(student => ({
           exam_id: selectedExam,
-          student_id: student.id,
-          marks_obtained: marks[student.id],
-          grade: getGrade((marks[student.id] / selectedExamData.total_marks) * 100)
+          student_id: student.user_id,
+          marks_obtained: marks[student.user_id]
         }));
 
-      if (resultsToInsert.length === 0) {
+      if (resultsToUpload.length === 0) {
         toast({
           title: "Warning",
           description: "No marks entered to save",
@@ -113,42 +120,11 @@ const TestMarksUpload = () => {
         return;
       }
 
-      const { error } = await supabase
-        .from('exam_results')
-        .upsert(resultsToInsert, { 
-          onConflict: 'exam_id,student_id',
-          ignoreDuplicates: false 
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: `Marks saved for ${resultsToInsert.length} students`
-      });
-
-      setMarks({});
-    } catch (error: any) {
+      await uploadResults(resultsToUpload);
+      setMarks({}); // Clear marks after successful upload
+    } catch (error) {
       console.error('Error saving marks:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to save marks",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
     }
-  };
-
-  const getGrade = (percentage: number): string => {
-    if (percentage >= 90) return 'A+';
-    if (percentage >= 80) return 'A';
-    if (percentage >= 70) return 'B+';
-    if (percentage >= 60) return 'B';
-    if (percentage >= 50) return 'C+';
-    if (percentage >= 40) return 'C';
-    if (percentage >= 35) return 'D';
-    return 'F';
   };
 
   return (
@@ -182,11 +158,13 @@ const TestMarksUpload = () => {
                   <SelectValue placeholder="Choose an exam" />
                 </SelectTrigger>
                 <SelectContent>
-                  {exams.map(exam => (
-                    <SelectItem key={exam.id} value={exam.id}>
-                      {exam.title} - {exam.subject} (Max: {exam.total_marks})
-                    </SelectItem>
-                  ))}
+                  {exams
+                    .filter(exam => exam.class_level === parseInt(selectedClass))
+                    .map(exam => (
+                      <SelectItem key={exam.id} value={exam.id}>
+                        {exam.title} - {exam.subject} (Max: {exam.total_marks})
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -209,25 +187,31 @@ const TestMarksUpload = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Student ID</TableHead>
+                      <TableHead>Student Name</TableHead>
+                      <TableHead>Email</TableHead>
                       <TableHead>Class</TableHead>
                       <TableHead>Marks</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {students.map(student => (
-                      <TableRow key={student.id}>
-                        <TableCell className="font-medium font-mono text-sm">
-                          {student.id.substring(0, 8)}...
+                      <TableRow key={student.user_id}>
+                        <TableCell className="font-medium">
+                          {student.full_name}
                         </TableCell>
-                        <TableCell>{student.class_level}</TableCell>
+                        <TableCell className="text-sm text-gray-600">
+                          {student.email}
+                        </TableCell>
+                        <TableCell>
+                          {student.student_profiles?.class_level || selectedClass}
+                        </TableCell>
                         <TableCell>
                           <Input
                             type="number"
                             min="0"
                             max={exams.find(e => e.id === selectedExam)?.total_marks || 100}
-                            value={marks[student.id] || ''}
-                            onChange={(e) => handleMarkChange(student.id, e.target.value)}
+                            value={marks[student.user_id] || ''}
+                            onChange={(e) => handleMarkChange(student.user_id, e.target.value)}
                             placeholder="Enter marks"
                             className="w-24"
                           />
@@ -237,6 +221,12 @@ const TestMarksUpload = () => {
                   </TableBody>
                 </Table>
               </div>
+            </div>
+          )}
+
+          {students.length === 0 && selectedClass && (
+            <div className="text-center py-8 text-gray-500">
+              No approved students found for Class {selectedClass}
             </div>
           )}
         </CardContent>
