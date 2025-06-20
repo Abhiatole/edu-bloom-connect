@@ -121,14 +121,17 @@ const SimplifiedUserApprovals = () => {
           created_at: teacher.created_at,
           profile_data: teacher
         }))
-      ];
-
-      setAllUsers(allUsersData);
+      ];      setAllUsers(allUsersData);
+      console.log(`📊 Fetched ${allUsersData.length} users total`);
+      console.log(`📊 Pending: ${allUsersData.filter(u => !u.is_approved).length}, Approved: ${allUsersData.filter(u => u.is_approved).length}`);
     } catch (error) {
       console.error('Error fetching users:', error);
       throw error;
     }
-  };  const handleApproval = async (userId: string, action: 'approve' | 'reject') => {
+  };
+
+  const handleApproval = async (userId: string, action: 'approve' | 'reject') => {
+    console.log(`🔄 Starting approval process: ${action} for user ${userId}`);
     setActionLoading(userId);
     try {
       const { data: currentUser } = await supabase.auth.getUser();
@@ -137,13 +140,15 @@ const SimplifiedUserApprovals = () => {
       const userToUpdate = allUsers.find(u => u.user_id === userId);
       if (!userToUpdate) throw new Error('User not found');
 
+      console.log(`📝 Updating ${userToUpdate.role} profile for user:`, userToUpdate.display_name);
+
       const approvalDate = action === 'approve' ? new Date().toISOString() : null;
 
       // Update the appropriate table based on user role
       let updateError;
       let updateResult;
-      
-      if (userToUpdate.role === 'STUDENT') {
+        if (userToUpdate.role === 'STUDENT') {
+        console.log('📊 Updating student_profiles table...');
         const { data, error, count } = await supabase
           .from('student_profiles')
           .update({ 
@@ -153,7 +158,9 @@ const SimplifiedUserApprovals = () => {
           .eq('user_id', userId);
         updateError = error;
         updateResult = { data, count };
+        console.log('📊 Student update result:', { data, error, count });
       } else if (userToUpdate.role === 'TEACHER') {
+        console.log('📊 Updating teacher_profiles table...');
         const { data, error, count } = await supabase
           .from('teacher_profiles')
           .update({ 
@@ -163,21 +170,40 @@ const SimplifiedUserApprovals = () => {
           .eq('user_id', userId);
         updateError = error;
         updateResult = { data, count };
+        console.log('📊 Teacher update result:', { data, error, count });
       }
 
       if (updateError) {
         throw updateError;
-      }
-
-      if (updateResult && updateResult.count === 0) {
+      }      if (updateResult && updateResult.count === 0) {
         throw new Error('No rows were updated. This might be due to RLS policies preventing admin updates. Please run the RLS fix script.');
-      }toast({
+      }      // Immediately update the local state for instant UI feedback
+      console.log('🎯 Updating local UI state...');
+      setAllUsers(prevUsers => {
+        const updatedUsers = prevUsers.map(user => 
+          user.user_id === userId 
+            ? { 
+                ...user, 
+                is_approved: action === 'approve',
+                approval_date: approvalDate 
+              }
+            : user
+        );
+        console.log('🎯 UI state updated. User now approved:', updatedUsers.find(u => u.user_id === userId)?.is_approved);
+        return updatedUsers;
+      });
+
+      toast({
         title: `${action === 'approve' ? 'Approved' : 'Rejected'}!`,
         description: `${userToUpdate.display_name} has been ${action}d successfully.`,
-      });      console.log('✅ Approval successful! Refreshing data...');
+      });
 
-      // Refresh data
-      await fetchAllData();
+      console.log('✅ Approval successful! UI updated immediately.');
+
+      // Refresh data from server to ensure consistency (background refresh)
+      setTimeout(() => {
+        fetchAllData();
+      }, 1000);
     } catch (error: any) {
       console.error('❌ Approval error:', error);
       
