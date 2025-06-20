@@ -24,8 +24,32 @@ import {
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell } from 'recharts';
 
+interface ExamData {
+  id: string;
+  title: string;
+  exam_type: string;
+  class_level: number;
+  max_marks: number;
+  created_at: string;
+  subjects?: {
+    name: string;
+  };
+  topics?: {
+    name: string;
+  };
+}
+
+interface TeacherStats {
+  totalStudents: number;
+  myExams: number;
+  recentResults: number;
+  avgPerformance: number;
+  pendingGrading: number;
+  activeClasses: number;
+}
+
 const ModernTeacherDashboard = () => {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<TeacherStats>({
     totalStudents: 0,
     myExams: 0,
     recentResults: 0,
@@ -33,10 +57,10 @@ const ModernTeacherDashboard = () => {
     pendingGrading: 0,
     activeClasses: 0
   });
-  const [recentExams, setRecentExams] = useState([]);
-  const [performanceData, setPerformanceData] = useState([]);
+  const [recentExams, setRecentExams] = useState<ExamData[]>([]);
+  const [performanceData, setPerformanceData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [teacherProfile, setTeacherProfile] = useState(null);
+  const [teacherProfile, setTeacherProfile] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -62,35 +86,49 @@ const ModernTeacherDashboard = () => {
       const { data: exams, error: examsError } = await supabase
         .from('exams')
         .select(`
-          *,
+          id,
+          title,
+          exam_type,
+          class_level,
+          max_marks,
+          created_at,
           subjects(name),
           topics(name)
         `)
-        .eq('created_by', currentUser.user.id)
+        .eq('created_by_teacher_id', currentUser.user.id)
         .order('created_at', { ascending: false })
         .limit(8);
 
-      if (examsError) throw examsError;
-      setRecentExams(exams || []);
+      if (examsError) {
+        console.error('Error fetching exams:', examsError);
+        setRecentExams([]);
+      } else {
+        setRecentExams(exams || []);
+      }
 
       // Get statistics
-      const [studentsResult, myExamsResult, resultsResult] = await Promise.all([
+      const [studentsResult, myExamsResult] = await Promise.all([
         supabase.from('student_profiles').select('*', { count: 'exact' }).eq('status', 'APPROVED'),
-        supabase.from('exams').select('*', { count: 'exact' }).eq('created_by', currentUser.user.id),
-        supabase.from('exam_results').select(`
-          percentage,
-          exams(created_by)
-        `).eq('exams.created_by', currentUser.user.id)
+        supabase.from('exams').select('*', { count: 'exact' }).eq('created_by_teacher_id', currentUser.user.id)
       ]);
 
-      // Calculate performance data for charts
-      const teacherResults = resultsResult.data?.filter(result => result.exams?.created_by === currentUser.user.id) || [];
+      // Get exam results for teacher's exams
+      const { data: resultsData } = await supabase
+        .from('exam_results')
+        .select(`
+          percentage,
+          exam_id,
+          exams!inner(created_by_teacher_id)
+        `)
+        .eq('exams.created_by_teacher_id', currentUser.user.id);
+
+      const teacherResults = resultsData || [];
       const avgPerformance = teacherResults.length > 0 
         ? Math.round(teacherResults.reduce((sum, result) => sum + (result.percentage || 0), 0) / teacherResults.length)
         : 0;
 
       // Generate subject-wise performance data
-      const subjectPerformance = exams?.reduce((acc, exam) => {
+      const subjectPerformance = exams?.reduce((acc: any, exam) => {
         const subject = exam.subjects?.name || 'Unknown';
         if (!acc[subject]) {
           acc[subject] = { subject, count: 0, avgScore: 0 };

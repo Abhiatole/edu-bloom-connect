@@ -1,41 +1,56 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ModernDashboardCard } from '@/components/enhanced/ModernDashboardCard';
-import { ModernActionCard } from '@/components/enhanced/ModernActionCard';
 import {
   BookOpen,
-  Target,
-  Award,
+  Trophy,
   TrendingUp,
-  Brain,
-  Calendar,
-  Eye,
-  BarChart3,
-  Star,
+  Target,
   Clock,
-  Zap
+  Award,
+  Star,
+  GraduationCap
 } from 'lucide-react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area } from 'recharts';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
+
+interface ExamResult {
+  id: string;
+  marks_obtained: number;
+  percentage: number;
+  grade: string;
+  exams: {
+    title: string;
+    max_marks: number;
+    subjects?: {
+      name: string;
+    };
+  };
+  submitted_at: string;
+}
+
+interface StudentStats {
+  totalExams: number;
+  averageScore: number;
+  highestScore: number;
+  currentRank: number;
+}
 
 const ModernStudentDashboard = () => {
-  const [stats, setStats] = useState({
+  const [results, setResults] = useState<ExamResult[]>([]);
+  const [stats, setStats] = useState<StudentStats>({
     totalExams: 0,
     averageScore: 0,
     highestScore: 0,
-    recentExams: 0,
-    improvement: 0,
-    rank: 0
+    currentRank: 1
   });
-  const [recentResults, setRecentResults] = useState([]);
-  const [insights, setInsights] = useState([]);
-  const [performanceData, setPerformanceData] = useState([]);
+  const [performanceData, setPerformanceData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [studentProfile, setStudentProfile] = useState(null);
+  const [studentProfile, setStudentProfile] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -57,69 +72,61 @@ const ModernStudentDashboard = () => {
       if (profileError) throw profileError;
       setStudentProfile(profile);
 
-      // Get exam results with performance data
-      const { data: results, error: resultsError } = await supabase
+      // Get exam results with calculated percentages
+      const { data: examResults, error: resultsError } = await supabase
         .from('exam_results')
         .select(`
-          *,
-          exams(
+          id,
+          marks_obtained,
+          grade,
+          submitted_at,
+          exams!inner(
             title,
             max_marks,
-            exam_type,
             subjects(name)
           )
         `)
-        .eq('student_id', profile.id)
-        .order('submitted_at', { ascending: false })
-        .limit(10);
+        .eq('student_id', currentUser.user.id)
+        .order('submitted_at', { ascending: false });
 
       if (resultsError) throw resultsError;
-      setRecentResults(results || []);
 
-      // Generate performance chart data
-      const chartData = (results || []).slice(0, 6).reverse().map((result, index) => ({
-        exam: `Exam ${index + 1}`,
-        score: result.percentage || ((result.marks_obtained / (result.exams?.max_marks || 100)) * 100),
-        subject: result.exams?.subjects?.name
-      }));
-      setPerformanceData(chartData);
+      // Calculate percentages and transform results
+      const transformedResults: ExamResult[] = examResults?.map(result => ({
+        ...result,
+        percentage: result.exams?.max_marks ? Math.round((result.marks_obtained / result.exams.max_marks) * 100) : 0
+      })) || [];
 
-      // Get AI insights
-      const { data: insightsData, error: insightsError } = await supabase
-        .from('student_insights')
-        .select(`
-          *,
-          subjects(name)
-        `)
-        .eq('student_id', profile.id);
+      setResults(transformedResults);
 
-      if (insightsError) throw insightsError;
-      setInsights(insightsData || []);
-
-      // Calculate enhanced statistics
-      const allResults = results || [];
-      const scores = allResults.map(r => r.percentage || ((r.marks_obtained / (r.exams?.max_marks || 100)) * 100));
-      
-      const recentScores = scores.slice(0, 3);
-      const olderScores = scores.slice(3, 6);
-      const improvement = recentScores.length > 0 && olderScores.length > 0 
-        ? Math.round(((recentScores.reduce((a, b) => a + b, 0) / recentScores.length) - 
-                     (olderScores.reduce((a, b) => a + b, 0) / olderScores.length)))
+      // Calculate statistics
+      const totalExams = transformedResults.length;
+      const averageScore = totalExams > 0 
+        ? Math.round(transformedResults.reduce((sum, result) => sum + result.percentage, 0) / totalExams)
+        : 0;
+      const highestScore = totalExams > 0 
+        ? Math.max(...transformedResults.map(result => result.percentage))
         : 0;
 
       setStats({
-        totalExams: allResults.length,
-        averageScore: scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0,
-        highestScore: scores.length > 0 ? Math.round(Math.max(...scores)) : 0,
-        recentExams: allResults.filter(r => {
-          const examDate = new Date(r.submitted_at);
-          const weekAgo = new Date();
-          weekAgo.setDate(weekAgo.getDate() - 7);
-          return examDate >= weekAgo;
-        }).length,
-        improvement,
-        rank: Math.max(1, Math.ceil(Math.random() * 50)) // Mock rank for demo
+        totalExams,
+        averageScore,
+        highestScore,
+        currentRank: Math.floor(Math.random() * 10) + 1 // Mock ranking
       });
+
+      // Prepare performance trend data
+      const performanceTrend = transformedResults
+        .slice(0, 6)
+        .reverse()
+        .map((result, index) => ({
+          exam: result.exams?.title?.substring(0, 10) + '...' || `Exam ${index + 1}`,
+          score: result.percentage,
+          maxMarks: result.exams?.max_marks || 100
+        }));
+
+      setPerformanceData(performanceTrend);
+
     } catch (error) {
       console.error('Error fetching student data:', error);
       toast({
@@ -132,36 +139,18 @@ const ModernStudentDashboard = () => {
     }
   };
 
-  const quickActions = [
-    {
-      title: "Performance Analytics",
-      description: "Detailed performance analysis and trends",
-      icon: BarChart3,
-      gradient: "from-blue-500 to-cyan-600",
-      link: "/student/performance"
-    },
-    {
-      title: "AI Study Insights",
-      description: "Personalized learning recommendations",
-      icon: Brain,
-      gradient: "from-purple-500 to-pink-600",
-      link: "/student/performance"
-    },
-    {
-      title: "Exam History",
-      description: "View complete exam results and patterns",
-      icon: Eye,
-      gradient: "from-green-500 to-emerald-600",
-      link: "/student/performance"
-    },
-    {
-      title: "Progress Tracker",
-      description: "Monitor your academic journey",
-      icon: TrendingUp,
-      gradient: "from-orange-500 to-red-600",
-      link: "/student/performance"
+  const getGradeBadgeColor = (grade: string) => {
+    switch (grade) {
+      case 'A+': return 'bg-green-600';
+      case 'A': return 'bg-green-500';
+      case 'B+': return 'bg-blue-500';
+      case 'B': return 'bg-blue-400';
+      case 'C+': return 'bg-yellow-500';
+      case 'C': return 'bg-yellow-400';
+      case 'D': return 'bg-orange-500';
+      default: return 'bg-red-500';
     }
-  ];
+  };
 
   if (loading) {
     return (
@@ -177,14 +166,14 @@ const ModernStudentDashboard = () => {
       <div className="text-center space-y-4">
         <div className="flex items-center justify-center space-x-2">
           <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full">
-            <Star className="h-6 w-6 text-white" />
+            <GraduationCap className="h-6 w-6 text-white" />
           </div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Welcome back, {studentProfile?.full_name}!
+            Welcome, {studentProfile?.full_name}!
           </h1>
         </div>
         <p className="text-muted-foreground">
-          Class {studentProfile?.class_level} • Your learning journey continues
+          Class {studentProfile?.class_level} • Academic Dashboard
         </p>
         <Badge variant="outline" className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
           Student Dashboard
@@ -192,7 +181,7 @@ const ModernStudentDashboard = () => {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <ModernDashboardCard
           title="Total Exams"
           value={stats.totalExams}
@@ -205,207 +194,137 @@ const ModernStudentDashboard = () => {
           value={`${stats.averageScore}%`}
           icon={Target}
           gradient="from-green-500 to-emerald-600"
-          trend={{ value: Math.abs(stats.improvement), isPositive: stats.improvement >= 0 }}
+          description="Overall performance"
         />
         <ModernDashboardCard
           title="Highest Score"
           value={`${stats.highestScore}%`}
-          icon={Award}
-          gradient="from-purple-500 to-pink-600"
-          description="Personal best"
-        />
-        <ModernDashboardCard
-          title="Recent Exams"
-          value={stats.recentExams}
-          icon={Calendar}
-          gradient="from-orange-500 to-red-600"
-          description="This week"
+          icon={Trophy}
+          gradient="from-yellow-500 to-orange-600"
+          description="Best achievement"
         />
         <ModernDashboardCard
           title="Class Rank"
-          value={`#${stats.rank}`}
-          icon={TrendingUp}
-          gradient="from-teal-500 to-cyan-600"
-          description="Estimated position"
-        />
-        <ModernDashboardCard
-          title="Study Streak"
-          value="7 days"
-          icon={Zap}
-          gradient="from-yellow-500 to-orange-600"
-          description="Keep it up!"
+          value={`#${stats.currentRank}`}
+          icon={Award}
+          gradient="from-purple-500 to-pink-600"
+          description="Current position"
         />
       </div>
 
-      {/* Performance Chart */}
-      {performanceData.length > 0 && (
+      {/* Performance Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Performance Trend */}
         <Card className="border-0 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-blue-600" />
+              <TrendingUp className="h-5 w-5 text-blue-600" />
               Performance Trend
             </CardTitle>
             <CardDescription>
-              Your recent exam performance over time
+              Your recent exam performance
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {performanceData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={performanceData}>
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                  <XAxis dataKey="exam" />
+                  <YAxis domain={[0, 100]} />
+                  <Tooltip />
+                  <Line 
+                    type="monotone" 
+                    dataKey="score" 
+                    stroke="#3b82f6" 
+                    strokeWidth={3}
+                    dot={{ fill: '#3b82f6', strokeWidth: 2, r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-64 text-muted-foreground">
+                No performance data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Subject Performance */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Star className="h-5 w-5 text-purple-600" />
+              Subject Performance
+            </CardTitle>
+            <CardDescription>
+              Performance across different subjects
             </CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={performanceData}>
-                <defs>
-                  <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
+              <BarChart data={performanceData}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                 <XAxis dataKey="exam" />
                 <YAxis domain={[0, 100]} />
-                <Tooltip 
-                  formatter={(value, name) => [`${Math.round(value as number)}%`, 'Score']}
-                  labelFormatter={(label) => `Exam: ${label}`}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="score" 
-                  stroke="#3b82f6" 
-                  fillOpacity={1} 
-                  fill="url(#colorScore)"
-                  strokeWidth={3}
-                />
-              </AreaChart>
+                <Tooltip />
+                <Bar dataKey="score" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
-      )}
+      </div>
 
-      {/* Quick Actions */}
+      {/* Recent Results */}
       <Card className="border-0 shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-purple-600" />
-            Quick Actions
+            <Clock className="h-5 w-5 text-green-600" />
+            Recent Exam Results
           </CardTitle>
           <CardDescription>
-            Access your learning tools and insights
+            Your latest examination performance
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {quickActions.map((action, index) => (
-              <ModernActionCard
-                key={index}
-                title={action.title}
-                description={action.description}
-                icon={action.icon}
-                link={action.link}
-                gradient={action.gradient}
-              />
-            ))}
-          </div>
+          {results.length > 0 ? (
+            <div className="space-y-4">
+              {results.slice(0, 5).map((result) => (
+                <div key={result.id} className="p-4 rounded-lg bg-gradient-to-r from-muted/50 to-muted/30 border border-muted">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-lg">{result.exams?.title}</h3>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>{result.exams?.subjects?.name}</span>
+                        <span>•</span>
+                        <span>{result.marks_obtained}/{result.exams?.max_marks} marks</span>
+                        <span>•</span>
+                        <span>{new Date(result.submitted_at).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">Score:</span>
+                          <Progress value={result.percentage} className="w-20" />
+                          <span className="text-sm font-bold">{result.percentage}%</span>
+                        </div>
+                        <Badge className={`${getGradeBadgeColor(result.grade)} text-white`}>
+                          Grade {result.grade}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">No Exam Results Yet</h3>
+              <p className="mb-6">Your exam results will appear here once you take your first exam.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      {/* Recent Results and AI Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Results */}
-        <Card className="border-0 shadow-lg">
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-green-600" />
-                Recent Results
-              </CardTitle>
-              <Button variant="outline" size="sm" asChild>
-                <a href="/student/performance">
-                  <Eye className="h-4 w-4 mr-2" />
-                  View All
-                </a>
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {recentResults.length > 0 ? (
-              <div className="space-y-4">
-                {recentResults.slice(0, 3).map((result) => (
-                  <div key={result.id} className="p-4 rounded-lg bg-gradient-to-r from-muted/50 to-muted/30 border border-muted">
-                    <div className="flex justify-between items-center">
-                      <div className="space-y-1">
-                        <h4 className="font-medium">{result.exams?.title}</h4>
-                        <p className="text-sm text-muted-foreground">{result.exams?.subjects?.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(result.submitted_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary">
-                          {result.percentage ? Math.round(result.percentage) : Math.round((result.marks_obtained / (result.exams?.max_marks || 100)) * 100)}%
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {result.marks_obtained}/{result.exams?.max_marks}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No exam results yet</p>
-                <p className="text-sm">Your results will appear here after taking exams</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* AI Insights Preview */}
-        <Card className="border-0 shadow-lg">
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="flex items-center gap-2">
-                <Brain className="h-5 w-5 text-purple-600" />
-                AI Study Insights
-              </CardTitle>
-              <Button variant="outline" size="sm" asChild>
-                <a href="/student/performance">
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Details
-                </a>
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {insights.length > 0 ? (
-              <div className="space-y-4">
-                {insights.slice(0, 2).map((insight) => (
-                  <div key={insight.id} className="p-4 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 border border-purple-200 dark:border-purple-800">
-                    <div className="flex justify-between items-center mb-3">
-                      <h4 className="font-medium">{insight.subjects?.name}</h4>
-                      <Badge className={`text-xs ${
-                        insight.strength_level >= 4 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                        insight.strength_level >= 3 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
-                        'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                      }`}>
-                        Level {insight.strength_level}/5
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {insight.ai_recommendations?.substring(0, 120)}...
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Brain className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="font-medium">AI Insights Coming Soon</p>
-                <p className="text-sm">Complete more exams to unlock personalized insights</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 };

@@ -1,32 +1,49 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Link } from 'react-router-dom';
 import {
   BookOpen,
+  Trophy,
+  TrendingUp,
   Target,
   Award,
-  TrendingUp,
-  Brain,
-  Calendar,
-  Eye,
-  BarChart3
+  User
 } from 'lucide-react';
 
+interface ExamResult {
+  id: string;
+  marks_obtained: number;
+  percentage: number;
+  grade: string;
+  exams: {
+    title: string;
+    max_marks: number;
+    subject: string;
+  };
+  submitted_at: string;
+}
+
+interface StudentStats {
+  totalExams: number;
+  averageScore: number;
+  highestScore: number;
+  currentGrade: string;
+}
+
 const StudentDashboard = () => {
-  const [stats, setStats] = useState({
+  const [results, setResults] = useState<ExamResult[]>([]);
+  const [stats, setStats] = useState<StudentStats>({
     totalExams: 0,
     averageScore: 0,
     highestScore: 0,
-    recentExams: 0
+    currentGrade: 'N/A'
   });
-  const [recentResults, setRecentResults] = useState([]);
-  const [insights, setInsights] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [studentProfile, setStudentProfile] = useState(null);
+  const [studentProfile, setStudentProfile] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -49,51 +66,49 @@ const StudentDashboard = () => {
       setStudentProfile(profile);
 
       // Get exam results
-      const { data: results, error: resultsError } = await supabase
+      const { data: examResults, error: resultsError } = await supabase
         .from('exam_results')
         .select(`
-          *,
-          exams(
+          id,
+          marks_obtained,
+          grade,
+          submitted_at,
+          exams!inner(
             title,
             max_marks,
-            exam_type,
-            subjects(name)
+            subject
           )
         `)
-        .eq('student_id', profile.id)
-        .order('submitted_at', { ascending: false })
-        .limit(5);
+        .eq('student_id', currentUser.user.id)
+        .order('submitted_at', { ascending: false });
 
       if (resultsError) throw resultsError;
-      setRecentResults(results || []);
 
-      // Get AI insights
-      const { data: insightsData, error: insightsError } = await supabase
-        .from('student_insights')
-        .select(`
-          *,
-          subjects(name)
-        `)
-        .eq('student_id', profile.id);
+      // Calculate percentages and transform results
+      const transformedResults: ExamResult[] = examResults?.map(result => ({
+        ...result,
+        percentage: result.exams?.max_marks ? Math.round((result.marks_obtained / result.exams.max_marks) * 100) : 0
+      })) || [];
 
-      if (insightsError) throw insightsError;
-      setInsights(insightsData || []);
+      setResults(transformedResults);
 
       // Calculate statistics
-      const allResults = results || [];
-      const scores = allResults.map(r => r.percentage || ((r.marks_obtained / (r.exams?.max_marks || 100)) * 100));
-      
+      const totalExams = transformedResults.length;
+      const averageScore = totalExams > 0 
+        ? Math.round(transformedResults.reduce((sum, result) => sum + result.percentage, 0) / totalExams)
+        : 0;
+      const highestScore = totalExams > 0 
+        ? Math.max(...transformedResults.map(result => result.percentage))
+        : 0;
+      const latestGrade = transformedResults.length > 0 ? transformedResults[0].grade : 'N/A';
+
       setStats({
-        totalExams: allResults.length,
-        averageScore: scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0,
-        highestScore: scores.length > 0 ? Math.round(Math.max(...scores)) : 0,
-        recentExams: allResults.filter(r => {
-          const examDate = new Date(r.submitted_at);
-          const weekAgo = new Date();
-          weekAgo.setDate(weekAgo.getDate() - 7);
-          return examDate >= weekAgo;
-        }).length
+        totalExams,
+        averageScore,
+        highestScore,
+        currentGrade: latestGrade
       });
+
     } catch (error) {
       console.error('Error fetching student data:', error);
       toast({
@@ -106,40 +121,18 @@ const StudentDashboard = () => {
     }
   };
 
-  const quickActions = [
-    {
-      title: "View Performance",
-      description: "Detailed performance analysis and trends",
-      icon: BarChart3,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
-      link: "/student/performance"
-    },
-    {
-      title: "AI Insights",
-      description: "Personalized learning recommendations",
-      icon: Brain,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
-      link: "/student/performance"
-    },
-    {
-      title: "All Results",
-      description: "View complete exam history",
-      icon: Eye,
-      color: "text-green-600",
-      bgColor: "bg-green-50",
-      link: "/student/performance"
-    },
-    {
-      title: "Progress Tracking",
-      description: "Monitor your academic journey",
-      icon: TrendingUp,
-      color: "text-orange-600",
-      bgColor: "bg-orange-50",
-      link: "/student/performance"
+  const getGradeBadgeColor = (grade: string) => {
+    switch (grade) {
+      case 'A+': return 'bg-green-600 text-white';
+      case 'A': return 'bg-green-500 text-white';
+      case 'B+': return 'bg-blue-500 text-white';
+      case 'B': return 'bg-blue-400 text-white';
+      case 'C+': return 'bg-yellow-500 text-white';
+      case 'C': return 'bg-yellow-400 text-black';
+      case 'D': return 'bg-orange-500 text-white';
+      default: return 'bg-red-500 text-white';
     }
-  ];
+  };
 
   if (loading) {
     return <div className="flex justify-center p-8">Loading dashboard...</div>;
@@ -156,12 +149,13 @@ const StudentDashboard = () => {
           </p>
         </div>
         <Badge className="bg-blue-100 text-blue-800">
+          <User className="h-4 w-4 mr-1" />
           Student
         </Badge>
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -193,7 +187,7 @@ const StudentDashboard = () => {
                 <p className="text-sm font-medium text-gray-600">Highest Score</p>
                 <p className="text-2xl font-bold text-purple-600">{stats.highestScore}%</p>
               </div>
-              <Award className="h-8 w-8 text-purple-600" />
+              <Trophy className="h-8 w-8 text-purple-600" />
             </div>
           </CardContent>
         </Card>
@@ -202,143 +196,65 @@ const StudentDashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Recent Exams</p>
-                <p className="text-2xl font-bold text-orange-600">{stats.recentExams}</p>
+                <p className="text-sm font-medium text-gray-600">Latest Grade</p>
+                <p className="text-2xl font-bold text-orange-600">{stats.currentGrade}</p>
               </div>
-              <Calendar className="h-8 w-8 text-orange-600" />
+              <Award className="h-8 w-8 text-orange-600" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Quick Actions */}
+      {/* Recent Results */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            Quick Actions
+            <TrendingUp className="h-5 w-5" />
+            Recent Exam Results
           </CardTitle>
           <CardDescription>
-            Track your academic progress and performance
+            Your latest examination performance
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {quickActions.map((action, index) => (
-              <Link key={index} to={action.link}>
-                <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                  <CardContent className="p-4">
-                    <div className={`w-12 h-12 rounded-lg ${action.bgColor} flex items-center justify-center mb-3`}>
-                      <action.icon className={`h-6 w-6 ${action.color}`} />
+          {results.length > 0 ? (
+            <div className="space-y-4">
+              {results.slice(0, 5).map((result) => (
+                <div key={result.id} className="border rounded-lg p-4 bg-gray-50">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-lg">{result.exams?.title}</h3>
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <span>{result.exams?.subject}</span>
+                        <span>•</span>
+                        <span>{result.marks_obtained}/{result.exams?.max_marks} marks</span>
+                        <span>•</span>
+                        <span>{new Date(result.submitted_at).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">Score:</span>
+                          <Progress value={result.percentage} className="w-24" />
+                          <span className="text-sm font-bold">{result.percentage}%</span>
+                        </div>
+                        <Badge className={getGradeBadgeColor(result.grade)}>
+                          Grade {result.grade}
+                        </Badge>
+                      </div>
                     </div>
-                    <h3 className="font-semibold text-gray-900 mb-1">{action.title}</h3>
-                    <p className="text-sm text-gray-600">{action.description}</p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <h3 className="text-lg font-semibold mb-2">No Exam Results Yet</h3>
+              <p className="mb-4">Your exam results will appear here once you take your first exam.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      {/* Recent Results and AI Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Results */}
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Recent Results
-              </CardTitle>
-              <Link to="/student/performance">
-                <Button variant="outline" size="sm">
-                  <Eye className="h-4 w-4 mr-2" />
-                  View All
-                </Button>
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {recentResults.length > 0 ? (
-              <div className="space-y-3">
-                {recentResults.map((result) => (
-                  <div key={result.id} className="border rounded-lg p-3 bg-gray-50">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h4 className="font-medium">{result.exams?.title}</h4>
-                        <p className="text-sm text-gray-600">{result.exams?.subjects?.name}</p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(result.submitted_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-blue-600">
-                          {result.percentage ? Math.round(result.percentage) : Math.round((result.marks_obtained / (result.exams?.max_marks || 100)) * 100)}%
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          {result.marks_obtained}/{result.exams?.max_marks}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-gray-500">
-                <Calendar className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                <p>No exam results yet</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* AI Insights Preview */}
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="flex items-center gap-2">
-                <Brain className="h-5 w-5 text-purple-600" />
-                AI Insights
-              </CardTitle>
-              <Link to="/student/performance">
-                <Button variant="outline" size="sm">
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Details
-                </Button>
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {insights.length > 0 ? (
-              <div className="space-y-3">
-                {insights.slice(0, 2).map((insight) => (
-                  <div key={insight.id} className="border rounded-lg p-3 bg-purple-50">
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="font-medium">{insight.subjects?.name}</h4>
-                      <Badge className={`text-xs ${
-                        insight.strength_level >= 4 ? 'bg-green-100 text-green-800' :
-                        insight.strength_level >= 3 ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        Level {insight.strength_level}/5
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-gray-700">
-                      {insight.ai_recommendations?.substring(0, 100)}...
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-gray-500">
-                <Brain className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                <p className="text-sm">AI insights will appear after exams</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 };
