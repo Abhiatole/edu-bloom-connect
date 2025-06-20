@@ -28,15 +28,29 @@ const TeacherRegister = () => {
     setLoading(true);
 
     try {
+      // Enhanced validation with better debugging
+      console.log('Form data:', {
+        password: formData.password ? `[${formData.password.length} chars]` : 'empty',
+        confirmPassword: formData.confirmPassword ? `[${formData.confirmPassword.length} chars]` : 'empty',
+        passwordsMatch: formData.password === formData.confirmPassword
+      });
+
+      if (!formData.password || !formData.confirmPassword) {
+        throw new Error('Please enter both password and confirm password');
+      }
+
       if (formData.password !== formData.confirmPassword) {
         throw new Error('Passwords do not match');
       }
 
       if (formData.password.length < 6) {
         throw new Error('Password must be at least 6 characters long');
-      }
+      }      // Validate all required fields
+      if (!formData.fullName || !formData.email || !formData.subjectExpertise || !formData.experienceYears) {
+        throw new Error('Please fill in all required fields');
+      }      console.log('Attempting teacher registration...');
 
-      // Create auth user with profile data in metadata
+      // Step 1: Create auth user first
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -50,62 +64,82 @@ const TeacherRegister = () => {
         }
       });
 
-      if (authError) throw authError;      if (authData.user) {
-        console.log('User signup data:', authData);
-        console.log('Has session:', !!authData.session);
-        console.log('User confirmed:', authData.user.email_confirmed_at);
-        
-        // Check if email confirmation is required
-        if (authData.session || authData.user.email_confirmed_at) {
-          // User is immediately confirmed or email confirmation is disabled - create profile directly
-          console.log('User is confirmed or email confirmation disabled, creating profile directly');
-          
-          const profileData = {
-            user_id: authData.user.id,
-            full_name: formData.fullName,
-            email: formData.email,
-            subject_expertise: formData.subjectExpertise as any,
-            experience_years: parseInt(formData.experienceYears),
-            status: 'PENDING' as const
-          };
-          
-          const { error: profileError } = await supabase
-            .from('teacher_profiles')
-            .insert(profileData);
+      if (authError) {
+        console.error('Auth signup error:', authError);
+        throw authError;
+      }
 
-          if (profileError) {
-            console.error('Profile creation error:', profileError);
-            throw new Error(`Profile creation failed: ${profileError.message}`);
-          }          toast({
-            title: "Registration Successful!",
-            description: "Your teacher account has been created and is pending admin approval. You'll be notified once approved.",
-          });
-          
-          navigate('/login');
-        } else {
-          // Email confirmation is required - redirect to success page
-          console.log('Email confirmation required, redirecting to success page');
-          
-          navigate('/register/success', {
-            state: {
-              email: formData.email,
-              userType: 'teacher'
-            }
-          });
-        }
-      } else {
+      if (!authData.user) {
         throw new Error('User creation failed - no user data returned');
+      }
+
+      console.log('Auth user created successfully:', authData.user.id);
+
+      // Step 2: Create profile with the returned user ID (not auth.uid())
+      if (authData.session || authData.user.email_confirmed_at) {
+        console.log('User confirmed, creating profile with user ID:', authData.user.id);
+        
+        const profileData = {
+          user_id: authData.user.id, // Use the actual user ID from signup
+          full_name: formData.fullName,
+          email: formData.email,
+          subject_expertise: formData.subjectExpertise as any,
+          experience_years: parseInt(formData.experienceYears),
+          status: 'PENDING' as const
+        };
+
+        console.log('Creating profile with data:', profileData);
+
+        const { error: profileError } = await supabase
+          .from('teacher_profiles')
+          .insert(profileData);
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          
+          // Clean up auth user if profile creation fails
+          try {
+            console.log('Cleaning up auth user due to profile error');
+            await supabase.auth.admin.deleteUser(authData.user.id);
+          } catch (cleanupError) {
+            console.error('Cleanup error:', cleanupError);
+          }
+          
+          throw new Error(`Profile creation failed: ${profileError.message}`);
+        }
+
+        console.log('Profile created successfully');
+        
+        toast({
+          title: "Registration Successful!",
+          description: "Your teacher account has been created and is pending admin approval. You'll be notified once approved.",
+        });
+        
+        navigate('/login');
+      } else {
+        console.log('Email confirmation required');
+        navigate('/register/success', {
+          state: {
+            email: formData.email,
+            userType: 'teacher'
+          }
+        });
       }
     } catch (error: any) {
       console.error('Registration error:', error);
-      
-      // Provide more specific error messages
+        // Provide more specific error messages
       let errorMessage = error.message || "An error occurred during registration";
       
-      if (error.message?.includes('foreign key constraint')) {
-        errorMessage = "Registration temporarily unavailable. Please try again in a few moments or contact support.";
-      } else if (error.message?.includes('already registered')) {
+      if (error.message?.includes('teacher_profiles_user_id_fkey')) {
+        errorMessage = "Registration failed due to a timing issue. Please try again in a moment.";
+      } else if (error.message?.includes('foreign key constraint')) {
+        errorMessage = "Registration temporarily unavailable. Please try again in a few moments.";
+      } else if (error.message?.includes('already registered') || error.message?.includes('already been registered')) {
         errorMessage = "This email is already registered. Please use a different email or try logging in.";
+      } else if (error.message?.includes('duplicate key')) {
+        errorMessage = "An account with this email already exists. Please try logging in instead.";
+      } else if (error.message?.includes('Password')) {
+        errorMessage = error.message; // Keep password validation messages as-is
       }
       
       toast({

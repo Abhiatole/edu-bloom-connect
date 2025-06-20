@@ -6,38 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, UserCheck, UserX, Clock, GraduationCap, BookOpen, RefreshCw, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Users, UserCheck, UserX, Clock, GraduationCap, RefreshCw, CheckCircle, AlertTriangle } from 'lucide-react';
+import type { Database } from '@/integrations/supabase/types';
 
-interface StudentProfile {
-  id: string;
-  user_id: string;
-  enrollment_no: string;
-  class_level: number;
-  section: string | null;
-  parent_email: string | null;
-  parent_phone: string | null;
-  address: string | null;
-  date_of_birth: string | null;
-  approval_date: string | null;
-  approved_by_teacher_id: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-}
-
-interface TeacherProfile {
-  id: string;
-  user_id: string;
-  employee_id: string;
-  department: string;
-  designation: string | null;
-  qualification: string | null;
-  experience_years: number | null;
-  subject_expertise: string;
-  approval_date: string | null;
-  approved_by_admin_id: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-}
+type StudentProfile = Database['public']['Tables']['student_profiles']['Row'];
+type TeacherProfile = Database['public']['Tables']['teacher_profiles']['Row'];
 
 interface UserWithProfile {
   id: string;
@@ -82,6 +55,7 @@ const SimplifiedUserApprovals = () => {
       setLoading(false);
     }
   };
+
   const fetchUsers = async () => {
     try {
       // Fetch students and teachers
@@ -97,7 +71,9 @@ const SimplifiedUserApprovals = () => {
       ]);
 
       if (studentsResponse.error) throw studentsResponse.error;
-      if (teachersResponse.error) throw teachersResponse.error;      // Combine and normalize the data
+      if (teachersResponse.error) throw teachersResponse.error;
+
+      // Combine and normalize the data
       const allUsersData: UserWithProfile[] = [
         ...(studentsResponse.data || []).map(student => ({
           id: student.id,
@@ -113,17 +89,17 @@ const SimplifiedUserApprovals = () => {
         ...(teachersResponse.data || []).map(teacher => ({
           id: teacher.id,
           user_id: teacher.user_id,
-          display_name: `Teacher ${teacher.employee_id} (${teacher.department})`,
-          email: 'Email not available',
+          display_name: `Teacher ${teacher.full_name} (${teacher.subject_expertise})`,
+          email: teacher.email,
           role: 'TEACHER' as const,
           is_approved: !!teacher.approval_date,
           approval_date: teacher.approval_date,
           created_at: teacher.created_at,
           profile_data: teacher
         }))
-      ];      setAllUsers(allUsersData);
-      console.log(`📊 Fetched ${allUsersData.length} users total`);
-      console.log(`📊 Pending: ${allUsersData.filter(u => !u.is_approved).length}, Approved: ${allUsersData.filter(u => u.is_approved).length}`);
+      ];
+
+      setAllUsers(allUsersData);
     } catch (error) {
       console.error('Error fetching users:', error);
       throw error;
@@ -131,54 +107,60 @@ const SimplifiedUserApprovals = () => {
   };
 
   const handleApproval = async (userId: string, action: 'approve' | 'reject') => {
-    console.log(`🔄 Starting approval process: ${action} for user ${userId}`);
     setActionLoading(userId);
     try {
       const { data: currentUser } = await supabase.auth.getUser();
-      if (!currentUser.user) throw new Error('Not authenticated');
+      if (!currentUser.user) {
+        throw new Error('Not authenticated');
+      }
 
       const userToUpdate = allUsers.find(u => u.user_id === userId);
-      if (!userToUpdate) throw new Error('User not found');
+      if (!userToUpdate) {
+        throw new Error('User not found');
+      }
 
-      console.log(`📝 Updating ${userToUpdate.role} profile for user:`, userToUpdate.display_name);
-
+      const status = action === 'approve' ? 'APPROVED' : 'REJECTED';
       const approvalDate = action === 'approve' ? new Date().toISOString() : null;
 
       // Update the appropriate table based on user role
-      let updateError;
-      let updateResult;
-        if (userToUpdate.role === 'STUDENT') {
-        console.log('📊 Updating student_profiles table...');
-        const { data, error, count } = await supabase
+      let updateError: any = null;
+      let updateCount = 0;
+
+      if (userToUpdate.role === 'STUDENT') {
+        const { error, count } = await supabase
           .from('student_profiles')
           .update({ 
+            status,
             approval_date: approvalDate,
+            approved_by: currentUser.user.id,
             updated_at: new Date().toISOString()
           })
           .eq('user_id', userId);
         updateError = error;
-        updateResult = { data, count };
-        console.log('📊 Student update result:', { data, error, count });
+        updateCount = count || 0;
       } else if (userToUpdate.role === 'TEACHER') {
-        console.log('📊 Updating teacher_profiles table...');
-        const { data, error, count } = await supabase
+        const { error, count } = await supabase
           .from('teacher_profiles')
           .update({ 
+            status,
             approval_date: approvalDate,
+            approved_by: currentUser.user.id,
             updated_at: new Date().toISOString()
           })
           .eq('user_id', userId);
         updateError = error;
-        updateResult = { data, count };
-        console.log('📊 Teacher update result:', { data, error, count });
+        updateCount = count || 0;
       }
 
       if (updateError) {
         throw updateError;
-      }      if (updateResult && updateResult.count === 0) {
-        throw new Error('No rows were updated. This might be due to RLS policies preventing admin updates. Please run the RLS fix script.');
-      }      // Immediately update the local state for instant UI feedback
-      console.log('🎯 Updating local UI state...');
+      }
+
+      if (updateCount === 0) {
+        throw new Error('No rows were updated. This might be due to RLS policies preventing admin updates.');
+      }
+
+      // Update local state for immediate UI feedback
       setAllUsers(prevUsers => {
         const updatedUsers = prevUsers.map(user => 
           user.user_id === userId 
@@ -189,35 +171,29 @@ const SimplifiedUserApprovals = () => {
               }
             : user
         );
-        console.log('🎯 UI state updated. User now approved:', updatedUsers.find(u => u.user_id === userId)?.is_approved);
         return updatedUsers;
       });
 
       toast({
-        title: `${action === 'approve' ? 'Approved' : 'Rejected'}!`,
+        title: action === 'approve' ? 'User Approved!' : 'User Rejected!',
         description: `${userToUpdate.display_name} has been ${action}d successfully.`,
       });
 
-      console.log('✅ Approval successful! UI updated immediately.');
-
-      // Refresh data from server to ensure consistency (background refresh)
+      // Refresh data from server to ensure consistency
       setTimeout(() => {
         fetchAllData();
       }, 1000);
     } catch (error: any) {
-      console.error('❌ Approval error:', error);
-      
-      // Provide more specific error messages
       let errorMessage = error.message || `Failed to ${action} user`;
       
       if (error.message && error.message.includes('No rows were updated')) {
-        errorMessage = `Approval blocked: Please run the RLS fix script in Supabase to allow admin updates. See ADMIN_APPROVAL_ROOT_CAUSE_SOLUTION.md for details.`;
+        errorMessage = 'Database policies prevent this action. Please run the RLS fix script in Supabase.';
       } else if (error.message && error.message.includes('policy')) {
-        errorMessage = 'Permission denied: Database policies prevent admin approval. Please check RLS policies.';
+        errorMessage = 'Permission denied. Please check your admin permissions.';
       }
       
       toast({
-        title: "Approval Failed", 
+        title: "Action Failed", 
         description: errorMessage,
         variant: "destructive"
       });
@@ -251,7 +227,7 @@ const SimplifiedUserApprovals = () => {
   };
 
   const renderUserCard = (user: UserWithProfile, showActions: boolean = true) => (
-    <div key={user.id} className="border rounded-lg p-4 bg-gray-50">
+    <div key={user.id} className="border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start">
         <div className="space-y-2 flex-1">
           <div className="flex items-center gap-2">
@@ -261,16 +237,17 @@ const SimplifiedUserApprovals = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
             <div><strong>Email:</strong> {user.email}</div>
-            <div><strong>Role:</strong> {user.role}</div>            {user.role === 'STUDENT' && (
+            <div><strong>Role:</strong> {user.role}</div>
+            {user.role === 'STUDENT' && (
               <>
                 <div><strong>Class:</strong> {(user.profile_data as StudentProfile).class_level}</div>
-                <div><strong>Student ID:</strong> {user.id}</div>
+                <div><strong>Enrollment:</strong> {(user.profile_data as StudentProfile).enrollment_no}</div>
               </>
             )}
             {user.role === 'TEACHER' && (
               <>
-                <div><strong>Department:</strong> {(user.profile_data as TeacherProfile).department}</div>
-                <div><strong>Employee ID:</strong> {(user.profile_data as TeacherProfile).employee_id}</div>
+                <div><strong>Subject:</strong> {(user.profile_data as TeacherProfile).subject_expertise}</div>
+                <div><strong>Experience:</strong> {(user.profile_data as TeacherProfile).experience_years} years</div>
               </>
             )}
           </div>
@@ -324,23 +301,24 @@ const SimplifiedUserApprovals = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">User Management Dashboard</h2>
-          <p className="text-gray-600">Manage user approvals (Simplified Version)</p>
+          <h2 className="text-2xl font-bold text-gray-900">Admin Dashboard</h2>
+          <p className="text-gray-600">Manage user approvals and access control</p>
         </div>
-        <Button onClick={fetchAllData} variant="outline" size="sm">
-          <RefreshCw className="h-4 w-4 mr-2" />
+        <Button onClick={fetchAllData} variant="outline" size="sm" disabled={loading}>
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
-      </div>      {/* Admin Approval Setup Notice */}
+      </div>
+
+      {/* Setup Notice */}
       <Card className="border-orange-200 bg-orange-50">
         <CardContent className="p-4">
           <div className="flex items-center gap-2 text-orange-800">
             <AlertTriangle className="h-5 w-5" />
             <div>
-              <p className="font-medium">Admin Approval Setup Required</p>
+              <p className="font-medium">Setup Required</p>
               <p className="text-sm">
-                If the "Approve" button doesn't work, you need to run the RLS policy fix in Supabase SQL Editor. 
-                See <code>APPLY_ADMIN_APPROVAL_FIX.md</code> for step-by-step instructions.
+                If the approve button doesn't work, run <code>FIX_ADMIN_APPROVAL_RLS.sql</code> in your Supabase SQL editor.
               </p>
             </div>
           </div>
@@ -429,7 +407,8 @@ const SimplifiedUserApprovals = () => {
               )}
             </CardContent>
           </Card>
-        </TabsContent>      </Tabs>
+        </TabsContent>
+      </Tabs>
 
       <AlertDialog open={confirmDialog?.isOpen} onOpenChange={() => setConfirmDialog(null)}>
         <AlertDialogContent>
