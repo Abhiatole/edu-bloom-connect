@@ -28,10 +28,8 @@ export class RegistrationService {
    * Register a new student
    */
   static async registerStudent(data: StudentRegistrationData) {
-    try {      // Get the current domain for email redirect
+    try {
       const currentDomain = window.location.origin;
-      
-      // Create auth user with proper email confirmation redirect
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -43,7 +41,7 @@ export class RegistrationService {
             guardian_name: data.guardianName,
             guardian_mobile: data.guardianMobile
           },
-          emailRedirectTo: `${currentDomain}/auth/confirm`
+          emailRedirectTo: `${currentDomain}/email-confirmed`
         }
       });
 
@@ -90,10 +88,8 @@ export class RegistrationService {
    * Register a new teacher
    */
   static async registerTeacher(data: TeacherRegistrationData) {
-    try {      // Get the current domain for email redirect
+    try {
       const currentDomain = window.location.origin;
-      
-      // Create auth user with proper email confirmation redirect
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -104,7 +100,7 @@ export class RegistrationService {
             subject_expertise: data.subjectExpertise,
             experience_years: data.experienceYears
           },
-          emailRedirectTo: `${currentDomain}/auth/confirm`
+          emailRedirectTo: `${currentDomain}/email-confirmed`
         }
       });
 
@@ -149,7 +145,7 @@ export class RegistrationService {
    */
   static async registerAdmin(data: AdminRegistrationData) {
     try {
-      // Create auth user
+      const currentDomain = window.location.origin;
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -157,38 +153,35 @@ export class RegistrationService {
           data: {
             role: 'admin',
             full_name: data.fullName,
-            department: data.department
-          }
+            department: data.department || ''
+          },
+          emailRedirectTo: `${currentDomain}/email-confirmed`
         }
       });
-
       if (authError) throw authError;
-
-      if (authData.user) {        // Create admin profile if user is immediately confirmed
-        if (authData.session || authData.user.email_confirmed_at) {          const profileData = {
+      if (authData.user) {
+        if (authData.session || authData.user.email_confirmed_at) {
+          const profileData = {
             user_id: authData.user.id,
             full_name: data.fullName,
             email: data.email,
+            department: data.department || '',
             role: 'ADMIN' as const,
             status: 'PENDING' as const
           };
-
           const { error: profileError } = await supabase
             .from('user_profiles')
             .insert(profileData);
-
           if (profileError) {
             throw new Error(`Profile creation failed: ${profileError.message}`);
           }
         }
-
         return {
           success: true,
           user: authData.user,
           requiresEmailConfirmation: !authData.session && !authData.user.email_confirmed_at
         };
       }
-
       throw new Error('User creation failed - no user data returned');
     } catch (error: any) {
       console.error('Admin registration error:', error);
@@ -242,13 +235,13 @@ export class RegistrationService {
           user_id: userId,
           full_name: userMetadata.full_name,
           email: currentUser.user.email,
-          role: 'ADMIN' as const
+          department: userMetadata.department || '',
+          role: 'ADMIN' as const,
+          status: 'PENDING' as const
         };
-
         const { error } = await supabase
           .from('user_profiles')
           .insert(profileData);
-
         if (error) throw error;
       }
 
