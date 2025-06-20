@@ -283,14 +283,14 @@ const ModernTeacherDashboard = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {quickActions.map((action, index) => (
-              <Link key={index} to={action.link}>
-                <ModernActionCard
-                  title={action.title}
-                  description={action.description}
-                  icon={action.icon}
-                  gradient={action.gradient}
-                />
-              </Link>
+              <ModernActionCard
+                key={index}
+                title={action.title}
+                description={action.description}
+                icon={action.icon}
+                gradient={action.gradient}
+                link={action.link}
+              />
             ))}
           </div>
         </CardContent>
