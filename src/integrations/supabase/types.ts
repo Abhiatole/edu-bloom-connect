@@ -78,6 +78,7 @@ export type Database = {
           grade: string | null
           id: string
           marks_obtained: number
+          percentage: number | null
           remarks: string | null
           student_id: string
           submitted_at: string | null
@@ -87,6 +88,7 @@ export type Database = {
           grade?: string | null
           id?: string
           marks_obtained: number
+          percentage?: number | null
           remarks?: string | null
           student_id: string
           submitted_at?: string | null
@@ -96,6 +98,7 @@ export type Database = {
           grade?: string | null
           id?: string
           marks_obtained?: number
+          percentage?: number | null
           remarks?: string | null
           student_id?: string
           submitted_at?: string | null
@@ -119,7 +122,9 @@ export type Database = {
           exam_date: string
           exam_type: Database["public"]["Enums"]["exam_type"]
           id: string
+          max_marks: number | null
           subject: Database["public"]["Enums"]["subject_type"]
+          subject_id: string | null
           title: string
           total_marks: number
           updated_at: string | null
@@ -132,7 +137,9 @@ export type Database = {
           exam_date: string
           exam_type: Database["public"]["Enums"]["exam_type"]
           id?: string
+          max_marks?: number | null
           subject: Database["public"]["Enums"]["subject_type"]
+          subject_id?: string | null
           title: string
           total_marks?: number
           updated_at?: string | null
@@ -145,12 +152,22 @@ export type Database = {
           exam_date?: string
           exam_type?: Database["public"]["Enums"]["exam_type"]
           id?: string
+          max_marks?: number | null
           subject?: Database["public"]["Enums"]["subject_type"]
+          subject_id?: string | null
           title?: string
           total_marks?: number
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "exams_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fee_payments: {
         Row: {
@@ -302,44 +319,73 @@ export type Database = {
       student_insights: {
         Row: {
           ai_comment: string | null
+          ai_recommendations: string | null
           created_at: string | null
+          focus_topics: string[] | null
           id: string
           last_analyzed: string | null
           performance_level: Database["public"]["Enums"]["performance_level"]
+          performance_trend: string | null
           recommendations: string | null
+          strength_level: number | null
           strengths: string[] | null
+          strong_areas: string[] | null
           student_id: string
           subject: Database["public"]["Enums"]["subject_type"]
+          subject_id: string | null
           topic: string | null
+          weak_areas: string[] | null
           weaknesses: string[] | null
         }
         Insert: {
           ai_comment?: string | null
+          ai_recommendations?: string | null
           created_at?: string | null
+          focus_topics?: string[] | null
           id?: string
           last_analyzed?: string | null
           performance_level: Database["public"]["Enums"]["performance_level"]
+          performance_trend?: string | null
           recommendations?: string | null
+          strength_level?: number | null
           strengths?: string[] | null
+          strong_areas?: string[] | null
           student_id: string
           subject: Database["public"]["Enums"]["subject_type"]
+          subject_id?: string | null
           topic?: string | null
+          weak_areas?: string[] | null
           weaknesses?: string[] | null
         }
         Update: {
           ai_comment?: string | null
+          ai_recommendations?: string | null
           created_at?: string | null
+          focus_topics?: string[] | null
           id?: string
           last_analyzed?: string | null
           performance_level?: Database["public"]["Enums"]["performance_level"]
+          performance_trend?: string | null
           recommendations?: string | null
+          strength_level?: number | null
           strengths?: string[] | null
+          strong_areas?: string[] | null
           student_id?: string
           subject?: Database["public"]["Enums"]["subject_type"]
+          subject_id?: string | null
           topic?: string | null
+          weak_areas?: string[] | null
           weaknesses?: string[] | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "student_insights_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       student_profiles: {
         Row: {
@@ -383,6 +429,33 @@ export type Database = {
           status?: Database["public"]["Enums"]["approval_status"] | null
           updated_at?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      subjects: {
+        Row: {
+          code: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
