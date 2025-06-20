@@ -22,7 +22,7 @@ CREATE POLICY "Students can view own profile and admins can view all" ON student
         EXISTS (
             SELECT 1 FROM auth.users u
             WHERE u.id = auth.uid() 
-            AND u.raw_user_meta_data->>'role' IN ('admin', 'ADMIN', 'super_admin', 'SUPER_ADMIN')
+            AND u.raw_user_meta_data->>'role' IN ('admin', 'ADMIN')
         )
     );
 
@@ -32,18 +32,18 @@ CREATE POLICY "Students can update own profile and admins can update all" ON stu
         EXISTS (
             SELECT 1 FROM auth.users u
             WHERE u.id = auth.uid() 
-            AND u.raw_user_meta_data->>'role' IN ('admin', 'ADMIN', 'super_admin', 'SUPER_ADMIN')
+            AND u.raw_user_meta_data->>'role' IN ('admin', 'ADMIN')
         )
     );
 
--- Create policies for teacher_profiles
+-- Create policies for teacher_profiles  
 CREATE POLICY "Teachers can view own profile and admins can view all" ON teacher_profiles
     FOR SELECT USING (
         user_id = auth.uid() OR
         EXISTS (
             SELECT 1 FROM auth.users u
             WHERE u.id = auth.uid() 
-            AND u.raw_user_meta_data->>'role' IN ('admin', 'ADMIN', 'super_admin', 'SUPER_ADMIN')
+            AND u.raw_user_meta_data->>'role' IN ('admin', 'ADMIN')
         )
     );
 
@@ -53,7 +53,7 @@ CREATE POLICY "Teachers can update own profile and admins can update all" ON tea
         EXISTS (
             SELECT 1 FROM auth.users u
             WHERE u.id = auth.uid() 
-            AND u.raw_user_meta_data->>'role' IN ('admin', 'ADMIN', 'super_admin', 'SUPER_ADMIN')
+            AND u.raw_user_meta_data->>'role' IN ('admin', 'ADMIN')
         )
     );
 
@@ -97,10 +97,9 @@ CREATE POLICY "Admins can view all user profiles" ON user_profiles
     FOR SELECT USING (
         user_id = auth.uid() OR
         EXISTS (
-            SELECT 1 FROM user_profiles up 
-            WHERE up.user_id = auth.uid() 
-            AND up.role IN ('ADMIN', 'SUPER_ADMIN') 
-            AND up.approval_status = 'APPROVED'
+            SELECT 1 FROM auth.users u
+            WHERE u.id = auth.uid() 
+            AND u.raw_user_meta_data->>'role' IN ('admin', 'ADMIN')
         )
     );
 
@@ -110,10 +109,9 @@ CREATE POLICY "Admins can update user profiles" ON user_profiles
     FOR UPDATE USING (
         user_id = auth.uid() OR
         EXISTS (
-            SELECT 1 FROM user_profiles up 
-            WHERE up.user_id = auth.uid() 
-            AND up.role IN ('ADMIN', 'SUPER_ADMIN') 
-            AND up.approval_status = 'APPROVED'
+            SELECT 1 FROM auth.users u
+            WHERE u.id = auth.uid() 
+            AND u.raw_user_meta_data->>'role' IN ('admin', 'ADMIN')
         )
     );
 
@@ -123,20 +121,19 @@ SELECT 'Admin RLS policies added successfully!' as status;
 -- Show current admin user for verification
 SELECT 
     'Current Admin User:' as section,
-    email,
-    role,
-    approval_status
-FROM user_profiles up
-JOIN auth.users au ON up.user_id = au.id
-WHERE up.role IN ('ADMIN', 'SUPER_ADMIN')
-ORDER BY up.created_at;
+    au.email,
+    u.raw_user_meta_data->>'role' as role
+FROM auth.users au, auth.users u
+WHERE au.id = u.id 
+AND u.raw_user_meta_data->>'role' IN ('admin', 'ADMIN')
+ORDER BY au.created_at;
 
--- Show pending users that can now be approved
+-- Show pending users that can now be approved  
 SELECT 
     'Pending Users Available for Approval:' as section,
     COUNT(*) as pending_count
 FROM (
-    SELECT user_id FROM student_profiles WHERE approval_date IS NULL
+    SELECT user_id FROM student_profiles WHERE status = 'PENDING'
     UNION ALL
-    SELECT user_id FROM teacher_profiles WHERE approval_date IS NULL
+    SELECT user_id FROM teacher_profiles WHERE status = 'PENDING'
 ) pending;
