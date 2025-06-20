@@ -62,7 +62,7 @@ const StudentCategorization = () => {
 
   const fetchResults = async () => {
     try {
-      // Get exam results and calculate percentage manually
+      // Get exam details
       const { data: examData, error: examError } = await supabase
         .from('exams')
         .select('title, total_marks')
@@ -71,23 +71,24 @@ const StudentCategorization = () => {
       
       if (examError) throw examError;
 
+      // Get exam results with student data
       const { data: resultsData, error: resultsError } = await supabase
         .from('exam_results')
         .select(`
           *,
-          student_profiles!inner(id, class_level)
+          student_profiles!inner(class_level, full_name)
         `)
         .eq('exam_id', selectedExam);
 
       if (resultsError) throw resultsError;
 
-      // Transform the data to match our interface
+      // Transform the data
       const transformedResults = resultsData.map(result => ({
         id: result.id,
         student_id: result.student_id,
         marks_obtained: result.marks_obtained,
         percentage: (result.marks_obtained / examData.total_marks) * 100,
-        student_name: `Student ${result.student_id.substring(0, 8)}`, // Mock name since we don't have full_name
+        student_name: result.student_profiles?.full_name || `Student ${result.student_id.substring(0, 8)}`,
         class_level: result.student_profiles?.class_level || 0,
         exam_title: examData.title,
         max_marks: examData.total_marks

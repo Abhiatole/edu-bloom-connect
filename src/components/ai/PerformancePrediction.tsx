@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,42 +36,6 @@ const PerformancePrediction = () => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const generateInsight = async (studentId: string, subject: string) => {
-    try {
-      // Generate AI insight based on existing student performance
-      const mockInsight = {
-        student_id: studentId,
-        subject: subject as 'Physics' | 'Chemistry' | 'Mathematics' | 'Biology' | 'English' | 'Computer Science' | 'Other',
-        topic: 'General Performance',
-        performance_level: Math.random() > 0.7 ? 'Excellent' : Math.random() > 0.4 ? 'Good' : 'Average' as 'Excellent' | 'Good' | 'Average' | 'Below Average' | 'Poor',
-        strengths: ['Problem solving', 'Conceptual understanding'],
-        weaknesses: ['Time management', 'Complex calculations'],
-        ai_comment: 'Student shows consistent improvement in recent assessments.',
-        recommendations: 'Focus on practice problems and time management techniques.'
-      };
-
-      const { error } = await supabase
-        .from('student_insights')
-        .insert([mockInsight]);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Performance insight generated successfully"
-      });
-      
-      fetchInsights();
-    } catch (error) {
-      console.error('Error generating insight:', error);
-      toast({
-        title: "Error",
-        description: "Failed to generate insight",
-        variant: "destructive"
-      });
     }
   };
 
@@ -157,9 +122,9 @@ const PerformancePrediction = () => {
           <h2 className="text-2xl font-bold text-gray-900">AI Performance Insights</h2>
           <p className="text-gray-600">Analytics for student success</p>
         </div>
-        <Button onClick={() => generateInsight('sample-student-id', 'Mathematics')}>
+        <Button onClick={generatePredictions}>
           <Brain className="h-4 w-4 mr-2" />
-          Generate Insight
+          Generate Insights
         </Button>
       </div>
 
