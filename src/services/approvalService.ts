@@ -21,17 +21,16 @@ export class ApprovalService {
    * Get all pending users (students and teachers)
    */
   static async getPendingUsers(): Promise<PendingUser[]> {
-    try {
-      const [studentsResponse, teachersResponse] = await Promise.all([
+    try {      const [studentsResponse, teachersResponse] = await Promise.all([
         supabase
           .from('student_profiles')
           .select('*')
-          .is('approval_date', null)
+          .eq('status', 'PENDING')
           .order('created_at', { ascending: false }),
         supabase
           .from('teacher_profiles')
           .select('*')
-          .is('approval_date', null)
+          .eq('status', 'PENDING')
           .order('created_at', { ascending: false })
       ]);
 
@@ -53,21 +52,18 @@ export class ApprovalService {
             parentPhone: student.parent_phone,
             address: student.address
           }
-        })),
-        ...(teachersResponse.data || []).map(teacher => ({
+        })),        ...(teachersResponse.data || []).map(teacher => ({
           id: teacher.id,
           user_id: teacher.user_id,
-          displayName: `Teacher ${teacher.employee_id} (${teacher.department})`,
-          email: 'Contact via admin',
+          displayName: `Teacher ${teacher.full_name} (${teacher.subject_expertise})`,
+          email: teacher.email,
           role: 'teacher' as const,
           registrationDate: teacher.created_at || '',
           additionalInfo: {
-            employeeId: teacher.employee_id,
-            department: teacher.department,
+            fullName: teacher.full_name,
+            email: teacher.email,
             subjectExpertise: teacher.subject_expertise,
-            experienceYears: teacher.experience_years,
-            designation: teacher.designation,
-            qualification: teacher.qualification
+            experienceYears: teacher.experience_years
           }
         }))
       ];
@@ -78,7 +74,6 @@ export class ApprovalService {
       throw error;
     }
   }
-
   /**
    * Get pending students for teacher approval
    */
@@ -87,7 +82,7 @@ export class ApprovalService {
       const { data, error } = await supabase
         .from('student_profiles')
         .select('*')
-        .is('approval_date', null)
+        .eq('status', 'PENDING')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -112,7 +107,6 @@ export class ApprovalService {
       throw error;
     }
   }
-
   /**
    * Get pending teachers for admin approval
    */
@@ -121,25 +115,21 @@ export class ApprovalService {
       const { data, error } = await supabase
         .from('teacher_profiles')
         .select('*')
-        .is('approval_date', null)
+        .eq('status', 'PENDING')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-
-      return (data || []).map(teacher => ({
+      if (error) throw error;      return (data || []).map(teacher => ({
         id: teacher.id,
         user_id: teacher.user_id,
-        displayName: `Teacher ${teacher.employee_id} (${teacher.department})`,
-        email: 'Contact via admin',
+        displayName: `Teacher ${teacher.full_name} (${teacher.subject_expertise})`,
+        email: teacher.email,
         role: 'teacher' as const,
         registrationDate: teacher.created_at || '',
         additionalInfo: {
-          employeeId: teacher.employee_id,
-          department: teacher.department,
+          fullName: teacher.full_name,
+          email: teacher.email,
           subjectExpertise: teacher.subject_expertise,
-          experienceYears: teacher.experience_years,
-          designation: teacher.designation,
-          qualification: teacher.qualification
+          experienceYears: teacher.experience_years
         }
       }));
     } catch (error: any) {
@@ -156,13 +146,12 @@ export class ApprovalService {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) {
         throw new Error('Not authenticated');
-      }
-
-      const { error } = await supabase
+      }      const { error } = await supabase
         .from('student_profiles')
         .update({
+          status: 'APPROVED',
           approval_date: new Date().toISOString(),
-          approved_by_teacher_id: approverId,
+          approved_by: approverId,
           updated_at: new Date().toISOString()
         })
         .eq('user_id', userId);
@@ -191,13 +180,12 @@ export class ApprovalService {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) {
         throw new Error('Not authenticated');
-      }
-
-      const { error } = await supabase
+      }      const { error } = await supabase
         .from('teacher_profiles')
         .update({
+          status: 'APPROVED',
           approval_date: new Date().toISOString(),
-          approved_by_admin_id: approverId,
+          approved_by: approverId,
           updated_at: new Date().toISOString()
         })
         .eq('user_id', userId);
@@ -217,9 +205,8 @@ export class ApprovalService {
       };
     }
   }
-
   /**
-   * Reject a user (remove from pending)
+   * Reject a user (update status to rejected instead of deleting)
    */
   static async rejectUser(userId: string, userType: 'student' | 'teacher', reason?: string): Promise<ApprovalResult> {
     try {
@@ -228,29 +215,29 @@ export class ApprovalService {
         throw new Error('Not authenticated');
       }
 
-      // For rejection, we could either delete the profile or mark it as rejected
-      // For now, let's delete the profile and the auth user
-      
+      const rejectionData = {
+        status: 'REJECTED' as const,
+        rejected_at: new Date().toISOString(),
+        rejected_by: currentUser.user.id,
+        rejection_reason: reason || null,
+        updated_at: new Date().toISOString()
+      };
+
       if (userType === 'student') {
         const { error: profileError } = await supabase
           .from('student_profiles')
-          .delete()
+          .update(rejectionData)
           .eq('user_id', userId);
 
         if (profileError) throw profileError;
       } else if (userType === 'teacher') {
         const { error: profileError } = await supabase
           .from('teacher_profiles')
-          .delete()
+          .update(rejectionData)
           .eq('user_id', userId);
 
         if (profileError) throw profileError;
       }
-
-      // Note: In a production system, you might want to:
-      // 1. Keep the profile but mark it as rejected
-      // 2. Send an email notification about the rejection
-      // 3. Log the rejection reason for audit purposes
 
       return {
         success: true,
@@ -265,7 +252,6 @@ export class ApprovalService {
       };
     }
   }
-
   /**
    * Bulk approve multiple users
    */
@@ -277,6 +263,7 @@ export class ApprovalService {
       }
 
       const approvalData = {
+        status: 'APPROVED' as const,
         approval_date: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -286,7 +273,7 @@ export class ApprovalService {
           .from('student_profiles')
           .update({
             ...approvalData,
-            approved_by_teacher_id: approverId
+            approved_by: approverId
           })
           .in('user_id', userIds);
 
@@ -296,7 +283,7 @@ export class ApprovalService {
           .from('teacher_profiles')
           .update({
             ...approvalData,
-            approved_by_admin_id: approverId
+            approved_by: approverId
           })
           .in('user_id', userIds);
 
@@ -316,7 +303,6 @@ export class ApprovalService {
       };
     }
   }
-
   /**
    * Get approval statistics
    */
@@ -325,10 +311,10 @@ export class ApprovalService {
       const [studentsResponse, teachersResponse] = await Promise.all([
         supabase
           .from('student_profiles')
-          .select('approval_date', { count: 'exact' }),
+          .select('status', { count: 'exact' }),
         supabase
           .from('teacher_profiles')
-          .select('approval_date', { count: 'exact' })
+          .select('status', { count: 'exact' })
       ]);
 
       if (studentsResponse.error) throw studentsResponse.error;
@@ -336,14 +322,16 @@ export class ApprovalService {
 
       const studentStats = {
         total: studentsResponse.count || 0,
-        pending: (studentsResponse.data || []).filter(s => !s.approval_date).length,
-        approved: (studentsResponse.data || []).filter(s => s.approval_date).length
+        pending: (studentsResponse.data || []).filter(s => s.status === 'PENDING').length,
+        approved: (studentsResponse.data || []).filter(s => s.status === 'APPROVED').length,
+        rejected: (studentsResponse.data || []).filter(s => s.status === 'REJECTED').length
       };
 
       const teacherStats = {
         total: teachersResponse.count || 0,
-        pending: (teachersResponse.data || []).filter(t => !t.approval_date).length,
-        approved: (teachersResponse.data || []).filter(t => t.approval_date).length
+        pending: (teachersResponse.data || []).filter(t => t.status === 'PENDING').length,
+        approved: (teachersResponse.data || []).filter(t => t.status === 'APPROVED').length,
+        rejected: (teachersResponse.data || []).filter(t => t.status === 'REJECTED').length
       };
 
       return {
@@ -352,6 +340,7 @@ export class ApprovalService {
         overall: {
           totalPending: studentStats.pending + teacherStats.pending,
           totalApproved: studentStats.approved + teacherStats.approved,
+          totalRejected: studentStats.rejected + teacherStats.rejected,
           totalUsers: studentStats.total + teacherStats.total
         }
       };
@@ -360,7 +349,6 @@ export class ApprovalService {
       throw error;
     }
   }
-
   /**
    * Check if user is approved
    */
@@ -369,22 +357,22 @@ export class ApprovalService {
       // Check in student_profiles
       const { data: studentData } = await supabase
         .from('student_profiles')
-        .select('approval_date')
+        .select('status')
         .eq('user_id', userId)
         .single();
 
-      if (studentData && studentData.approval_date) {
+      if (studentData && studentData.status === 'APPROVED') {
         return true;
       }
 
       // Check in teacher_profiles
       const { data: teacherData } = await supabase
         .from('teacher_profiles')
-        .select('approval_date')
+        .select('status')
         .eq('user_id', userId)
         .single();
 
-      if (teacherData && teacherData.approval_date) {
+      if (teacherData && teacherData.status === 'APPROVED') {
         return true;
       }
 

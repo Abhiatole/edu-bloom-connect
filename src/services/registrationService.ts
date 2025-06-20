@@ -50,14 +50,14 @@ export class RegistrationService {
         if (authData.session || authData.user.email_confirmed_at) {
           // Generate enrollment number
           const enrollmentNo = `ENR${Date.now()}`;
-          
-          const profileData = {
+            const profileData = {
             user_id: authData.user.id,
             enrollment_no: enrollmentNo,
             class_level: data.classLevel,
             parent_email: data.email,
             parent_phone: data.guardianMobile,
-            address: `Guardian: ${data.guardianName}`
+            address: `Guardian: ${data.guardianName}`,
+            status: 'PENDING' as const
           };
 
           const { error: profileError } = await supabase
@@ -106,15 +106,13 @@ export class RegistrationService {
 
       if (authData.user) {        // Create teacher profile if user is immediately confirmed
         if (authData.session || authData.user.email_confirmed_at) {
-          // Generate employee ID
-          const employeeId = `EMP${Date.now()}`;
-          
           const profileData = {
             user_id: authData.user.id,
-            employee_id: employeeId,
-            department: data.subjectExpertise, // Using subject as department
+            full_name: data.fullName,
+            email: data.email,
             subject_expertise: data.subjectExpertise as any,
-            experience_years: data.experienceYears
+            experience_years: data.experienceYears,
+            status: 'PENDING' as const
           };
 
           const { error: profileError } = await supabase
@@ -161,12 +159,12 @@ export class RegistrationService {
       if (authError) throw authError;
 
       if (authData.user) {        // Create admin profile if user is immediately confirmed
-        if (authData.session || authData.user.email_confirmed_at) {
-          const profileData = {
+        if (authData.session || authData.user.email_confirmed_at) {          const profileData = {
             user_id: authData.user.id,
             full_name: data.fullName,
             email: data.email,
-            role: 'ADMIN' as const
+            role: 'ADMIN' as const,
+            status: 'PENDING' as const
           };
 
           const { error: profileError } = await supabase
@@ -204,31 +202,28 @@ export class RegistrationService {
       const userId = currentUser.user.id;      if (role === 'student') {
         // Generate enrollment number
         const enrollmentNo = `ENR${Date.now()}`;
-        
-        const profileData = {
+          const profileData = {
           user_id: userId,
           enrollment_no: enrollmentNo,
           class_level: userMetadata.class_level,
           parent_email: currentUser.user.email,
           parent_phone: userMetadata.guardian_mobile,
-          address: `Guardian: ${userMetadata.guardian_name}`
+          address: `Guardian: ${userMetadata.guardian_name}`,
+          status: 'PENDING' as const
         };
 
         const { error } = await supabase
           .from('student_profiles')
           .insert(profileData);
 
-        if (error) throw error;
-      } else if (role === 'teacher') {
-        // Generate employee ID
-        const employeeId = `EMP${Date.now()}`;
-        
+        if (error) throw error;      } else if (role === 'teacher') {
         const profileData = {
           user_id: userId,
-          employee_id: employeeId,
-          department: userMetadata.subject_expertise,
+          full_name: userMetadata.full_name || 'Teacher Name',
+          email: userMetadata.email || currentUser.user.email,
           subject_expertise: userMetadata.subject_expertise,
-          experience_years: userMetadata.experience_years
+          experience_years: userMetadata.experience_years,
+          status: 'PENDING' as const
         };
 
         const { error } = await supabase

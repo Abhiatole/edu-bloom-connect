@@ -282,15 +282,14 @@ export type Database = {
           student_id?: string
           subject?: Database["public"]["Enums"]["subject_type"]
           topic?: string | null
-          weaknesses?: string[] | null
-        }
+          weaknesses?: string[] | null        }
         Relationships: []
       }
       student_profiles: {
         Row: {
           address: string | null
           approval_date: string | null
-          approved_by_teacher_id: string | null
+          approved_by: string | null
           class_level: number
           created_at: string | null
           date_of_birth: string | null
@@ -298,14 +297,18 @@ export type Database = {
           id: string
           parent_email: string | null
           parent_phone: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
           section: string | null
+          status: Database["public"]["Enums"]["approval_status"] | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
           address?: string | null
           approval_date?: string | null
-          approved_by_teacher_id?: string | null
+          approved_by?: string | null
           class_level: number
           created_at?: string | null
           date_of_birth?: string | null
@@ -313,14 +316,18 @@ export type Database = {
           id?: string
           parent_email?: string | null
           parent_phone?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
           section?: string | null
+          status?: Database["public"]["Enums"]["approval_status"] | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
           address?: string | null
           approval_date?: string | null
-          approved_by_teacher_id?: string | null
+          approved_by?: string | null
           class_level?: number
           created_at?: string | null
           date_of_birth?: string | null
@@ -328,7 +335,11 @@ export type Database = {
           id?: string
           parent_email?: string | null
           parent_phone?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
           section?: string | null
+          status?: Database["public"]["Enums"]["approval_status"] | null
           updated_at?: string | null
           user_id?: string
         }
@@ -337,42 +348,48 @@ export type Database = {
       teacher_profiles: {
         Row: {
           approval_date: string | null
-          approved_by_admin_id: string | null
+          approved_by: string | null
           created_at: string | null
-          department: string
-          designation: string | null
-          employee_id: string
+          email: string
           experience_years: number | null
+          full_name: string
           id: string
-          qualification: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
+          status: Database["public"]["Enums"]["approval_status"] | null
           subject_expertise: Database["public"]["Enums"]["subject_type"]
           updated_at: string | null
           user_id: string
         }
         Insert: {
           approval_date?: string | null
-          approved_by_admin_id?: string | null
+          approved_by?: string | null
           created_at?: string | null
-          department: string
-          designation?: string | null
-          employee_id: string
+          email: string
           experience_years?: number | null
+          full_name: string
           id?: string
-          qualification?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["approval_status"] | null
           subject_expertise: Database["public"]["Enums"]["subject_type"]
           updated_at?: string | null
           user_id: string
         }
         Update: {
           approval_date?: string | null
-          approved_by_admin_id?: string | null
+          approved_by?: string | null
           created_at?: string | null
-          department?: string
-          designation?: string | null
-          employee_id?: string
+          email?: string
           experience_years?: number | null
+          full_name?: string
           id?: string
-          qualification?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["approval_status"] | null
           subject_expertise?: Database["public"]["Enums"]["subject_type"]
           updated_at?: string | null
           user_id?: string
@@ -656,8 +673,7 @@ export const Constants = {
         "English",
         "Computer Science",
         "Other",
-      ],
-      user_role: ["ADMIN", "TEACHER", "STUDENT", "PARENT"],
+      ],      user_role: ["ADMIN", "TEACHER", "STUDENT", "PARENT"],
     },
   },
 } as const
