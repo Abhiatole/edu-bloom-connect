@@ -33,8 +33,9 @@ const StudentRegister = () => {
 
       if (formData.password.length < 6) {
         throw new Error('Password must be at least 6 characters long');
-      }
-
+      }      // Get the current domain for email redirect
+      const currentDomain = window.location.origin;
+      
       // Create auth user with profile data in metadata
       // This approach stores the profile data in user metadata
       // so it can be used later when the user is confirmed
@@ -48,7 +49,8 @@ const StudentRegister = () => {
             class_level: parseInt(formData.classLevel),
             guardian_name: formData.guardianName,
             guardian_mobile: formData.guardianMobile
-          }
+          },
+          emailRedirectTo: `${currentDomain}/auth/confirm`
         }
       });
 
@@ -61,6 +63,8 @@ const StudentRegister = () => {
         if (authData.session || authData.user.email_confirmed_at) {
           // User is immediately confirmed or email confirmation is disabled - create profile directly
           console.log('User is confirmed or email confirmation disabled, creating profile directly');
+            // Generate enrollment number
+          const enrollmentNo = `STU${Date.now()}`;
           
           const profileData = {
             user_id: authData.user.id,
@@ -69,6 +73,7 @@ const StudentRegister = () => {
             class_level: parseInt(formData.classLevel),
             guardian_name: formData.guardianName,
             guardian_mobile: formData.guardianMobile,
+            enrollment_no: enrollmentNo,
             status: 'PENDING' as const
           };
           

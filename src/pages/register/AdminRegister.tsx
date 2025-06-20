@@ -39,9 +39,10 @@ const AdminRegister = () => {
       // Optional: Check admin code if provided
       if (showAdminCode && formData.adminCode && formData.adminCode !== 'ADMIN2025') {
         throw new Error('Invalid admin verification code');
-      }
-
-      // Create auth user with admin role in metadata
+      }      // Get the current domain for email redirect
+      const currentDomain = window.location.origin;
+      
+      // Create auth user with admin role in metadata and email redirect
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -49,7 +50,8 @@ const AdminRegister = () => {
           data: {
             role: 'admin',
             full_name: formData.fullName,
-          }
+          },
+          emailRedirectTo: `${currentDomain}/auth/confirm`
         }
       });
 

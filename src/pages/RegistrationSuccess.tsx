@@ -23,13 +23,17 @@ const RegistrationSuccess = () => {
         variant: "destructive"
       });
       return;
-    }
-
-    setResending(true);
+    }    setResending(true);
     try {
+      // Get the current domain for email redirect
+      const currentDomain = window.location.origin;
+      
       const { error } = await supabase.auth.resend({
         type: 'signup',
-        email: email
+        email: email,
+        options: {
+          emailRedirectTo: `${currentDomain}/auth/confirm`
+        }
       });
 
       if (error) throw error;

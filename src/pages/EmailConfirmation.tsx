@@ -4,8 +4,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { CheckCircle, XCircle, Loader2, ArrowRight } from 'lucide-react';
+import EmailConfirmationService from '@/services/emailConfirmationService';
 
 const EmailConfirmation = () => {
   const [searchParams] = useSearchParams();
@@ -13,37 +13,27 @@ const EmailConfirmation = () => {
   const { toast } = useToast();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
-
   useEffect(() => {
     const handleEmailConfirmation = async () => {
       try {
-        const token = searchParams.get('token');
-        const type = searchParams.get('type');
-
-        if (!token || type !== 'signup') {
-          throw new Error('Invalid confirmation link');
-        }
-
-        const { error } = await supabase.auth.verifyOtp({
-          token_hash: token,
-          type: 'signup'
-        });
-
-        if (error) throw error;
-
-        setStatus('success');
-        setMessage('Your email has been confirmed successfully!');
+        const result = await EmailConfirmationService.handleEmailConfirmationCallback(searchParams);
         
-        toast({
-          title: "Email Confirmed!",
-          description: "Your account is now verified and pending approval.",
-        });
+        if (result.success) {
+          setStatus('success');
+          setMessage(result.message);
+          
+          toast({
+            title: "Email Confirmed!",
+            description: "Your account is now verified and pending approval.",
+          });
 
-        // Redirect to success page after a short delay
-        setTimeout(() => {
-          navigate('/auth/success');
-        }, 2000);
-
+          // Redirect to success page after a short delay
+          setTimeout(() => {
+            navigate('/auth/success');
+          }, 2000);
+        } else {
+          throw new Error(result.message);
+        }
       } catch (error: any) {
         console.error('Email confirmation error:', error);
         setStatus('error');

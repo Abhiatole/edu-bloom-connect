@@ -50,7 +50,10 @@ const TeacherRegister = () => {
         throw new Error('Please fill in all required fields');
       }      console.log('Attempting teacher registration...');
 
-      // Step 1: Create auth user first
+      // Get the current domain for email redirect
+      const currentDomain = window.location.origin;
+
+      // Step 1: Create auth user first with email redirect
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -60,7 +63,8 @@ const TeacherRegister = () => {
             full_name: formData.fullName,
             subject_expertise: formData.subjectExpertise,
             experience_years: parseInt(formData.experienceYears)
-          }
+          },
+          emailRedirectTo: `${currentDomain}/auth/confirm`
         }
       });
 

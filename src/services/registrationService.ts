@@ -28,8 +28,10 @@ export class RegistrationService {
    * Register a new student
    */
   static async registerStudent(data: StudentRegistrationData) {
-    try {
-      // Create auth user
+    try {      // Get the current domain for email redirect
+      const currentDomain = window.location.origin;
+      
+      // Create auth user with proper email confirmation redirect
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -40,7 +42,8 @@ export class RegistrationService {
             class_level: data.classLevel,
             guardian_name: data.guardianName,
             guardian_mobile: data.guardianMobile
-          }
+          },
+          emailRedirectTo: `${currentDomain}/auth/confirm`
         }
       });
 
@@ -87,8 +90,10 @@ export class RegistrationService {
    * Register a new teacher
    */
   static async registerTeacher(data: TeacherRegistrationData) {
-    try {
-      // Create auth user
+    try {      // Get the current domain for email redirect
+      const currentDomain = window.location.origin;
+      
+      // Create auth user with proper email confirmation redirect
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -98,7 +103,8 @@ export class RegistrationService {
             full_name: data.fullName,
             subject_expertise: data.subjectExpertise,
             experience_years: data.experienceYears
-          }
+          },
+          emailRedirectTo: `${currentDomain}/auth/confirm`
         }
       });
 
