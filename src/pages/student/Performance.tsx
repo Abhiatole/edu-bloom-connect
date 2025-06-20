@@ -14,28 +14,25 @@ interface ExamResult {
   submitted_at: string;
   exams: {
     title: string;
-    total_marks: number;
     max_marks: number;
     exam_type: string;
-    subject: string;
+    subjects: {
+      name: string;
+    };
   };
 }
 
 interface StudentInsight {
   id: string;
-  performance_level: string;
-  weaknesses: string[];
-  strengths: string[];
+  strength_level: number;
   weak_areas: string[];
   strong_areas: string[];
-  recommendations: string;
-  ai_comment: string;
-  ai_recommendations: string;
-  subject: string;
-  topic: string;
-  strength_level: number;
   focus_topics: string[];
   performance_trend: string;
+  ai_recommendations: string;
+  subjects: {
+    name: string;
+  };
 }
 
 const Performance = () => {
@@ -64,73 +61,35 @@ const Performance = () => {
       if (profileError) throw profileError;
       setStudentProfile(profile);
 
-      // Get exam results with proper joins
+      // Get exam results
       const { data: results, error: resultsError } = await supabase
         .from('exam_results')
         .select(`
           *,
-          percentage,
           exams(
             title,
-            total_marks,
             max_marks,
             exam_type,
-            subject
+            subjects(name)
           )
         `)
-        .eq('student_id', currentUser.user.id)
+        .eq('student_id', profile.id)
         .order('submitted_at', { ascending: false });
 
       if (resultsError) throw resultsError;
 
-      console.log('Raw exam results:', results);
-
-      // Process results and ensure percentage is calculated
-      const resultsWithPercentage = (results || []).map(result => {
-        const maxMarks = result.exams?.max_marks || result.exams?.total_marks || 100;
-        const calculatedPercentage = result.percentage || (result.marks_obtained / maxMarks) * 100;
-        
-        return {
-          ...result,
-          percentage: calculatedPercentage,
-          exams: {
-            title: result.exams?.title || 'Unknown Exam',
-            total_marks: result.exams?.total_marks || maxMarks,
-            max_marks: maxMarks,
-            exam_type: result.exams?.exam_type || 'Unknown',
-            subject: result.exams?.subject || 'Unknown'
-          }
-        };
-      });
-
-      console.log('Processed exam results:', resultsWithPercentage);
-
-      // Get AI insights with all required fields
+      // Get AI insights
       const { data: insightsData, error: insightsError } = await supabase
         .from('student_insights')
         .select(`
-          id,
-          performance_level,
-          weaknesses,
-          strengths,
-          weak_areas,
-          strong_areas,
-          recommendations,
-          ai_comment,
-          ai_recommendations,
-          subject,
-          topic,
-          strength_level,
-          focus_topics,
-          performance_trend
+          *,
+          subjects(name)
         `)
-        .eq('student_id', currentUser.user.id);
+        .eq('student_id', profile.id);
 
       if (insightsError) throw insightsError;
 
-      console.log('Student insights:', insightsData);
-
-      setExamResults(resultsWithPercentage);
+      setExamResults(results || []);
       setInsights(insightsData || []);
     } catch (error: any) {
       console.error('Error fetching student data:', error);
@@ -148,8 +107,8 @@ const Performance = () => {
     const subjectData: { [key: string]: number[] } = {};
     
     examResults.forEach(result => {
-      if (result.exams?.subject) {
-        const subject = result.exams.subject;
+      if (result.exams?.subjects?.name) {
+        const subject = result.exams.subjects.name;
         if (!subjectData[subject]) {
           subjectData[subject] = [];
         }
@@ -171,7 +130,7 @@ const Performance = () => {
       .map((result, index) => ({
         exam: `Exam ${index + 1}`,
         score: result.percentage || 0,
-        subject: result.exams?.subject || 'Unknown'
+        subject: result.exams?.subjects?.name || 'Unknown'
       }));
   };
 
@@ -187,14 +146,20 @@ const Performance = () => {
     };
   };
 
-  const getPerformanceLevelColor = (level: string) => {
-    switch (level) {
-      case 'Excellent': return 'bg-green-100 text-green-800';
-      case 'Good': return 'bg-blue-100 text-blue-800';  
-      case 'Average': return 'bg-yellow-100 text-yellow-800';
-      case 'Below Average': return 'bg-orange-100 text-orange-800';
-      case 'Poor': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const getStrengthLevelColor = (level: number) => {
+    if (level >= 4) return 'bg-green-100 text-green-800';
+    if (level >= 3) return 'bg-yellow-100 text-yellow-800';
+    return 'bg-red-100 text-red-800';
+  };
+
+  const getTrendIcon = (trend: string) => {
+    switch (trend) {
+      case 'improving':
+        return <TrendingUp className="h-4 w-4 text-green-600" />;
+      case 'declining':
+        return <AlertTriangle className="h-4 w-4 text-red-600" />;
+      default:
+        return <TrendingUp className="h-4 w-4 text-gray-600" />;
     }
   };
 
@@ -357,7 +322,7 @@ const Performance = () => {
                       <div>
                         <h3 className="font-semibold">{result.exams?.title}</h3>
                         <div className="text-sm text-gray-600">
-                          {result.exams?.subject} • {result.exams?.exam_type}
+                          {result.exams?.subjects?.name} • {result.exams?.exam_type}
                         </div>
                         <div className="text-xs text-gray-500">
                           {new Date(result.submitted_at).toLocaleDateString()}
@@ -365,10 +330,10 @@ const Performance = () => {
                       </div>
                       <div className="text-right">
                         <div className="text-2xl font-bold text-blue-600">
-                          {Math.round(result.percentage)}%
+                          {result.percentage ? Math.round(result.percentage) : Math.round((result.marks_obtained / (result.exams?.max_marks || 100)) * 100)}%
                         </div>
                         <div className="text-sm text-gray-600">
-                          {result.marks_obtained}/{result.exams?.max_marks || result.exams?.total_marks} marks
+                          {result.marks_obtained}/{result.exams?.max_marks} marks
                         </div>
                       </div>
                     </div>
@@ -404,11 +369,14 @@ const Performance = () => {
                   <CardTitle className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Brain className="h-5 w-5 text-purple-600" />
-                      {insight.subject} Analysis
+                      {insight.subjects?.name} Analysis
                     </div>
-                    <Badge className={getPerformanceLevelColor(insight.performance_level)}>
-                      {insight.performance_level}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge className={getStrengthLevelColor(insight.strength_level)}>
+                        Level {insight.strength_level}/5
+                      </Badge>
+                      {getTrendIcon(insight.performance_trend)}
+                    </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -418,7 +386,7 @@ const Performance = () => {
                       Your Strengths
                     </h4>
                     <div className="flex flex-wrap gap-1">
-                      {(insight.strengths || insight.strong_areas || []).map((area, index) => (
+                      {insight.strong_areas?.map((area, index) => (
                         <Badge key={index} variant="outline" className="text-green-700 border-green-700">
                           {area}
                         </Badge>
@@ -432,7 +400,7 @@ const Performance = () => {
                       Areas to Improve
                     </h4>
                     <div className="flex flex-wrap gap-1">
-                      {(insight.weaknesses || insight.weak_areas || []).map((area, index) => (
+                      {insight.weak_areas?.map((area, index) => (
                         <Badge key={index} variant="outline" className="text-red-700 border-red-700">
                           {area}
                         </Badge>
@@ -441,9 +409,23 @@ const Performance = () => {
                   </div>
 
                   <div>
+                    <h4 className="font-semibold text-blue-700 flex items-center gap-2 mb-2">
+                      <Target className="h-4 w-4" />
+                      Focus Areas
+                    </h4>
+                    <div className="flex flex-wrap gap-1">
+                      {insight.focus_topics?.map((topic, index) => (
+                        <Badge key={index} variant="outline" className="text-blue-700 border-blue-700">
+                          {topic}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
                     <h4 className="font-semibold text-purple-700 mb-2">AI Recommendations</h4>
                     <p className="text-sm text-gray-700 bg-purple-50 p-3 rounded-lg">
-                      {insight.ai_recommendations || insight.recommendations || insight.ai_comment}
+                      {insight.ai_recommendations}
                     </p>
                   </div>
                 </CardContent>

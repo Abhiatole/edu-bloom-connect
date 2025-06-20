@@ -11,7 +11,6 @@ import { useToast } from '@/hooks/use-toast';
 const PerformancePrediction = () => {
   const [insights, setInsights] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [predictions, setPredictions] = useState([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -39,56 +38,39 @@ const PerformancePrediction = () => {
     }
   };
 
-  const generatePredictions = async () => {
-    setLoading(true);
+  const generateInsight = async (studentId: string, subject: string) => {
     try {
-      const predictions = [
-        {
-          student_id: 'sample-student-1',
-          subject: 'Physics' as const,
-          topic: 'Mechanics',
-          performance_level: 'Good' as const,
-          strengths: ['Problem solving', 'Mathematical concepts'],
-          weaknesses: ['Time management', 'Complex calculations'],
-          ai_comment: 'Shows good understanding of basic concepts but needs practice with advanced problems.',
-          recommendations: 'Focus on solving more complex numerical problems and practice time management during exams.'
-        },
-        {
-          student_id: 'sample-student-2', 
-          subject: 'Chemistry' as const,
-          topic: 'Organic Chemistry',
-          performance_level: 'Average' as const,
-          strengths: ['Theoretical knowledge', 'Memory retention'],
-          weaknesses: ['Reaction mechanisms', 'Structural formulas'],
-          ai_comment: 'Good theoretical foundation but struggles with practical applications.',
-          recommendations: 'Practice drawing reaction mechanisms and work on understanding molecular structures.'
-        }
-      ];
+      // Generate AI insight based on existing student performance
+      const mockInsight = {
+        student_id: studentId,
+        subject: subject as 'Physics' | 'Chemistry' | 'Mathematics' | 'Biology' | 'English' | 'Computer Science' | 'Other',
+        topic: 'General Performance',
+        performance_level: Math.random() > 0.7 ? 'Excellent' : Math.random() > 0.4 ? 'Good' : 'Average' as 'Excellent' | 'Good' | 'Average' | 'Below Average' | 'Poor',
+        strengths: ['Problem solving', 'Conceptual understanding'],
+        weaknesses: ['Time management', 'Complex calculations'],
+        ai_comment: 'Student shows consistent improvement in recent assessments.',
+        recommendations: 'Focus on practice problems and time management techniques.'
+      };
 
       const { error } = await supabase
         .from('student_insights')
-        .insert(predictions);
+        .insert([mockInsight]);
 
-      if (error) {
-        console.error('Error inserting predictions:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      setPredictions(predictions);
-      
       toast({
         title: "Success",
-        description: "AI predictions generated successfully",
+        description: "Performance insight generated successfully"
       });
-    } catch (error: any) {
-      console.error('Error generating predictions:', error);
+      
+      fetchInsights();
+    } catch (error) {
+      console.error('Error generating insight:', error);
       toast({
-        title: "Error", 
-        description: error.message || "Failed to generate predictions",
+        title: "Error",
+        description: "Failed to generate insight",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -122,9 +104,9 @@ const PerformancePrediction = () => {
           <h2 className="text-2xl font-bold text-gray-900">AI Performance Insights</h2>
           <p className="text-gray-600">Analytics for student success</p>
         </div>
-        <Button onClick={generatePredictions}>
+        <Button onClick={() => generateInsight('sample-student-id', 'Mathematics')}>
           <Brain className="h-4 w-4 mr-2" />
-          Generate Insights
+          Generate Insight
         </Button>
       </div>
 

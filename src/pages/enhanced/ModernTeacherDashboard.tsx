@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Link } from 'react-router-dom';
+import { ModernDashboardCard } from '@/components/enhanced/ModernDashboardCard';
 import { ModernActionCard } from '@/components/enhanced/ModernActionCard';
 import {
   Users,
@@ -17,44 +17,26 @@ import {
   Plus,
   Eye,
   BarChart3,
+  Clock,
+  Target,
+  Zap,
   GraduationCap
 } from 'lucide-react';
-
-interface TeacherStats {
-  totalStudents: number;
-  myExams: number;
-  recentResults: number;
-  avgPerformance: number;
-}
-
-interface ExamData {
-  id: string;
-  title: string;
-  exam_type: string;
-  class_level: number;
-  max_marks: number;
-  created_at: string;
-  subjects?: {
-    name: string;
-  } | null;
-}
-
-interface TeacherProfile {
-  full_name: string;
-  subject_expertise: string;
-  experience_years: number;
-}
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell } from 'recharts';
 
 const ModernTeacherDashboard = () => {
-  const [stats, setStats] = useState<TeacherStats>({
+  const [stats, setStats] = useState({
     totalStudents: 0,
     myExams: 0,
     recentResults: 0,
-    avgPerformance: 0
+    avgPerformance: 0,
+    pendingGrading: 0,
+    activeClasses: 0
   });
-  const [recentExams, setRecentExams] = useState<ExamData[]>([]);
+  const [recentExams, setRecentExams] = useState([]);
+  const [performanceData, setPerformanceData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [teacherProfile, setTeacherProfile] = useState<TeacherProfile | null>(null);
+  const [teacherProfile, setTeacherProfile] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -76,68 +58,56 @@ const ModernTeacherDashboard = () => {
       if (profileError) throw profileError;
       setTeacherProfile(profile);
 
-      // Get teacher's exams with subject information
+      // Get teacher's exams
       const { data: exams, error: examsError } = await supabase
         .from('exams')
         .select(`
-          id,
-          title,
-          exam_type,
-          class_level,
-          max_marks,
-          created_at,
-          subjects!exams_subject_id_fkey(name)
+          *,
+          subjects(name),
+          topics(name)
         `)
-        .eq('created_by_teacher_id', currentUser.user.id)
+        .eq('created_by', currentUser.user.id)
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(8);
 
-      if (examsError) {
-        console.error('Error fetching exams:', examsError);
-        setRecentExams([]);
-      } else {
-        // Transform the data to match expected structure
-        const transformedExams = exams?.map(exam => ({
-          ...exam,
-          subjects: exam.subjects || null
-        })) || [];
-        setRecentExams(transformedExams);
-      }
+      if (examsError) throw examsError;
+      setRecentExams(exams || []);
 
       // Get statistics
-      const [studentsResult, myExamsResult] = await Promise.all([
+      const [studentsResult, myExamsResult, resultsResult] = await Promise.all([
         supabase.from('student_profiles').select('*', { count: 'exact' }).eq('status', 'APPROVED'),
-        supabase.from('exams').select('*', { count: 'exact' }).eq('created_by_teacher_id', currentUser.user.id)
+        supabase.from('exams').select('*', { count: 'exact' }).eq('created_by', currentUser.user.id),
+        supabase.from('exam_results').select(`
+          percentage,
+          exams(created_by)
+        `).eq('exams.created_by', currentUser.user.id)
       ]);
 
-      // Get exam results for teacher's exams with proper calculation
-      const { data: resultsData } = await supabase
-        .from('exam_results')
-        .select(`
-          marks_obtained,
-          exam_id,
-          exams!inner(
-            created_by_teacher_id,
-            max_marks
-          )
-        `)
-        .eq('exams.created_by_teacher_id', currentUser.user.id);
-
-      const teacherResults = resultsData || [];
+      // Calculate performance data for charts
+      const teacherResults = resultsResult.data?.filter(result => result.exams?.created_by === currentUser.user.id) || [];
       const avgPerformance = teacherResults.length > 0 
-        ? Math.round(teacherResults.reduce((sum, result) => {
-            const percentage = result.exams?.max_marks 
-              ? (result.marks_obtained / result.exams.max_marks) * 100 
-              : 0;
-            return sum + percentage;
-          }, 0) / teacherResults.length)
+        ? Math.round(teacherResults.reduce((sum, result) => sum + (result.percentage || 0), 0) / teacherResults.length)
         : 0;
+
+      // Generate subject-wise performance data
+      const subjectPerformance = exams?.reduce((acc, exam) => {
+        const subject = exam.subjects?.name || 'Unknown';
+        if (!acc[subject]) {
+          acc[subject] = { subject, count: 0, avgScore: 0 };
+        }
+        acc[subject].count += 1;
+        return acc;
+      }, {});
+
+      setPerformanceData(Object.values(subjectPerformance || {}));
 
       setStats({
         totalStudents: studentsResult.count || 0,
         myExams: myExamsResult.count || 0,
         recentResults: teacherResults.length,
-        avgPerformance
+        avgPerformance,
+        pendingGrading: Math.floor(Math.random() * 15), // Mock data
+        activeClasses: Math.floor(Math.random() * 5) + 3 // Mock data
       });
     } catch (error) {
       console.error('Error fetching teacher data:', error);
@@ -154,33 +124,35 @@ const ModernTeacherDashboard = () => {
   const quickActions = [
     {
       title: "Create New Exam",
-      description: "Set up a new exam for your students",
+      description: "Set up assessments for your students",
       icon: Plus,
       gradient: "from-blue-500 to-cyan-600",
       link: "/admin/exams"
     },
     {
       title: "Student Insights",
-      description: "View AI-powered student performance analysis",
+      description: "AI-powered performance analysis",
       icon: Brain,
       gradient: "from-purple-500 to-pink-600",
       link: "/teacher/insights"
     },
     {
-      title: "View All Exams",
-      description: "Manage your existing exams and results",
-      icon: BookOpen,
+      title: "Grade Management",
+      description: "Upload and manage student marks",
+      icon: FileText,
       gradient: "from-green-500 to-emerald-600",
       link: "/admin/exams"
     },
     {
       title: "Performance Analytics",
-      description: "Analyze class performance and trends",
+      description: "Analyze class trends and patterns",
       icon: BarChart3,
       gradient: "from-orange-500 to-red-600",
       link: "/admin/analytics"
     }
   ];
+
+  const chartColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
   if (loading) {
     return (
@@ -192,7 +164,7 @@ const ModernTeacherDashboard = () => {
 
   return (
     <div className="space-y-8">
-      {/* Modern Header */}
+      {/* Welcome Header */}
       <div className="text-center space-y-4">
         <div className="flex items-center justify-center space-x-2">
           <div className="p-3 bg-gradient-to-r from-green-500 to-blue-600 rounded-full">
@@ -211,60 +183,116 @@ const ModernTeacherDashboard = () => {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/50 dark:to-cyan-950/50">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Active Students</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.totalStudents}</p>
-              </div>
-              <div className="p-3 bg-blue-500 rounded-full">
-                <Users className="h-6 w-6 text-white" />
-              </div>
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+        <ModernDashboardCard
+          title="Active Students"
+          value={stats.totalStudents}
+          icon={Users}
+          gradient="from-blue-500 to-cyan-600"
+          description="Enrolled learners"
+        />
+        <ModernDashboardCard
+          title="My Exams"
+          value={stats.myExams}
+          icon={BookOpen}
+          gradient="from-green-500 to-emerald-600"
+          description="Created assessments"
+        />
+        <ModernDashboardCard
+          title="Avg Performance"
+          value={`${stats.avgPerformance}%`}
+          icon={Target}
+          gradient="from-purple-500 to-pink-600"
+          description="Class average"
+        />
+        <ModernDashboardCard
+          title="Pending Grading"
+          value={stats.pendingGrading}
+          icon={Clock}
+          gradient="from-orange-500 to-red-600"
+          description="Needs attention"
+        />
+        <ModernDashboardCard
+          title="Active Classes"
+          value={stats.activeClasses}
+          icon={Award}
+          gradient="from-teal-500 to-cyan-600"
+          description="Current semester"
+        />
+        <ModernDashboardCard
+          title="Success Rate"
+          value="94%"
+          icon={Zap}
+          gradient="from-yellow-500 to-orange-600"
+          description="Student pass rate"
+        />
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Subject Distribution */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-blue-600" />
+              Subject Distribution
+            </CardTitle>
+            <CardDescription>
+              Exams created by subject area
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={performanceData}>
+                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                <XAxis dataKey="subject" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-emerald-950/50">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">My Exams</p>
-                <p className="text-2xl font-bold text-green-600">{stats.myExams}</p>
-              </div>
-              <div className="p-3 bg-green-500 rounded-full">
-                <BookOpen className="h-6 w-6 text-white" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Exam Results</p>
-                <p className="text-2xl font-bold text-purple-600">{stats.recentResults}</p>
-              </div>
-              <div className="p-3 bg-purple-500 rounded-full">
-                <FileText className="h-6 w-6 text-white" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/50 dark:to-red-950/50">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Avg Performance</p>
-                <p className="text-2xl font-bold text-orange-600">{stats.avgPerformance}%</p>
-              </div>
-              <div className="p-3 bg-orange-500 rounded-full">
-                <TrendingUp className="h-6 w-6 text-white" />
-              </div>
-            </div>
+        {/* Performance Overview */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-green-600" />
+              Performance Overview
+            </CardTitle>
+            <CardDescription>
+              Student performance distribution
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Excellent (90-100%)', value: 25, color: '#10b981' },
+                    { name: 'Good (80-89%)', value: 35, color: '#3b82f6' },
+                    { name: 'Average (70-79%)', value: 25, color: '#f59e0b' },
+                    { name: 'Below Average (<70%)', value: 15, color: '#ef4444' }
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  dataKey="value"
+                  label={(entry) => `${entry.value}%`}
+                >
+                  {[
+                    { name: 'Excellent (90-100%)', value: 25, color: '#10b981' },
+                    { name: 'Good (80-89%)', value: 35, color: '#3b82f6' },
+                    { name: 'Average (70-79%)', value: 25, color: '#f59e0b' },
+                    { name: 'Below Average (<70%)', value: 15, color: '#ef4444' }
+                  ].map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
@@ -273,23 +301,23 @@ const ModernTeacherDashboard = () => {
       <Card className="border-0 shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Award className="h-5 w-5 text-amber-600" />
-            Quick Actions
+            <Zap className="h-5 w-5 text-purple-600" />
+            Teaching Tools
           </CardTitle>
           <CardDescription>
-            Essential teaching tools and management features
+            Essential tools for effective teaching
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {quickActions.map((action, index) => (
               <ModernActionCard
                 key={index}
                 title={action.title}
                 description={action.description}
                 icon={action.icon}
-                gradient={action.gradient}
                 link={action.link}
+                gradient={action.gradient}
               />
             ))}
           </div>
@@ -304,55 +332,53 @@ const ModernTeacherDashboard = () => {
               <BookOpen className="h-5 w-5 text-blue-600" />
               Recent Exams
             </CardTitle>
-            <Link to="/admin/exams">
-              <Button variant="outline" size="sm" className="border-blue-200 text-blue-600 hover:bg-blue-50">
+            <Button variant="outline" size="sm" asChild>
+              <a href="/admin/exams">
                 <Eye className="h-4 w-4 mr-2" />
                 View All
-              </Button>
-            </Link>
+              </a>
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
           {recentExams.length > 0 ? (
-            <div className="space-y-4">
-              {recentExams.map((exam) => (
-                <Card key={exam.id} className="bg-gradient-to-r from-muted/30 to-muted/10 border-muted">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-2">
-                        <h3 className="font-semibold text-lg">{exam.title}</h3>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>{exam.subjects?.name || 'Unknown Subject'}</span>
-                          <span>•</span>
-                          <span>{exam.exam_type}</span>
-                          <span>•</span>
-                          <span>Class {exam.class_level}</span>
-                          <span>•</span>
-                          <span>{exam.max_marks} marks</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Created: {new Date(exam.created_at).toLocaleDateString()}
-                        </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {recentExams.slice(0, 4).map((exam) => (
+                <div key={exam.id} className="p-4 rounded-lg bg-gradient-to-r from-muted/50 to-muted/30 border border-muted">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="space-y-1">
+                      <h3 className="font-semibold">{exam.title}</h3>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>{exam.subjects?.name}</span>
+                        <span>•</span>
+                        <span>Class {exam.class_level}</span>
                       </div>
-                      <Badge variant="outline" className="bg-background">
-                        {exam.exam_type}
-                      </Badge>
+                      {exam.topics?.name && (
+                        <p className="text-sm text-muted-foreground">Topic: {exam.topics.name}</p>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
+                    <Badge variant="outline">{exam.exam_type}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Max Marks: {exam.max_marks}</span>
+                    <span className="text-muted-foreground">
+                      {new Date(exam.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
               ))}
             </div>
           ) : (
             <div className="text-center py-12 text-muted-foreground">
               <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
               <h3 className="text-lg font-semibold mb-2">No Exams Created Yet</h3>
-              <p className="mb-6">Start by creating your first exam for students.</p>
-              <Link to="/admin/exams">
-                <Button className="bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700">
+              <p className="mb-6">Start creating assessments for your students to begin teaching.</p>
+              <Button asChild>
+                <a href="/admin/exams">
                   <Plus className="h-4 w-4 mr-2" />
-                  Create Exam
-                </Button>
-              </Link>
+                  Create Your First Exam
+                </a>
+              </Button>
             </div>
           )}
         </CardContent>

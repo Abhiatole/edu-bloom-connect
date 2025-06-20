@@ -1,12 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Brain, TrendingUp, Users, Target, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Brain, Target, TrendingUp, AlertTriangle, BookOpen, RefreshCw } from 'lucide-react';
+
+interface Student {
+  id: string;
+  full_name: string;
+  class_level: number;
+}
 
 interface ExamResult {
   marks_obtained: number;
@@ -14,15 +21,15 @@ interface ExamResult {
   exams: {
     title: string;
     max_marks: number;
-    class_level: number;
+    subject_id: string;
+    subjects: {
+      name: string;
+    };
   };
 }
 
 interface StudentInsight {
   id: string;
-  student_id: string;
-  subject: string;
-  performance_level: string;
   strength_level: number;
   weak_areas: string[];
   strong_areas: string[];
@@ -30,34 +37,19 @@ interface StudentInsight {
   performance_trend: string;
   ai_recommendations: string;
   last_analyzed: string;
-}
-
-interface StudentInfo {
-  student_id: string;
-  full_name: string;
-  class_level: number;
-  averageScore: number;
-  totalExams: number;
+  subjects: {
+    name: string;
+  };
 }
 
 const StudentInsights = () => {
+  const [students, setStudents] = useState<Student[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<string>('');
-  const [selectedSubject, setSelectedSubject] = useState<string>('all');
-  const [students, setStudents] = useState<StudentInfo[]>([]);
   const [examResults, setExamResults] = useState<ExamResult[]>([]);
   const [insights, setInsights] = useState<StudentInsight[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generatingInsights, setGeneratingInsights] = useState(false);
   const { toast } = useToast();
-
-  const subjects = [
-    { value: 'all', label: 'All Subjects' },
-    { value: 'Physics', label: 'Physics' },
-    { value: 'Chemistry', label: 'Chemistry' },
-    { value: 'Mathematics', label: 'Mathematics' },
-    { value: 'Biology', label: 'Biology' },
-    { value: 'English', label: 'English' },
-    { value: 'Other', label: 'Other' }
-  ];
 
   useEffect(() => {
     fetchStudents();
@@ -67,48 +59,18 @@ const StudentInsights = () => {
     if (selectedStudent) {
       fetchStudentData();
     }
-  }, [selectedStudent, selectedSubject]);
+  }, [selectedStudent]);
 
   const fetchStudents = async () => {
     try {
-      // Get all students with their exam results
-      const { data: studentProfiles, error: profilesError } = await supabase
+      const { data, error } = await supabase
         .from('student_profiles')
-        .select('user_id, full_name, class_level')
-        .eq('status', 'APPROVED');
+        .select('id, full_name, class_level')
+        .eq('status', 'APPROVED')
+        .order('full_name');
 
-      if (profilesError) throw profilesError;
-
-      // Get exam results for each student to calculate averages
-      const studentsWithStats = await Promise.all(
-        studentProfiles?.map(async (student) => {
-          const { data: results } = await supabase
-            .from('exam_results')
-            .select(`
-              marks_obtained,
-              exams!inner(max_marks)
-            `)
-            .eq('student_id', student.user_id);
-
-          const totalExams = results?.length || 0;
-          const averageScore = results && results.length > 0
-            ? Math.round(results.reduce((sum, result) => {
-                const percentage = (result.marks_obtained / (result.exams?.max_marks || 100)) * 100;
-                return sum + percentage;
-              }, 0) / results.length)
-            : 0;
-
-          return {
-            student_id: student.user_id,
-            full_name: student.full_name,
-            class_level: student.class_level,
-            averageScore,
-            totalExams
-          };
-        }) || []
-      );
-
-      setStudents(studentsWithStats);
+      if (error) throw error;
+      setStudents(data || []);
     } catch (error) {
       console.error('Error fetching students:', error);
       toast({
@@ -123,59 +85,34 @@ const StudentInsights = () => {
 
   const fetchStudentData = async () => {
     try {
-      setLoading(true);
+      const [resultsResult, insightsResult] = await Promise.all([
+        supabase
+          .from('exam_results')
+          .select(`
+            marks_obtained,
+            percentage,
+            exams(
+              title,
+              max_marks,
+              subject_id,
+              subjects(name)
+            )
+          `)
+          .eq('student_id', selectedStudent),
+        supabase
+          .from('student_insights')
+          .select(`
+            *,
+            subjects(name)
+          `)
+          .eq('student_id', selectedStudent)
+      ]);
 
-      // Fetch exam results for the selected student
-      let resultsQuery = supabase
-        .from('exam_results')
-        .select(`
-          marks_obtained,
-          exams!inner(
-            title,
-            max_marks,
-            class_level,
-            subject
-          )
-        `)
-        .eq('student_id', selectedStudent);
+      if (resultsResult.error) throw resultsResult.error;
+      if (insightsResult.error) throw insightsResult.error;
 
-      if (selectedSubject !== 'all') {
-        resultsQuery = resultsQuery.eq('exams.subject', selectedSubject as any);
-      }
-
-      const { data: results, error: resultsError } = await resultsQuery;
-
-      if (resultsError) {
-        console.error('Error fetching exam results:', resultsError);
-        setExamResults([]);
-      } else {
-        // Calculate percentages
-        const resultsWithPercentage = results?.map(result => ({
-          ...result,
-          percentage: Math.round((result.marks_obtained / (result.exams?.max_marks || 100)) * 100)
-        })) || [];
-        setExamResults(resultsWithPercentage);
-      }
-
-      // Fetch student insights
-      let insightsQuery = supabase
-        .from('student_insights')
-        .select('*')
-        .eq('student_id', selectedStudent);
-
-      if (selectedSubject !== 'all') {
-        insightsQuery = insightsQuery.eq('subject', selectedSubject as any);
-      }
-
-      const { data: insightsData, error: insightsError } = await insightsQuery;
-
-      if (insightsError) {
-        console.error('Error fetching insights:', insightsError);
-        setInsights([]);
-      } else {
-        setInsights(insightsData || []);
-      }
-
+      setExamResults(resultsResult.data || []);
+      setInsights(insightsResult.data || []);
     } catch (error) {
       console.error('Error fetching student data:', error);
       toast({
@@ -183,26 +120,147 @@ const StudentInsights = () => {
         description: "Failed to load student data",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
   };
 
-  const getPerformanceBadge = (level: string) => {
-    switch (level) {
-      case 'Excellent':
-        return <Badge className="bg-green-100 text-green-800">Excellent</Badge>;
-      case 'Good':
-        return <Badge className="bg-blue-100 text-blue-800">Good</Badge>;
-      case 'Average':
-        return <Badge className="bg-yellow-100 text-yellow-800">Average</Badge>;
-      case 'Below Average':
-        return <Badge className="bg-orange-100 text-orange-800">Below Average</Badge>;
-      case 'Poor':
-        return <Badge className="bg-red-100 text-red-800">Poor</Badge>;
-      default:
-        return <Badge variant="outline">N/A</Badge>;
+  const generateAIInsights = async () => {
+    if (!selectedStudent) return;
+
+    setGeneratingInsights(true);
+    try {
+      const { data: currentUser } = await supabase.auth.getUser();
+      if (!currentUser.user) throw new Error('Not authenticated');
+
+      // Group exam results by subject
+      const subjectPerformance: { [key: string]: { scores: number[]; subjectId: string } } = {};
+      
+      examResults.forEach(result => {
+        if (result.exams?.subjects?.name) {
+          const subject = result.exams.subjects.name;
+          if (!subjectPerformance[subject]) {
+            subjectPerformance[subject] = { scores: [], subjectId: result.exams.subject_id };
+          }
+          subjectPerformance[subject].scores.push(result.percentage || 0);
+        }
+      });
+
+      // Generate insights for each subject
+      const insightsToInsert = [];
+      
+      for (const [subject, data] of Object.entries(subjectPerformance)) {
+        const averageScore = data.scores.reduce((a, b) => a + b, 0) / data.scores.length;
+        const trend = data.scores.length > 1 ? 
+          (data.scores[data.scores.length - 1] > data.scores[0] ? 'improving' : 'declining') : 
+          'stable';
+
+        // Simple AI logic for generating insights
+        let strengthLevel = Math.round(averageScore / 20); // Convert to 1-5 scale
+        strengthLevel = Math.max(1, Math.min(5, strengthLevel));
+
+        const weakAreas = [];
+        const strongAreas = [];
+        const focusTopics = [];
+        let recommendations = '';
+
+        if (averageScore < 40) {
+          weakAreas.push('Basic concepts', 'Problem solving');
+          focusTopics.push('Fundamental concepts', 'Practice problems');
+          recommendations = `${subject}: Focus on strengthening fundamental concepts. Regular practice is recommended.`;
+        } else if (averageScore < 70) {
+          weakAreas.push('Advanced topics');
+          strongAreas.push('Basic concepts');
+          focusTopics.push('Advanced problems', 'Application-based questions');
+          recommendations = `${subject}: Good foundation. Work on advanced topics and application-based problems.`;
+        } else {
+          strongAreas.push('Concepts', 'Problem solving');
+          focusTopics.push('Complex problems', 'Time management');
+          recommendations = `${subject}: Excellent performance. Focus on complex problems and exam strategies.`;
+        }
+
+        // Check if insight already exists for this student and subject
+        const existingInsight = insights.find(insight => 
+          insight.subjects?.name === subject
+        );
+
+        if (existingInsight) {
+          // Update existing insight
+          await supabase
+            .from('student_insights')
+            .update({
+              strength_level: strengthLevel,
+              weak_areas: weakAreas,
+              strong_areas: strongAreas,
+              focus_topics: focusTopics,
+              performance_trend: trend,
+              ai_recommendations: recommendations,
+              last_analyzed: new Date().toISOString()
+            })
+            .eq('id', existingInsight.id);
+        } else {
+          // Create new insight
+          insightsToInsert.push({
+            student_id: selectedStudent,
+            subject_id: data.subjectId,
+            strength_level: strengthLevel,
+            weak_areas: weakAreas,
+            strong_areas: strongAreas,
+            focus_topics: focusTopics,
+            performance_trend: trend,
+            ai_recommendations: recommendations
+          });
+        }
+      }
+
+      if (insightsToInsert.length > 0) {
+        const { error } = await supabase
+          .from('student_insights')
+          .insert(insightsToInsert);
+
+        if (error) throw error;
+      }
+
+      toast({
+        title: "Success",
+        description: "AI insights generated successfully"
+      });
+
+      fetchStudentData();
+    } catch (error: any) {
+      console.error('Error generating insights:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate insights",
+        variant: "destructive"
+      });
+    } finally {
+      setGeneratingInsights(false);
     }
+  };
+
+  const getSubjectPerformanceData = () => {
+    const subjectData: { [key: string]: number[] } = {};
+    
+    examResults.forEach(result => {
+      if (result.exams?.subjects?.name) {
+        const subject = result.exams.subjects.name;
+        if (!subjectData[subject]) {
+          subjectData[subject] = [];
+        }
+        subjectData[subject].push(result.percentage || 0);
+      }
+    });
+
+    return Object.entries(subjectData).map(([subject, scores]) => ({
+      subject,
+      average: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
+      fullMark: 100
+    }));
+  };
+
+  const getStrengthLevelColor = (level: number) => {
+    if (level >= 4) return 'bg-green-100 text-green-800';
+    if (level >= 3) return 'bg-yellow-100 text-yellow-800';
+    return 'bg-red-100 text-red-800';
   };
 
   const getTrendIcon = (trend: string) => {
@@ -212,220 +270,203 @@ const StudentInsights = () => {
       case 'declining':
         return <AlertTriangle className="h-4 w-4 text-red-600" />;
       default:
-        return <Target className="h-4 w-4 text-blue-600" />;
+        return <TrendingUp className="h-4 w-4 text-gray-600" />;
     }
   };
 
-  const selectedStudentInfo = students.find(s => s.student_id === selectedStudent);
+  if (loading) {
+    return <div className="flex justify-center p-8">Loading student insights...</div>;
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">Student Insights</h2>
-          <p className="text-gray-600">AI-powered analysis of student performance</p>
+          <h2 className="text-2xl font-bold text-gray-900">Student Insights</h2>
+          <p className="text-gray-600">AI-powered performance analysis and recommendations</p>
         </div>
-        <Badge className="bg-purple-100 text-purple-800 flex items-center gap-1">
-          <Brain className="h-4 w-4" />
-          AI Analytics
-        </Badge>
+        <div className="flex gap-2">
+          <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder="Select a student" />
+            </SelectTrigger>
+            <SelectContent>
+              {students.map(student => (
+                <SelectItem key={student.id} value={student.id}>
+                  {student.full_name} (Class {student.class_level})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {selectedStudent && (
+            <Button 
+              onClick={generateAIInsights} 
+              disabled={generatingInsights}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${generatingInsights ? 'animate-spin' : ''}`} />
+              Generate AI Insights
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Select Student & Subject
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Student" />
-                </SelectTrigger>
-                <SelectContent>
-                  {students.map(student => (
-                    <SelectItem key={student.student_id} value={student.student_id}>
-                      {student.full_name} (Class {student.class_level})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {subjects.map(subject => (
-                    <SelectItem key={subject.value} value={subject.value}>
-                      {subject.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      {selectedStudent ? (
+        <div className="space-y-6">
+          {/* Performance Overview */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Subject Performance Radar
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <RadarChart data={getSubjectPerformanceData()}>
+                    <PolarGrid />
+                    <PolarAngleAxis dataKey="subject" />
+                    <PolarRadiusAxis domain={[0, 100]} />
+                    <Radar
+                      name="Average Score"
+                      dataKey="average"
+                      stroke="#8884d8"
+                      fill="#8884d8"
+                      fillOpacity={0.3}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart className="h-5 w-5" />
+                  Subject-wise Average Performance
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={getSubjectPerformanceData()}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="subject" />
+                    <YAxis domain={[0, 100]} />
+                    <Tooltip formatter={(value) => [`${value}%`, 'Average Score']} />
+                    <Bar dataKey="average" fill="#3b82f6" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
 
-      {selectedStudentInfo && (
-        <>
-          {/* Student Overview */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Student Overview
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center">
-                  <h3 className="text-2xl font-bold text-blue-600">{selectedStudentInfo.averageScore}%</h3>
-                  <p className="text-sm text-gray-600">Average Score</p>
-                </div>
-                <div className="text-center">
-                  <h3 className="text-2xl font-bold text-green-600">{selectedStudentInfo.totalExams}</h3>
-                  <p className="text-sm text-gray-600">Total Exams</p>
-                </div>
-                <div className="text-center">
-                  <h3 className="text-2xl font-bold text-purple-600">Class {selectedStudentInfo.class_level}</h3>
-                  <p className="text-sm text-gray-600">Current Class</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Performance Analysis */}
-          {insights.length > 0 && (
+          {/* AI Insights */}
+          {insights.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {insights.map((insight) => (
                 <Card key={insight.id}>
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      <span>{insight.subject}</span>
-                      {getPerformanceBadge(insight.performance_level)}
+                      <div className="flex items-center gap-2">
+                        <Brain className="h-5 w-5 text-purple-600" />
+                        {insight.subjects?.name} Analysis
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge className={getStrengthLevelColor(insight.strength_level)}>
+                          Level {insight.strength_level}/5
+                        </Badge>
+                        {getTrendIcon(insight.performance_trend)}
+                      </div>
                     </CardTitle>
-                    <CardDescription className="flex items-center gap-2">
-                      {getTrendIcon(insight.performance_trend)}
-                      {insight.performance_trend || 'Stable'} trend
-                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">Strength Level</span>
-                        <span className="text-sm text-gray-600">{insight.strength_level}/5</span>
+                      <h4 className="font-semibold text-green-700 flex items-center gap-2 mb-2">
+                        <BookOpen className="h-4 w-4" />
+                        Strong Areas
+                      </h4>
+                      <div className="flex flex-wrap gap-1">
+                        {insight.strong_areas?.map((area, index) => (
+                          <Badge key={index} variant="outline" className="text-green-700 border-green-700">
+                            {area}
+                          </Badge>
+                        ))}
                       </div>
-                      <Progress value={(insight.strength_level / 5) * 100} />
                     </div>
 
-                    {insight.strong_areas && insight.strong_areas.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                          Strong Areas
-                        </h4>
-                        <div className="flex flex-wrap gap-1">
-                          {insight.strong_areas.map((area, index) => (
-                            <Badge key={index} variant="outline" className="text-green-700 border-green-300">
-                              {area}
-                            </Badge>
-                          ))}
-                        </div>
+                    <div>
+                      <h4 className="font-semibold text-red-700 flex items-center gap-2 mb-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        Areas for Improvement
+                      </h4>
+                      <div className="flex flex-wrap gap-1">
+                        {insight.weak_areas?.map((area, index) => (
+                          <Badge key={index} variant="outline" className="text-red-700 border-red-700">
+                            {area}
+                          </Badge>
+                        ))}
                       </div>
-                    )}
+                    </div>
 
-                    {insight.weak_areas && insight.weak_areas.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
-                          <AlertTriangle className="h-4 w-4 text-orange-600" />
-                          Areas for Improvement
-                        </h4>
-                        <div className="flex flex-wrap gap-1">
-                          {insight.weak_areas.map((area, index) => (
-                            <Badge key={index} variant="outline" className="text-orange-700 border-orange-300">
-                              {area}
-                            </Badge>
-                          ))}
-                        </div>
+                    <div>
+                      <h4 className="font-semibold text-blue-700 flex items-center gap-2 mb-2">
+                        <Target className="h-4 w-4" />
+                        Focus Topics
+                      </h4>
+                      <div className="flex flex-wrap gap-1">
+                        {insight.focus_topics?.map((topic, index) => (
+                          <Badge key={index} variant="outline" className="text-blue-700 border-blue-700">
+                            {topic}
+                          </Badge>
+                        ))}
                       </div>
-                    )}
+                    </div>
 
-                    {insight.ai_recommendations && (
-                      <div>
-                        <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
-                          <Brain className="h-4 w-4 text-purple-600" />
-                          AI Recommendations
-                        </h4>
-                        <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
-                          {insight.ai_recommendations}
-                        </p>
-                      </div>
-                    )}
+                    <div>
+                      <h4 className="font-semibold text-purple-700 mb-2">AI Recommendations</h4>
+                      <p className="text-sm text-gray-700 bg-purple-50 p-3 rounded-lg">
+                        {insight.ai_recommendations}
+                      </p>
+                    </div>
 
-                    <div className="text-xs text-gray-400 border-t pt-2">
-                      Last analyzed: {new Date(insight.last_analyzed).toLocaleDateString()}
+                    <div className="text-xs text-gray-500">
+                      Last analyzed: {insight.last_analyzed ? new Date(insight.last_analyzed).toLocaleDateString() : 'Not available'}
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
-          )}
-
-          {/* Recent Exam Results */}
-          {examResults.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Exam Performance</CardTitle>
-                <CardDescription>
-                  Latest exam results for {selectedStudentInfo.full_name}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {examResults.slice(0, 5).map((result, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                      <div>
-                        <h4 className="font-medium">{result.exams?.title}</h4>
-                        <p className="text-sm text-gray-600">
-                          {result.marks_obtained}/{result.exams?.max_marks} marks
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold">{result.percentage}%</div>
-                        <Progress value={result.percentage} className="w-20" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {insights.length === 0 && examResults.length === 0 && !loading && (
+          ) : (
             <Card>
               <CardContent className="text-center py-8">
-                <Brain className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-lg font-semibold mb-2">No Analysis Available</h3>
-                <p className="text-gray-600">
-                  No performance data or insights available for this student and subject combination.
+                <Brain className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">No AI Insights Available</h3>
+                <p className="text-gray-500 mb-4">
+                  Generate AI insights to get detailed performance analysis and recommendations.
                 </p>
+                <Button 
+                  onClick={generateAIInsights} 
+                  disabled={generatingInsights}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  <Brain className="h-4 w-4 mr-2" />
+                  Generate AI Insights
+                </Button>
               </CardContent>
             </Card>
           )}
-        </>
-      )}
-
-      {loading && (
-        <div className="flex justify-center p-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
+      ) : (
+        <Card>
+          <CardContent className="text-center py-8">
+            <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-600 mb-2">Select a Student</h3>
+            <p className="text-gray-500">
+              Choose a student from the dropdown to view their performance insights and AI analysis.
+            </p>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

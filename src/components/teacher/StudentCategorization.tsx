@@ -62,46 +62,36 @@ const StudentCategorization = () => {
 
   const fetchResults = async () => {
     try {
-      // Get exam details
+      // Get exam results and calculate percentage manually
       const { data: examData, error: examError } = await supabase
         .from('exams')
-        .select('title, total_marks, max_marks')
+        .select('title, total_marks')
         .eq('id', selectedExam)
         .single();
       
       if (examError) throw examError;
 
-      // Get exam results with calculated percentage
       const { data: resultsData, error: resultsError } = await supabase
         .from('exam_results')
-        .select('*, percentage')
+        .select(`
+          *,
+          student_profiles!inner(id, class_level)
+        `)
         .eq('exam_id', selectedExam);
 
       if (resultsError) throw resultsError;
 
-      // Get student profiles separately
-      const studentIds = resultsData?.map(r => r.student_id) || [];
-      const { data: studentProfiles, error: profilesError } = await supabase
-        .from('student_profiles')
-        .select('user_id, full_name, class_level')
-        .in('user_id', studentIds);
-
-      if (profilesError) throw profilesError;
-
-      // Transform and merge the data
-      const transformedResults = resultsData?.map(result => {
-        const studentProfile = studentProfiles?.find(p => p.user_id === result.student_id);
-        return {
-          id: result.id,
-          student_id: result.student_id,
-          marks_obtained: result.marks_obtained,
-          percentage: result.percentage || (result.marks_obtained / (examData.max_marks || examData.total_marks)) * 100,
-          student_name: studentProfile?.full_name || `Student ${result.student_id.substring(0, 8)}`,
-          class_level: studentProfile?.class_level || 0,
-          exam_title: examData.title,
-          max_marks: examData.max_marks || examData.total_marks
-        };
-      }) || [];
+      // Transform the data to match our interface
+      const transformedResults = resultsData.map(result => ({
+        id: result.id,
+        student_id: result.student_id,
+        marks_obtained: result.marks_obtained,
+        percentage: (result.marks_obtained / examData.total_marks) * 100,
+        student_name: `Student ${result.student_id.substring(0, 8)}`, // Mock name since we don't have full_name
+        class_level: result.student_profiles?.class_level || 0,
+        exam_title: examData.title,
+        max_marks: examData.total_marks
+      }));
 
       // Sort by percentage descending
       transformedResults.sort((a, b) => b.percentage - a.percentage);

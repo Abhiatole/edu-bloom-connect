@@ -1,148 +1,207 @@
-
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import Index from "./pages/Index";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import ModernLayout from "./components/enhanced/ModernLayout";
+
+// Pages
+import ModernHomePage from "./pages/enhanced/ModernHomePage";
 import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
+import ForgotPassword from "./pages/ForgotPassword";
+import About from "./pages/About";
+import Features from "./pages/Features";
+import Contact from "./pages/Contact";
+import DeploymentDebug from "./pages/DeploymentDebug";
 
-// Admin pages
-import UserApprovals from "./pages/admin/UserApprovals";
-import ExamManagement from "./pages/admin/ExamManagement";
-import QuickApprovalDashboard from "./pages/QuickApprovalDashboard";
+// Enhanced Dashboards
+import ModernSuperAdminDashboard from "./pages/enhanced/ModernSuperAdminDashboard";
+import ModernTeacherDashboard from "./pages/enhanced/ModernTeacherDashboard";
+import ModernStudentDashboard from "./pages/enhanced/ModernStudentDashboard";
 
-// Teacher pages  
-import TeacherDashboard from "./pages/teacher/Dashboard";
-import TestMarksUpload from "./components/teacher/TestMarksUpload";
-
-// Student pages
-import StudentDashboard from "./pages/student/Dashboard";
-
-// Super Admin pages
-import SuperAdminDashboard from "./pages/superadmin/Dashboard";
-import UserManagement from "./components/superadmin/UserManagement";
-
-// Registration pages
+// Registration Pages
 import StudentRegister from "./pages/register/StudentRegister";
 import TeacherRegister from "./pages/register/TeacherRegister";
 import AdminRegister from "./pages/register/AdminRegister";
+import EmailConfirmation from "./pages/EmailConfirmation";
+import EmailConfirmationSuccess from "./pages/EmailConfirmationSuccess";
+import RegistrationSuccess from "./pages/RegistrationSuccess";
+
+// Admin Pages
+import UserApprovals from "./pages/admin/UserApprovals";
+import ExamManagement from "./pages/admin/ExamManagement";
+import Analytics from "./pages/admin/Analytics";
+
+// Teacher Pages
+import StudentInsights from "./pages/teacher/StudentInsights";
+
+// Student Pages
+import Performance from "./pages/student/Performance";
+
+// Other Components
+import ParentPortal from "./components/parent/ParentPortal";
+import ProtectedRoute from "./components/ProtectedRoute";
+import NotFound from "./pages/NotFound";
+import AuthTest from "./pages/AuthTest";
+import EmailTest from "./pages/EmailTest";
+import TeacherFlowTest from "./pages/TeacherFlowTest";
+import SuperAdminSetup from "./pages/SuperAdminSetup";
+import QuickApprovalDashboard from "./pages/QuickApprovalDashboard";
 
 const queryClient = new QueryClient();
 
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <ThemeProvider>
       <TooltipProvider>
-        <AuthProvider>
-          <Toaster />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/register/student" element={<StudentRegister />} />
-              <Route path="/register/teacher" element={<TeacherRegister />} />
-              <Route path="/register/admin" element={<AdminRegister />} />
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<ModernLayout />}>
+              <Route index element={<ModernHomePage />} />
+              <Route path="login" element={<Login />} />
+              <Route path="forgot-password" element={<ForgotPassword />} />
+              <Route path="about" element={<About />} />
+              <Route path="features" element={<Features />} />
+              <Route path="contact" element={<Contact />} />
+              <Route path="email-test" element={<EmailTest />} />
+              <Route path="debug" element={<DeploymentDebug />} />
               
-              {/* Dashboard route - redirects based on role */}
+              {/* Registration Routes */}
+              <Route path="register/student" element={<StudentRegister />} />
+              <Route path="register/teacher" element={<TeacherRegister />} />
+              <Route path="register/admin" element={<AdminRegister />} />
+              <Route path="register/success" element={<RegistrationSuccess />} />
+              <Route path="auth/confirm" element={<EmailConfirmation />} />
+              <Route path="auth/success" element={<EmailConfirmationSuccess />} />
+              <Route path="auth/test" element={<AuthTest />} />
+              
+              {/* Protected Routes */}
               <Route 
-                path="/dashboard" 
+                path="superadmin/dashboard" 
                 element={
-                  <ProtectedRoute>
-                    <Dashboard />
+                  <ProtectedRoute allowedRoles={['superadmin']}>
+                    <ModernSuperAdminDashboard />
                   </ProtectedRoute>
                 } 
               />
 
-              {/* Admin routes */}
               <Route 
-                path="/admin/dashboard" 
+                path="admin/approvals" 
                 element={
-                  <ProtectedRoute allowedRoles={['ADMIN']} requireApproval={false}>
+                  <ProtectedRoute allowedRoles={['superadmin']}>
                     <UserApprovals />
                   </ProtectedRoute>
                 } 
               />
+
               <Route 
-                path="/admin/approvals" 
+                path="admin/exams" 
                 element={
-                  <ProtectedRoute allowedRoles={['ADMIN']} requireApproval={false}>
-                    <UserApprovals />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/admin/exams" 
-                element={
-                  <ProtectedRoute allowedRoles={['ADMIN']} requireApproval={false}>
+                  <ProtectedRoute allowedRoles={['superadmin']}>
                     <ExamManagement />
                   </ProtectedRoute>
                 } 
               />
+
               <Route 
-                path="/admin/quick-approvals" 
+                path="admin/analytics" 
                 element={
-                  <ProtectedRoute allowedRoles={['ADMIN']} requireApproval={false}>
+                  <ProtectedRoute allowedRoles={['superadmin']}>
+                    <Analytics />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="teacher/dashboard" 
+                element={
+                  <ProtectedRoute allowedRoles={['teacher']}>
+                    <ModernTeacherDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+
+              <Route 
+                path="teacher/insights" 
+                element={
+                  <ProtectedRoute allowedRoles={['teacher']}>
+                    <StudentInsights />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="student/dashboard" 
+                element={
+                  <ProtectedRoute allowedRoles={['student']}>
+                    <ModernStudentDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+
+              <Route 
+                path="student/performance" 
+                element={
+                  <ProtectedRoute allowedRoles={['student']}>
+                    <Performance />
+                  </ProtectedRoute>
+                } 
+              />
+
+              <Route 
+                path="parent/dashboard" 
+                element={
+                  <ProtectedRoute allowedRoles={['parent']}>
+                    <ParentPortal />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="setup-admin" 
+                element={<SuperAdminSetup />} 
+              />
+
+              <Route 
+                path="teacher/flow-test" 
+                element={
+                  <ProtectedRoute allowedRoles={['teacher']}>
+                    <TeacherFlowTest />
+                  </ProtectedRoute>
+                } 
+              />
+
+              <Route 
+                path="quick-approvals" 
+                element={
+                  <ProtectedRoute allowedRoles={['superadmin']}>
                     <QuickApprovalDashboard />
                   </ProtectedRoute>
                 } 
               />
-
-              {/* Teacher routes */}
+              
               <Route 
-                path="/teacher/dashboard" 
+                path="debug" 
                 element={
-                  <ProtectedRoute allowedRoles={['TEACHER']}>
-                    <TeacherDashboard />
+                  <ProtectedRoute allowedRoles={['superadmin', 'teacher', 'student', 'parent']}>
+                    <DeploymentDebug />
                   </ProtectedRoute>
                 } 
               />
-              <Route 
-                path="/teacher/marks-upload" 
-                element={
-                  <ProtectedRoute allowedRoles={['TEACHER']}>
-                    <TestMarksUpload />
-                  </ProtectedRoute>
-                } 
-              />
-
-              {/* Student routes */}
-              <Route 
-                path="/student/dashboard" 
-                element={
-                  <ProtectedRoute allowedRoles={['STUDENT']}>
-                    <StudentDashboard />
-                  </ProtectedRoute>
-                } 
-              />
-
-              {/* Super Admin routes */}
-              <Route 
-                path="/superadmin/dashboard" 
-                element={
-                  <ProtectedRoute allowedRoles={['ADMIN']} requireApproval={false}>
-                    <SuperAdminDashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/superadmin/user-management" 
-                element={
-                  <ProtectedRoute allowedRoles={['ADMIN']} requireApproval={false}>
-                    <UserManagement />
-                  </ProtectedRoute>
-                } 
-              />
-            </Routes>
-          </BrowserRouter>
-        </AuthProvider>
+              
+              {/* Redirect based on role */}
+              <Route path="dashboard" element={<Navigate to="/" replace />} />
+              
+              <Route path="*" element={<NotFound />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
       </TooltipProvider>
-    </QueryClientProvider>
-  );
-}
+    </ThemeProvider>
+  </QueryClientProvider>
+);
 
 export default App;

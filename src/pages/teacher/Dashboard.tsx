@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,41 +17,16 @@ import {
   BarChart3
 } from 'lucide-react';
 
-interface TeacherStats {
-  totalStudents: number;
-  myExams: number;
-  recentResults: number;
-  avgPerformance: number;
-}
-
-interface ExamData {
-  id: string;
-  title: string;
-  exam_type: string;
-  class_level: number;
-  max_marks: number;
-  created_at: string;
-  subjects?: {
-    name: string;
-  } | null;
-}
-
-interface TeacherProfile {
-  full_name: string;
-  subject_expertise: string;
-  experience_years: number;
-}
-
 const TeacherDashboard = () => {
-  const [stats, setStats] = useState<TeacherStats>({
+  const [stats, setStats] = useState({
     totalStudents: 0,
     myExams: 0,
     recentResults: 0,
     avgPerformance: 0
   });
-  const [recentExams, setRecentExams] = useState<ExamData[]>([]);
+  const [recentExams, setRecentExams] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [teacherProfile, setTeacherProfile] = useState<TeacherProfile | null>(null);
+  const [teacherProfile, setTeacherProfile] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -74,61 +48,35 @@ const TeacherDashboard = () => {
       if (profileError) throw profileError;
       setTeacherProfile(profile);
 
-      // Get teacher's exams with subject information
+      // Get teacher's exams
       const { data: exams, error: examsError } = await supabase
         .from('exams')
         .select(`
-          id,
-          title,
-          exam_type,
-          class_level,
-          max_marks,
-          created_at,
-          subjects!exams_subject_id_fkey(name)
+          *,
+          subjects(name),
+          topics(name)
         `)
-        .eq('created_by_teacher_id', currentUser.user.id)
+        .eq('created_by', currentUser.user.id)
         .order('created_at', { ascending: false })
         .limit(5);
 
-      if (examsError) {
-        console.error('Error fetching exams:', examsError);
-        setRecentExams([]);
-      } else {
-        // Transform the data to match expected structure
-        const transformedExams = exams?.map(exam => ({
-          ...exam,
-          subjects: exam.subjects || null
-        })) || [];
-        setRecentExams(transformedExams);
-      }
+      if (examsError) throw examsError;
+      setRecentExams(exams || []);
 
       // Get statistics
-      const [studentsResult, myExamsResult] = await Promise.all([
+      const [studentsResult, myExamsResult, resultsResult] = await Promise.all([
         supabase.from('student_profiles').select('*', { count: 'exact' }).eq('status', 'APPROVED'),
-        supabase.from('exams').select('*', { count: 'exact' }).eq('created_by_teacher_id', currentUser.user.id)
+        supabase.from('exams').select('*', { count: 'exact' }).eq('created_by', currentUser.user.id),
+        supabase.from('exam_results').select(`
+          percentage,
+          exams(created_by)
+        `).eq('exams.created_by', currentUser.user.id)
       ]);
 
-      // Get exam results for teacher's exams with proper calculation
-      const { data: resultsData } = await supabase
-        .from('exam_results')
-        .select(`
-          marks_obtained,
-          exam_id,
-          exams!inner(
-            created_by_teacher_id,
-            max_marks
-          )
-        `)
-        .eq('exams.created_by_teacher_id', currentUser.user.id);
-
-      const teacherResults = resultsData || [];
+      // Calculate average performance for teacher's exams
+      const teacherResults = resultsResult.data?.filter(result => result.exams?.created_by === currentUser.user.id) || [];
       const avgPerformance = teacherResults.length > 0 
-        ? Math.round(teacherResults.reduce((sum, result) => {
-            const percentage = result.exams?.max_marks 
-              ? (result.marks_obtained / result.exams.max_marks) * 100 
-              : 0;
-            return sum + percentage;
-          }, 0) / teacherResults.length)
+        ? Math.round(teacherResults.reduce((sum, result) => sum + (result.percentage || 0), 0) / teacherResults.length)
         : 0;
 
       setStats({
@@ -309,7 +257,7 @@ const TeacherDashboard = () => {
                     <div>
                       <h3 className="font-semibold text-lg">{exam.title}</h3>
                       <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                        <span>{exam.subjects?.name || 'Unknown Subject'}</span>
+                        <span>{exam.subjects?.name}</span>
                         <span>•</span>
                         <span>{exam.exam_type}</span>
                         <span>•</span>
@@ -317,6 +265,9 @@ const TeacherDashboard = () => {
                         <span>•</span>
                         <span>{exam.max_marks} marks</span>
                       </div>
+                      {exam.topics?.name && (
+                        <p className="text-sm text-gray-500 mt-1">Topic: {exam.topics.name}</p>
+                      )}
                       <p className="text-xs text-gray-400 mt-2">
                         Created: {new Date(exam.created_at).toLocaleDateString()}
                       </p>
