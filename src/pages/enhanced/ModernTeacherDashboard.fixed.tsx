@@ -556,27 +556,34 @@ const ModernTeacherDashboard = () => {
           value={stats.totalStudents.toString()}
           icon={Users}
           description="Students in your classes"          trend={{ value: 5, isPositive: true }}
+          trendDirection="up"
           gradient="from-blue-500 to-cyan-600"
         />
         <ModernDashboardCard
           title="My Exams"
           value={stats.myExams.toString()}
           icon={FileText}
-          description="Assessments created"          trend={{ value: 2, isPositive: true }}
+          description="Assessments created"
+          trend={"+2"}
+          trendDirection="up"
           gradient="from-purple-500 to-pink-600"
         />
         <ModernDashboardCard
           title="Results"
           value={stats.recentResults.toString()}
           icon={Award}
-          description="Recent submissions"          trend={{ value: 12, isPositive: true }}
+          description="Recent submissions"
+          trend={"+12"}
+          trendDirection="up"
           gradient="from-amber-500 to-orange-600"
         />
         <ModernDashboardCard
           title="Avg. Performance"
           value={`${stats.avgPerformance}%`}
           icon={TrendingUp}
-          description="Class average score"          trend={{ value: 3, isPositive: true }}
+          description="Class average score"
+          trend={"+3%"}
+          trendDirection="up"
           gradient="from-green-500 to-emerald-600"
         />
       </div>

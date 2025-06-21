@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 // Debug flag - set to true to log details about database operations
-const DEBUG = true;  // Set to true to help diagnose issues
+const DEBUG = false;
 
 /**
  * Safely checks if a table exists without querying information_schema directly
@@ -14,7 +14,7 @@ export const checkTableExists = async (tableName: string): Promise<boolean> => {
     if (DEBUG) console.log(`Checking if table exists: ${tableName}`);
     
     // Layer 1: Try the RPC function approach first (most reliable if set up)
-    try {      // Using the correct parameter name (p_table_name) that was defined in our SQL
+    try {
       // @ts-ignore - RPC function is defined in SQL but TypeScript doesn't know about it
       const { data, error } = await supabase.rpc('table_exists', { 
         p_table_name: tableName 
@@ -113,13 +113,15 @@ export const checkTableExists = async (tableName: string): Promise<boolean> => {
 export const getMissingTables = async (tableNames: string[]): Promise<string[]> => {
   try {
     if (DEBUG) console.log(`Checking for missing tables among: ${tableNames.join(', ')}`);
-      // Layer 1: Try using the RPC function first (most efficient)
+    
+    // Layer 1: Try using the RPC function first (most efficient)
     try {
       // @ts-ignore - RPC function is defined in SQL
       const { data, error } = await supabase.rpc('get_missing_tables', { 
         p_table_names: tableNames 
       });
-        if (!error && data !== null) {
+      
+      if (!error && data !== null) {
         if (DEBUG) console.log(`Found missing tables via RPC: ${Array.isArray(data) ? data.join(', ') : 'none'}`);
         return Array.isArray(data) ? data : [];
       }
@@ -307,7 +309,8 @@ export const createDashboardTables = async (): Promise<{success: boolean; messag
             );
           END IF;
           ` : ''}
-            ${missingTables.includes('exam_results') ? `
+          
+          ${missingTables.includes('exam_results') ? `
           IF NOT EXISTS (
             SELECT FROM information_schema.tables 
             WHERE table_schema = 'public' 
@@ -316,8 +319,8 @@ export const createDashboardTables = async (): Promise<{success: boolean; messag
             CREATE TABLE public.exam_results (
               id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
               exam_id UUID REFERENCES public.exams(id),
-              student_id UUID, -- Made optional to avoid errors
-              examiner_id UUID, -- Made optional to avoid errors
+              student_id UUID NOT NULL,
+              examiner_id UUID NOT NULL,
               score INTEGER,
               percentage DECIMAL,
               passing_status TEXT CHECK (passing_status IN ('PASS', 'FAIL')),
@@ -366,99 +369,15 @@ export const createDashboardTables = async (): Promise<{success: boolean; messag
       }
       
       throw new Error(`SQL execution error: ${error.message}`);
-    } catch (rpcError) {
+    } catch (rpcError: any) {
       console.error('Error creating tables via RPC:', rpcError);
       return { 
         success: false, 
         message: `Could not create tables automatically. Please run the SQL script manually in the Supabase dashboard. Error: ${rpcError.message}` 
       };
     }
-  } catch (e) {
+  } catch (e: any) {
     console.error('Error in createDashboardTables:', e);
-    return { 
-      success: false, 
-      message: `Unexpected error: ${e.message}. Please contact the administrator.` 
-    };
-  }
-};
-
-/**
- * Checks and adds missing columns to existing tables
- * This function will ensure that all required columns exist in the tables
- * @returns Promise<{success: boolean; message: string}>
- */
-export const ensureRequiredColumns = async (): Promise<{success: boolean; message: string}> => {
-  try {
-    // Check if the exam_results table exists
-    const examResultsExists = await checkTableExists('exam_results');
-    if (!examResultsExists) {
-      return { 
-        success: false, 
-        message: 'Cannot add columns - exam_results table does not exist.' 
-      };
-    }
-    
-    // Check for missing columns
-    const examinerIdExists = await checkColumnExists('exam_results', 'examiner_id');
-    const studentIdExists = await checkColumnExists('exam_results', 'student_id');
-    
-    if (examinerIdExists && studentIdExists) {
-      return { 
-        success: true, 
-        message: 'All required columns already exist.'
-      };
-    }
-    
-    // Build SQL to add missing columns
-    const columnsToAdd = [];
-    if (!examinerIdExists) columnsToAdd.push('examiner_id UUID');
-    if (!studentIdExists) columnsToAdd.push('student_id UUID');
-    
-    if (columnsToAdd.length === 0) {
-      return {
-        success: true,
-        message: 'No columns need to be added.'
-      };
-    }
-    
-    // Create SQL to add columns
-    const addColumnsSQL = `
-      DO $$
-      BEGIN
-        ${!examinerIdExists ? `
-        ALTER TABLE public.exam_results ADD COLUMN IF NOT EXISTS examiner_id UUID;
-        ` : ''}
-        
-        ${!studentIdExists ? `
-        ALTER TABLE public.exam_results ADD COLUMN IF NOT EXISTS student_id UUID;
-        ` : ''}
-      END
-      $$;
-    `;
-    
-    try {
-      // @ts-ignore - RPC function is defined in SQL
-      const { error } = await supabase.rpc('execute_sql', { 
-        sql_query: addColumnsSQL 
-      });
-      
-      if (!error) {
-        return { 
-          success: true, 
-          message: `Successfully added missing columns to exam_results table: ${columnsToAdd.join(', ')}` 
-        };
-      }
-      
-      throw new Error(`SQL execution error: ${error.message}`);
-    } catch (rpcError) {
-      console.error('Error adding columns via RPC:', rpcError);
-      return { 
-        success: false, 
-        message: `Could not add columns automatically. Please run the SQL script manually. Error: ${rpcError.message}` 
-      };
-    }
-  } catch (e) {
-    console.error('Error in ensureRequiredColumns:', e);
     return { 
       success: false, 
       message: `Unexpected error: ${e.message}. Please contact the administrator.` 

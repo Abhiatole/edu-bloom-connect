@@ -25,10 +25,9 @@ const RLSError: React.FC<RLSErrorProps> = ({
         <p className="text-sm text-red-700 dark:text-red-300 mb-4">
           {message}
         </p>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button 
+        <div className="flex flex-col sm:flex-row gap-2">          <Button 
             variant="outline" 
-            onClick={() => window.open('/EMERGENCY_RLS_FIX.sql', '_blank')}
+            onClick={() => window.open('/COMPREHENSIVE_RLS_FIX.sql', '_blank')}
             className="text-xs"
           >
             Download RLS Fix Script

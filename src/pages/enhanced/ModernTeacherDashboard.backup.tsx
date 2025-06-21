@@ -105,23 +105,11 @@ const ModernTeacherDashboard = () => {
   const [teacherProfile, setTeacherProfile] = useState<TeacherProfile | null>(null);
   const [missingTables, setMissingTables] = useState<string[]>([]);
   const { toast } = useToast();
-  
   useEffect(() => {
     fetchTeacherData();
-  }, []);
-  
+  }, []);  
   const fetchTeacherData = async () => {
     try {
-      // Initialize variables
-      let studentCount = 0;
-      let examCount = 0;
-      let examResults: ExamResult[] = [];
-      let pendingGradingCount = 0;
-      let activeClassesCount = 0;
-      let successRateValue = 0;
-      let examData: Exam[] = [];
-      
-      // Get current user
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error('Not authenticated');
 
@@ -139,8 +127,8 @@ const ModernTeacherDashboard = () => {
       const requiredTables = ['exams', 'subjects', 'topics', 'exam_results', 'timetables'];
       const missing = await getMissingTables(requiredTables);
       setMissingTables(missing);
-      
-      // Get teacher's exams - with error handling
+        // Get teacher's exams - with error handling
+      let examData: Exam[] = [];
       const examTablesExist = !missing.includes('exams');
       const topicsExist = !missing.includes('topics');
       const subjectsExist = !missing.includes('subjects');
@@ -212,6 +200,10 @@ const ModernTeacherDashboard = () => {
       setRecentExams(examData);
       
       // Get statistics - with error handling
+      let studentCount = 0;
+      let examCount = 0;
+      let examResults: ExamResult[] = [];
+      
       try {
         // Try an improved query for student count that handles RLS better
         // First try to get a count of all student profiles to check access
@@ -251,8 +243,7 @@ const ModernTeacherDashboard = () => {
       } catch (error) {
         console.warn('Error fetching student count:', error);
       }
-      
-      // Only try to get exam count if the exams table exists
+        // Only try to get exam count if the exams table exists
       if (examTablesExist) {
         try {
           // Check if the created_by column exists in the exams table
@@ -293,10 +284,7 @@ const ModernTeacherDashboard = () => {
         } catch (error) {
           console.warn('Error fetching exam count:', error);
         }
-      }
-      
-      // Check for exam_results and get results if table exists
-      if (resultsTableExists) {
+      }// Check for exam_results and get results if table exists      if (resultsTableExists) {
         try {
           // Check if the right columns exist using our helper
           const hasExaminerId = await checkColumnExists('exam_results', 'examiner_id');
@@ -326,13 +314,13 @@ const ModernTeacherDashboard = () => {
               examResults = (allResults || []) as ExamResult[];
               console.log('Fetched all results as fallback:', examResults.length);
             }
-          }
-        } catch (error) {
+          }        } catch (error) {
           console.warn('Error fetching exam results:', error);
         }
       }
 
       // Get pending grading count (submissions that need to be graded)
+      let pendingGradingCount = 0;
       try {
         if (resultsTableExists) {
           // Check if examiner_id column exists first
@@ -367,6 +355,7 @@ const ModernTeacherDashboard = () => {
       }
       
       // Get active classes count
+      let activeClassesCount = 0;
       try {
         if (timetableExists) {
           // Check if class_id column exists
@@ -395,9 +384,8 @@ const ModernTeacherDashboard = () => {
         console.warn('Error fetching active classes count:', error);
         // Fallback to reasonable default
         activeClassesCount = 4;
-      }
-      
-      // Calculate success rate (students who passed their exams)
+      }      // Calculate success rate (students who passed their exams)
+      let successRateValue = 0;
       try {
         if (examResults.length > 0) {
           // Calculate percentage of students who scored 70% or higher
@@ -467,7 +455,6 @@ const ModernTeacherDashboard = () => {
         activeClasses: activeClassesCount,
         successRate: successRateValue
       });
-      
     } catch (error) {
       console.error('Error fetching teacher data:', error);
       toast({
@@ -520,10 +507,7 @@ const ModernTeacherDashboard = () => {
       </div>
     );
   }
-  
-  return (
-    <div className="space-y-8">
-      {/* Show alert for missing tables if any */}
+  return (    <div className="space-y-8">      {/* Show alert for missing tables if any */}
       {missingTables.length > 0 && (
         <MissingTablesAlert missingTables={missingTables} />
       )}
@@ -542,233 +526,207 @@ const ModernTeacherDashboard = () => {
           <div className="p-3 bg-gradient-to-r from-green-500 to-blue-600 rounded-full">
             <GraduationCap className="h-6 w-6 text-white" />
           </div>
-          <h1 className="text-3xl font-bold">Teacher Dashboard</h1>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+            Welcome, {teacherProfile?.full_name}!
+          </h1>
         </div>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Welcome back, {teacherProfile?.full_name || 'Teacher'}! Here's an overview of your classes, exams, and student performance.
+        <p className="text-muted-foreground">
+          {teacherProfile?.subject_expertise} • {teacherProfile?.experience_years} years experience
         </p>
+        <Badge variant="outline" className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950">
+          Teacher Dashboard
+        </Badge>
       </div>
-      
-      {/* Stats Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
         <ModernDashboardCard
-          title="Total Students"
-          value={stats.totalStudents.toString()}
+          title="Active Students"
+          value={stats.totalStudents}
           icon={Users}
-          description="Students in your classes"          trend={{ value: 5, isPositive: true }}
           gradient="from-blue-500 to-cyan-600"
+          description="Enrolled learners"
         />
         <ModernDashboardCard
           title="My Exams"
-          value={stats.myExams.toString()}
-          icon={FileText}
-          description="Assessments created"          trend={{ value: 2, isPositive: true }}
-          gradient="from-purple-500 to-pink-600"
-        />
-        <ModernDashboardCard
-          title="Results"
-          value={stats.recentResults.toString()}
-          icon={Award}
-          description="Recent submissions"          trend={{ value: 12, isPositive: true }}
-          gradient="from-amber-500 to-orange-600"
-        />
-        <ModernDashboardCard
-          title="Avg. Performance"
-          value={`${stats.avgPerformance}%`}
-          icon={TrendingUp}
-          description="Class average score"          trend={{ value: 3, isPositive: true }}
+          value={stats.myExams}
+          icon={BookOpen}
           gradient="from-green-500 to-emerald-600"
+          description="Created assessments"
+        />
+        <ModernDashboardCard
+          title="Avg Performance"
+          value={`${stats.avgPerformance}%`}
+          icon={Target}
+          gradient="from-purple-500 to-pink-600"
+          description="Class average"
+        />
+        <ModernDashboardCard
+          title="Pending Grading"
+          value={stats.pendingGrading}
+          icon={Clock}
+          gradient="from-orange-500 to-red-600"
+          description="Needs attention"
+        />
+        <ModernDashboardCard
+          title="Active Classes"
+          value={stats.activeClasses}
+          icon={Award}
+          gradient="from-teal-500 to-cyan-600"
+          description="Current semester"
+        />        <ModernDashboardCard
+          title="Success Rate"
+          value={`${stats.successRate}%`}
+          icon={Zap}
+          gradient="from-yellow-500 to-orange-600"
+          description="Student pass rate"
         />
       </div>
-      
-      {/* Quick Actions Section */}
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Quick Actions</h2>
-          <Button variant="outline" size="sm">View All</Button>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {quickActions.map((action, index) => (
-            <ModernActionCard
-              key={index}
-              title={action.title}
-              description={action.description}
-              icon={action.icon}
-              gradient={action.gradient}
-              link={action.link}
-            />
-          ))}
-        </div>
-      </div>
-      
-      {/* Recent Exams & Performance Distribution Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Exams */}
-        <Card className="lg:col-span-2">
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Subject Distribution */}
+        <Card className="border-0 shadow-lg">
           <CardHeader>
-            <CardTitle>Recent Exams</CardTitle>
-            <CardDescription>Your latest assessments and tests</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-blue-600" />
+              Subject Distribution
+            </CardTitle>
+            <CardDescription>
+              Exams created by subject area
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentExams.length > 0 ? (
-                recentExams.slice(0, 5).map((exam, index) => (
-                  <div key={index} className="flex items-start justify-between border-b border-border pb-3 last:border-0 last:pb-0">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={performanceData}>
+                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                <XAxis dataKey="subject" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Performance Overview */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-green-600" />
+              Performance Overview
+            </CardTitle>
+            <CardDescription>
+              Student performance distribution
+            </CardDescription>
+          </CardHeader>
+          <CardContent>            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={performanceDistribution}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  dataKey="value"
+                  label={(entry) => `${entry.value}%`}
+                >
+                  {performanceDistribution.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-purple-600" />
+            Teaching Tools
+          </CardTitle>
+          <CardDescription>
+            Essential tools for effective teaching
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {quickActions.map((action, index) => (
+              <ModernActionCard
+                key={index}
+                title={action.title}
+                description={action.description}
+                icon={action.icon}
+                link={action.link}
+                gradient={action.gradient}
+              />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Recent Exams */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-blue-600" />
+              Recent Exams
+            </CardTitle>
+            <Button variant="outline" size="sm" asChild>
+              <a href="/admin/exams">
+                <Eye className="h-4 w-4 mr-2" />
+                View All
+              </a>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {recentExams.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {recentExams.slice(0, 4).map((exam) => (
+                <div key={exam.id} className="p-4 rounded-lg bg-gradient-to-r from-muted/50 to-muted/30 border border-muted">
+                  <div className="flex justify-between items-start mb-3">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{exam.title}</h3>
-                        <Badge variant="outline" className="rounded-full">
-                          {exam.subjects?.name || exam.subject || 'General'}
-                        </Badge>
+                      <h3 className="font-semibold">{exam.title}</h3>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>{exam.subjects?.name}</span>
+                        <span>•</span>
+                        <span>Class {exam.class_level}</span>
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {exam.description?.substring(0, 60) || 'No description provided'}
-                        {exam.description && exam.description.length > 60 ? '...' : ''}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Created on: {new Date(exam.created_at).toLocaleDateString()}
-                      </div>
+                      {exam.topics?.name && (
+                        <p className="text-sm text-muted-foreground">Topic: {exam.topics.name}</p>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-4 w-4 mr-1" />
-                        View
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <FileText className="h-4 w-4 mr-1" />
-                        Results
-                      </Button>
-                    </div>
+                    <Badge variant="outline">{exam.exam_type}</Badge>
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-6">
-                  <div className="rounded-full bg-amber-100 p-3 inline-flex mb-4">
-                    <AlertTriangle className="h-6 w-6 text-amber-600" />
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Max Marks: {exam.max_marks}</span>
+                    <span className="text-muted-foreground">
+                      {new Date(exam.created_at).toLocaleDateString()}
+                    </span>
                   </div>
-                  <h3 className="font-semibold text-lg mb-2">No exams created yet</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    You haven't created any exams for your students yet.
-                  </p>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" /> Create First Exam
-                  </Button>
                 </div>
-              )}
+              ))}
             </div>
-          </CardContent>
-        </Card>
-        
-        {/* Performance Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Performance Distribution</CardTitle>
-            <CardDescription>Student scores breakdown</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {stats.recentResults > 0 ? (
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={performanceDistribution}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="value"
-                      label={({ name, value }) => `${name}: ${value}%`}
-                      labelLine={false}
-                    >
-                      {performanceDistribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="text-center py-6">
-                <div className="rounded-full bg-blue-100 p-3 inline-flex mb-4">
-                  <BarChart3 className="h-6 w-6 text-blue-600" />
-                </div>
-                <h3 className="font-semibold mb-2">No data available</h3>
-                <p className="text-sm text-muted-foreground">
-                  Performance data will appear once students have completed exams.
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-      
-      {/* At-a-Glance Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium flex items-center">
-              <Clock className="h-4 w-4 mr-2 text-amber-500" />
-              Pending Grading
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-baseline justify-between">
-              <span className="text-3xl font-bold">{stats.pendingGrading}</span>
-              <span className="text-sm text-muted-foreground">
-                submissions
-              </span>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">No Exams Created Yet</h3>
+              <p className="mb-6">Start creating assessments for your students to begin teaching.</p>
+              <Button asChild>
+                <a href="/admin/exams">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Your First Exam
+                </a>
+              </Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              {stats.pendingGrading > 0 
-                ? 'Submissions awaiting your review and grading'
-                : 'No pending submissions to grade'
-              }
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium flex items-center">
-              <Target className="h-4 w-4 mr-2 text-green-500" />
-              Success Rate
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-baseline justify-between">
-              <span className="text-3xl font-bold">{stats.successRate}%</span>
-              <span className="text-sm text-muted-foreground">
-                pass rate
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Percentage of students scoring 70% or higher
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium flex items-center">
-              <Zap className="h-4 w-4 mr-2 text-purple-500" />
-              Active Classes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-baseline justify-between">
-              <span className="text-3xl font-bold">{stats.activeClasses}</span>
-              <span className="text-sm text-muted-foreground">
-                classes
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Currently active courses you are teaching
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

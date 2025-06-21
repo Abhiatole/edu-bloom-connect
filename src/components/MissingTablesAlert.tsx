@@ -89,14 +89,6 @@ BEGIN
   END IF;
 END
 $$;
-    CREATE TABLE public.subjects (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      name TEXT NOT NULL UNIQUE,
-      description TEXT,
-      created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-      updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-    );
-  END IF;
 
   IF NOT public.table_exists('topics') THEN
     CREATE TABLE public.topics (
@@ -196,16 +188,18 @@ const MissingTablesAlert = ({ missingTables, onTablesCreated }: MissingTablesAle
         }
       } catch (execError) {
         console.warn("SQL execution via RPC failed, trying alternative approach:", execError);
-      }
-      
-      // Fallback: If direct execution fails, use the REST API to run raw SQL
+      }        // Fallback: If direct execution fails, use the REST API to run raw SQL
       try {
+        // Use the Supabase URL from environment
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://pgwgtronuluhwuiaqkcc.supabase.co";
+        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+        
         // This approach may still fail due to permissions
-        const response = await fetch('https://pgwgtronuluhwuiaqkcc.supabase.co/rest/v1/rpc/execute_sql', {
+        const response = await fetch(`${supabaseUrl}/rest/v1/rpc/execute_sql`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+            'apikey': supabaseKey,
             'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
           },
           body: JSON.stringify({
