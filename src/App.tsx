@@ -14,6 +14,8 @@ import About from "./pages/About";
 import Features from "./pages/Features";
 import Contact from "./pages/Contact";
 import DeploymentDebug from "./pages/DeploymentDebug";
+import DatabaseFix from "./pages/DatabaseFix";
+import FixExamResultsTable from "./pages/FixExamResultsTable";
 
 // Enhanced Dashboards
 import ModernSuperAdminDashboard from "./pages/enhanced/ModernSuperAdminDashboard";
@@ -66,10 +68,10 @@ const App = () => (
               <Route path="login" element={<Login />} />
               <Route path="forgot-password" element={<ForgotPassword />} />
               <Route path="about" element={<About />} />
-              <Route path="features" element={<Features />} />
-              <Route path="contact" element={<Contact />} />
-              <Route path="email-test" element={<EmailTest />} />
+              <Route path="features" element={<Features />} />              <Route path="contact" element={<Contact />} />              <Route path="email-test" element={<EmailTest />} />
               <Route path="debug" element={<DeploymentDebug />} />
+              <Route path="database-fix" element={<DatabaseFix />} />
+              <Route path="fix-exam-results" element={<FixExamResultsTable />} />
               
               {/* Registration Routes */}
               <Route path="register/student" element={<StudentRegister />} />

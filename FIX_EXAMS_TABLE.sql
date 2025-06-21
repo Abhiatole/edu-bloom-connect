@@ -1,0 +1,207 @@
+-- FIX EXAMS TABLE STRUCTURE
+-- This script ensures the exams table has the necessary columns
+
+DO $$
+BEGIN
+    -- Check if the exams table exists
+    IF EXISTS (
+        SELECT 1 
+        FROM information_schema.tables 
+        WHERE table_name = 'exams'
+        AND table_schema = 'public'
+    ) THEN
+        -- Check if created_by column exists
+        IF NOT EXISTS (
+            SELECT 1 
+            FROM information_schema.columns 
+            WHERE table_name = 'exams' 
+            AND column_name = 'created_by'
+            AND table_schema = 'public'
+        ) THEN
+            -- Add the created_by column
+            ALTER TABLE exams ADD COLUMN created_by UUID REFERENCES auth.users(id);
+            
+            -- Add an index for faster filtering
+            CREATE INDEX idx_exams_created_by ON exams(created_by);
+            
+            -- Try to populate from teacher_profiles where possible
+            UPDATE exams e
+            SET created_by = (SELECT user_id FROM teacher_profiles LIMIT 1)
+            WHERE e.created_by IS NULL;
+            
+            RAISE NOTICE 'Added created_by column to exams table';
+        ELSE
+            RAISE NOTICE 'created_by column already exists in exams table';
+        END IF;
+          -- Ensure other required columns exist
+        IF NOT EXISTS (
+            SELECT 1 
+            FROM information_schema.columns 
+            WHERE table_name = 'exams' 
+            AND column_name = 'subject'
+            AND table_schema = 'public'
+        ) THEN
+            -- Add subject column for non-relational subject storage
+            ALTER TABLE exams ADD COLUMN subject TEXT;
+            RAISE NOTICE 'Added subject column to exams table';
+        END IF;
+        
+        IF NOT EXISTS (
+            SELECT 1 
+            FROM information_schema.columns 
+            WHERE table_name = 'exams' 
+            AND column_name = 'description'
+            AND table_schema = 'public'
+        ) THEN
+            -- Add description column if it doesn't exist
+            ALTER TABLE exams ADD COLUMN description TEXT;
+            RAISE NOTICE 'Added description column to exams table';
+        END IF;
+        
+        -- Check if subject_id and topic_id columns exist
+        IF NOT EXISTS (
+            SELECT 1 
+            FROM information_schema.columns 
+            WHERE table_name = 'exams' 
+            AND column_name = 'subject_id'
+            AND table_schema = 'public'
+        ) THEN
+            -- Check if subjects table exists before adding the FK
+            IF EXISTS (
+                SELECT 1 
+                FROM information_schema.tables 
+                WHERE table_name = 'subjects'
+                AND table_schema = 'public'
+            ) THEN
+                -- Add subject_id column with foreign key
+                ALTER TABLE exams ADD COLUMN subject_id UUID REFERENCES subjects(id);
+                RAISE NOTICE 'Added subject_id column to exams table';
+            ELSE
+                -- Add subject_id without FK if subjects table doesn't exist
+                ALTER TABLE exams ADD COLUMN subject_id UUID;
+                RAISE NOTICE 'Added subject_id column (without FK) to exams table';
+            END IF;
+        END IF;
+        
+        IF NOT EXISTS (
+            SELECT 1 
+            FROM information_schema.columns 
+            WHERE table_name = 'exams' 
+            AND column_name = 'topic_id'
+            AND table_schema = 'public'
+        ) THEN
+            -- Check if topics table exists before adding the FK
+            IF EXISTS (
+                SELECT 1 
+                FROM information_schema.tables 
+                WHERE table_name = 'topics'
+                AND table_schema = 'public'
+            ) THEN
+                -- Add topic_id column with foreign key
+                ALTER TABLE exams ADD COLUMN topic_id UUID REFERENCES topics(id);
+                RAISE NOTICE 'Added topic_id column to exams table';
+            ELSE
+                -- Add topic_id without FK if topics table doesn't exist
+                ALTER TABLE exams ADD COLUMN topic_id UUID;
+                RAISE NOTICE 'Added topic_id column (without FK) to exams table';
+            END IF;
+        END IF;
+    ELSE
+        RAISE NOTICE 'The exams table does not exist';
+    END IF;
+END $$;
+
+-- Create a view for simplified exam management
+DO $$
+DECLARE
+    has_topic_id BOOLEAN;
+    has_subject_id BOOLEAN;
+BEGIN
+    -- Check if required columns exist
+    SELECT EXISTS (
+        SELECT 1 
+        FROM information_schema.columns 
+        WHERE table_name = 'exams' 
+        AND column_name = 'topic_id'
+        AND table_schema = 'public'
+    ) INTO has_topic_id;
+    
+    SELECT EXISTS (
+        SELECT 1 
+        FROM information_schema.columns 
+        WHERE table_name = 'exams' 
+        AND column_name = 'subject_id'
+        AND table_schema = 'public'
+    ) INTO has_subject_id;
+    
+    -- Drop the view if it exists to recreate it
+    DROP VIEW IF EXISTS exam_summary_view;
+    
+    -- Create different view definitions based on available columns
+    IF has_topic_id AND has_subject_id THEN
+        -- Full version with topic_id and subject_id
+        EXECUTE 'CREATE OR REPLACE VIEW exam_summary_view AS
+        SELECT 
+            e.id,
+            e.title,
+            e.description,
+            CASE 
+                WHEN e.subject_id IS NOT NULL AND s.name IS NOT NULL THEN s.name
+                ELSE COALESCE(e.subject, ''Unknown'')
+            END AS subject_name,
+            COALESCE(t.name, ''General'') AS topic_name,
+            e.class_level,
+            e.max_marks,
+            e.created_by,
+            e.created_at
+        FROM 
+            exams e
+        LEFT JOIN 
+            subjects s ON e.subject_id = s.id
+        LEFT JOIN 
+            topics t ON e.topic_id = t.id';
+        
+        RAISE NOTICE 'Created exam_summary_view with subject and topic joins';
+    ELSIF has_subject_id AND NOT has_topic_id THEN
+        -- Version with only subject_id
+        EXECUTE 'CREATE OR REPLACE VIEW exam_summary_view AS
+        SELECT 
+            e.id,
+            e.title,
+            e.description,
+            CASE 
+                WHEN e.subject_id IS NOT NULL AND s.name IS NOT NULL THEN s.name
+                ELSE COALESCE(e.subject, ''Unknown'')
+            END AS subject_name,
+            ''General'' AS topic_name,
+            e.class_level,
+            e.max_marks,
+            e.created_by,
+            e.created_at
+        FROM 
+            exams e
+        LEFT JOIN 
+            subjects s ON e.subject_id = s.id';
+        
+        RAISE NOTICE 'Created exam_summary_view with subject join only (no topic_id column)';
+    ELSE
+        -- Simplified version with no joins
+        EXECUTE 'CREATE OR REPLACE VIEW exam_summary_view AS
+        SELECT 
+            e.id,
+            e.title,
+            e.description,
+            COALESCE(e.subject, ''Unknown'') AS subject_name,
+            ''General'' AS topic_name,
+            e.class_level,
+            e.max_marks,
+            e.created_by,
+            e.created_at
+        FROM 
+            exams e';
+        
+        RAISE NOTICE 'Created simplified exam_summary_view (no subject_id or topic_id columns)';
+    END IF;
+    
+    RAISE NOTICE 'Created or updated exam_summary_view';
+END $$;

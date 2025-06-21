@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ModernDashboardCard } from '@/components/enhanced/ModernDashboardCard';
 import { ModernActionCard } from '@/components/enhanced/ModernActionCard';
 import RLSError from '@/components/RLSError';
+import TeacherApprovalTool from '@/components/TeacherApprovalTool';
 import {
   Users,
   GraduationCap,
@@ -322,24 +323,30 @@ const ModernSuperAdminDashboard = () => {  const [stats, setStats] = useState({
           <CardTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5 text-purple-600" />
             Administrative Tools
-          </CardTitle>
-          <CardDescription>
+          </CardTitle>          <CardDescription>
             Essential platform management functions
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {quickActions.map((action, index) => (
-              <ModernActionCard
-                key={index}
-                title={action.title}
-                description={action.description}
-                icon={action.icon}
-                link={action.link}
-                gradient={action.gradient}
-                count={action.count}
-              />
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {quickActions.map((action, index) => (
+                  <ModernActionCard
+                    key={index}
+                    title={action.title}
+                    description={action.description}
+                    icon={action.icon}
+                    link={action.link}
+                    gradient={action.gradient}
+                    count={action.count}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="md:col-span-1">
+              <TeacherApprovalTool />
+            </div>
           </div>
         </CardContent>
       </Card>
