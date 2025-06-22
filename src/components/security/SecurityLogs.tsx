@@ -17,11 +17,10 @@ import { DateRange } from 'react-day-picker';
 
 const SecurityLogs = () => {
   const [logs, setLogs] = useState([]);
-  const [filteredLogs, setFilteredLogs] = useState([]);
-  const [filters, setFilters] = useState({
+  const [filteredLogs, setFilteredLogs] = useState([]);  const [filters, setFilters] = useState({
     search: '',
-    action: '',
-    success: '',
+    action: 'all',
+    success: 'all',
     dateRange: undefined as DateRange | undefined
   });
   const [stats, setStats] = useState({
@@ -147,15 +146,11 @@ const SecurityLogs = () => {
         log.ip_address?.includes(filters.search) ||
         log.error_message?.toLowerCase().includes(filters.search.toLowerCase())
       );
-    }
-
-    // Action filter
-    if (filters.action) {
+    }    // Action filter
+    if (filters.action && filters.action !== 'all') {
       filtered = filtered.filter(log => log.action === filters.action);
-    }
-
-    // Success filter
-    if (filters.success !== '') {
+    }    // Success filter
+    if (filters.success !== '' && filters.success !== 'all') {
       filtered = filtered.filter(log => log.success.toString() === filters.success);
     }
 
@@ -326,7 +321,7 @@ const SecurityLogs = () => {
                   <SelectValue placeholder="All actions" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All actions</SelectItem>
+                  <SelectItem value="all">All actions</SelectItem>
                   <SelectItem value="LOGIN">Login</SelectItem>
                   <SelectItem value="LOGIN_FAILED">Login Failed</SelectItem>
                   <SelectItem value="CREATE_STUDENT">Create Student</SelectItem>
@@ -343,7 +338,7 @@ const SecurityLogs = () => {
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="all">All statuses</SelectItem>
                   <SelectItem value="true">Success</SelectItem>
                   <SelectItem value="false">Failed</SelectItem>
                 </SelectContent>

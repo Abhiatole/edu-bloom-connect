@@ -649,9 +649,10 @@ const ModernTeacherDashboard = () => {
                   <h3 className="font-semibold text-lg mb-2">No exams created yet</h3>
                   <p className="text-sm text-muted-foreground mb-4">
                     You haven't created any exams for your students yet.
-                  </p>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" /> Create First Exam
+                  </p>                  <Button asChild>
+                    <a href="/admin/exams">
+                      <Plus className="h-4 w-4 mr-2" /> Create First Exam
+                    </a>
                   </Button>
                 </div>
               )}

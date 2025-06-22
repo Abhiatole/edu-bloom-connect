@@ -36,23 +36,22 @@ BEGIN
         
         -- Add an index for faster filtering
         CREATE INDEX idx_exam_results_examiner ON exam_results(examiner_id);
-        
-        -- Check if created_by column exists in exams table before trying to use it
+          -- Check if created_by_teacher_id column exists in exams table before trying to use it
         IF EXISTS (
             SELECT 1 
             FROM information_schema.columns 
             WHERE table_name = 'exams' 
-            AND column_name = 'created_by'
+            AND column_name = 'created_by_teacher_id'
             AND table_schema = 'public'
         ) THEN
             -- Set the examiner_id for existing records using the creator of the exam
             UPDATE exam_results er
-            SET examiner_id = e.created_by
+            SET examiner_id = e.created_by_teacher_id
             FROM exams e
             WHERE er.exam_id = e.id AND er.examiner_id IS NULL;
         ELSE
-            -- If created_by doesn't exist, log a notice
-            RAISE NOTICE 'Cannot update examiner_id because created_by column does not exist in exams table';
+            -- If created_by_teacher_id doesn't exist, log a notice
+            RAISE NOTICE 'Cannot update examiner_id because created_by_teacher_id column does not exist in exams table';
         END IF;
         
         RAISE NOTICE 'Added examiner_id column to exam_results table';
@@ -119,35 +118,46 @@ END $$;
 DO $$
 DECLARE
     teacher_id UUID;
-    exam_id UUID;
+    exam_id_var UUID; -- Renamed to avoid ambiguity
     created_by_exists BOOLEAN;
-BEGIN
-    -- Check if created_by column exists in exams table
+BEGIN    -- Check if created_by_teacher_id column exists in exams table
     SELECT EXISTS (
         SELECT 1 
         FROM information_schema.columns 
         WHERE table_name = 'exams' 
-        AND column_name = 'created_by'
+        AND column_name = 'created_by_teacher_id'
         AND table_schema = 'public'
     ) INTO created_by_exists;
     
-    -- Only proceed if the created_by column exists
-    IF created_by_exists THEN
-        -- Get a random teacher
+    -- Only proceed if the created_by_teacher_id column exists
+    IF created_by_exists THEN        -- Get a random teacher
         SELECT user_id INTO teacher_id FROM teacher_profiles LIMIT 1;
         
         -- Only proceed if we have a teacher
         IF teacher_id IS NOT NULL THEN
             -- Get or create an exam for this teacher
-            SELECT id INTO exam_id FROM exams WHERE created_by = teacher_id LIMIT 1;
-            
-            -- If no exam exists, create one
-            IF exam_id IS NULL THEN
-                INSERT INTO exams (title, description, class_level, subject, max_marks, created_by)
-                VALUES ('Sample Exam', 'For testing pending grading', '10', 'Mathematics', 100, teacher_id)
-                RETURNING id INTO exam_id;
-            END IF;
-              -- Insert some pending exam results
+            SELECT id INTO exam_id_var FROM exams WHERE created_by_teacher_id = teacher_id LIMIT 1;-- If no exam exists, create one
+            IF exam_id_var IS NULL THEN
+                -- Insert using the actual columns in the table
+                INSERT INTO exams (
+                    title, 
+                    subject, 
+                    class_level, 
+                    exam_type, 
+                    max_marks,
+                    exam_date,
+                    created_by_teacher_id
+                )
+                VALUES (
+                    'Sample Exam', 
+                    'Mathematics', 
+                    10, 
+                    'Quiz', 
+                    100,
+                    CURRENT_DATE,                    teacher_id
+                )
+                RETURNING id INTO exam_id_var;            END IF;
+              -- Insert some pending exam results            
             FOR i IN 1..5 LOOP
                 -- Find a student
                 WITH student AS (
@@ -155,7 +165,7 @@ BEGIN
                 )
                 INSERT INTO exam_results (exam_id, student_id, marks_obtained, status, examiner_id)
                 SELECT 
-                    exam_id, 
+                    exam_id_var, -- Use the variable name with a suffix to avoid ambiguity
                     student_id, 
                     0, -- Set to 0 initially since marks_obtained is NOT NULL
                     'PENDING',

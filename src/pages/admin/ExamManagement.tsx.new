@@ -1,0 +1,951 @@
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import ManualMarkUpload from '@/components/ManualMarkUpload';
+import CSVUploader from '@/components/CSVUploader';
+import { format } from 'date-fns';
+import { Loader2 } from 'lucide-react';
+
+// Interfaces matching the actual DB schema
+interface Student {
+  id: string;
+  enrollment_no: string;
+  class_level: number;
+  display_name?: string; // Added display name for UI
+}
+
+interface Subject {
+  id: string;
+  name: string;
+  class_level?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface Topic {
+  id: string;
+  name: string;
+  description?: string;
+  subject_id: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface Exam {
+  id: string;
+  title: string;
+  description?: string;
+  exam_date: string;
+  exam_type: ExamType;
+  duration_minutes: number;
+  class_level: number;
+  subject: string;
+  topic?: string;
+  max_marks: number;
+  passing_marks?: number;
+  created_by_teacher_id: string;
+  created_at?: string;
+  updated_at?: string;
+  status?: string;
+}
+
+type ExamType = 'JEE' | 'NEET' | 'CET' | 'Boards' | 'Internal' | 'Quarterly' | 'Half Yearly' | 'Annual';
+
+interface ExamResult {
+  id: string;
+  exam_id: string;
+  student_id: string;
+  marks_obtained: number;
+  grade?: string;
+  remarks?: string;
+  submitted_at: string;
+  status?: string;
+  examiner_id?: string;
+}
+
+interface StudentResult {
+  student: Student;
+  result: ExamResult;
+}
+
+interface ExamFormData {
+  title: string;
+  description: string;
+  examDate: string;
+  examType: ExamType | '';
+  durationMinutes: number;
+  classLevel: number;
+  subjectId: string;
+  topicId: string;
+  maxMarks: number;
+  passingMarks: number;
+}
+
+const ExamManagement: React.FC = () => {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [loadingExams, setLoadingExams] = useState(false);
+  const [exams, setExams] = useState<Exam[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [examResults, setExamResults] = useState<StudentResult[]>([]);
+  const [customSubject, setCustomSubject] = useState('');
+  const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
+  const [activeTab, setActiveTab] = useState('view-exams');
+  const [examForm, setExamForm] = useState<ExamFormData>({
+    title: '',
+    description: '',
+    examDate: format(new Date(), 'yyyy-MM-dd'),
+    examType: '',
+    durationMinutes: 60,
+    classLevel: 11,
+    subjectId: '',
+    topicId: '',
+    maxMarks: 100,
+    passingMarks: 35,
+  });
+
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        loadInitialData();
+      }
+    });
+
+    if (supabase.auth.getSession()) {
+      loadInitialData();
+    }
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const loadInitialData = async () => {
+    setLoading(true);
+    try {
+      await Promise.all([
+        fetchExams(),
+        fetchSubjects(),
+        fetchStudents(),
+      ]);
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error loading data',
+        description: 'Failed to load initial data. Please try again.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSubjects = async () => {
+    try {
+      console.log('Fetching subjects...');
+      // Try to use RPC if available
+      try {
+        const { data: subjectsData, error: subjectsError } = await supabase.rpc('get_subjects');
+        if (!subjectsError && subjectsData) {
+          console.log('Got subjects from RPC:', subjectsData);
+          setSubjects(subjectsData);
+          return;
+        }
+      } catch (rpcError) {
+        console.log('RPC not available, falling back to direct query');
+      }
+
+      // Direct query as fallback
+      const { data: subjectsResult, error: queryError } = await supabase
+        .from('subjects')
+        .select('*');
+
+      if (queryError) {
+        console.error('Error fetching subjects:', queryError);
+        return;
+      }
+
+      if (subjectsResult) {
+        console.log('Got subjects from direct query:', subjectsResult);
+        const mappedSubjects = subjectsResult.map(subj => ({
+          id: subj.id,
+          name: subj.name || 'Unknown Subject',
+          class_level: subj.class_level || 11,
+          created_at: subj.created_at,
+          updated_at: subj.updated_at
+        }));
+        setSubjects(mappedSubjects);
+      } else {
+        console.log('No subjects found');
+      }
+    } catch (error) {
+      console.error('Error in fetchSubjects:', error);
+    }
+  };
+
+  const fetchExams = async () => {
+    setLoadingExams(true);
+    try {
+      console.log('Fetching exams...');
+      const { data: examsData, error: examsError } = await supabase
+        .from('exams')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (examsError) {
+        console.error('Error fetching exams:', examsError);
+        return;
+      }
+
+      console.log('Exams fetched:', examsData);
+      
+      if (examsData) {
+        const mappedExams = examsData.map(exam => ({
+          id: exam.id,
+          title: exam.title,
+          description: exam.description,
+          exam_date: exam.exam_date,
+          exam_type: exam.exam_type,
+          duration_minutes: exam.duration_minutes,
+          class_level: exam.class_level,
+          subject: exam.subject,
+          topic: exam.topic,
+          max_marks: exam.max_marks || 100,
+          passing_marks: exam.passing_marks || 35,
+          created_by_teacher_id: exam.created_by_teacher_id,
+          created_at: exam.created_at,
+          updated_at: exam.updated_at,
+          status: exam.status
+        }));
+        setExams(mappedExams);
+      }
+    } catch (error) {
+      console.error('Error in fetchExams:', error);
+    } finally {
+      setLoadingExams(false);
+    }
+  };
+
+  const fetchTopics = async (subjectId: string) => {
+    try {
+      console.log(`Fetching topics for subject ${subjectId}...`);
+      
+      if (subjectId === 'other' || !subjectId) {
+        setTopics([]);
+        return;
+      }
+
+      const { data: topicsData, error: topicsError } = await supabase
+        .from('topics')
+        .select('*')
+        .eq('subject_id', subjectId);
+
+      if (topicsError) {
+        console.error('Error fetching topics:', topicsError);
+        return;
+      }
+
+      console.log('Topics fetched:', topicsData);
+      
+      if (topicsData) {
+        const mappedTopics = topicsData.map(topic => ({
+          id: topic.id,
+          name: topic.name || 'Unknown Topic',
+          description: topic.description,
+          subject_id: topic.subject_id,
+          created_at: topic.created_at,
+          updated_at: topic.updated_at
+        }));
+        setTopics(mappedTopics);
+      }
+    } catch (error) {
+      console.error('Error in fetchTopics:', error);
+    }
+  };
+
+  const fetchStudents = async () => {
+    try {
+      console.log('Fetching students...');
+      const { data: studentsData, error: studentsError } = await supabase
+        .from('student_profiles')
+        .select('*');
+
+      if (studentsError) {
+        console.error('Error fetching students:', studentsError);
+        return;
+      }
+
+      console.log('Students fetched:', studentsData);
+      
+      if (studentsData) {
+        const mappedStudents = studentsData.map(student => {
+          // Create a display name from available fields
+          const displayName = 
+            student.enrollment_no || 
+            `Student-${student.id.substring(0, 8)}`;
+          
+          return {
+            id: student.id,
+            enrollment_no: student.enrollment_no || '',
+            class_level: student.class_level || 0,
+            display_name: displayName
+          };
+        });
+        setStudents(mappedStudents);
+      }
+    } catch (error) {
+      console.error('Error in fetchStudents:', error);
+    }
+  };
+
+  const fetchExamResults = async (examId: string) => {
+    try {
+      console.log(`Fetching results for exam ${examId}...`);
+      
+      // First get the exam results
+      const { data: resultsData, error: resultsError } = await supabase
+        .from('exam_results')
+        .select('*')
+        .eq('exam_id', examId);
+
+      if (resultsError) {
+        console.error('Error fetching exam results:', resultsError);
+        return;
+      }
+
+      console.log('Results fetched:', resultsData);
+      
+      if (!resultsData || resultsData.length === 0) {
+        setExamResults([]);
+        return;
+      }
+
+      // For each result, get the student details
+      const studentResultsPromises = resultsData.map(async (result) => {
+        const { data: studentData } = await supabase
+          .from('student_profiles')
+          .select('*')
+          .eq('id', result.student_id)
+          .single();
+
+        // Create a student object with fallbacks
+        const student: Student = studentData || {
+          id: result.student_id,
+          enrollment_no: `Unknown-${result.student_id.substring(0, 8)}`,
+          class_level: 0,
+          display_name: `Student-${result.student_id.substring(0, 8)}`
+        };
+
+        return {
+          student,
+          result
+        };
+      });
+
+      const studentResults = await Promise.all(studentResultsPromises);
+      setExamResults(studentResults);
+    } catch (error) {
+      console.error('Error in fetchExamResults:', error);
+    }
+  };
+
+  const handleCreateExam = async () => {
+    setLoading(true);
+    try {
+      if (!examForm.examType) {
+        toast({
+          variant: 'destructive',
+          title: 'Validation Error',
+          description: 'Please select an exam type.',
+        });
+        setLoading(false);
+        return;
+      }
+
+      let finalSubjectName = '';
+      let subjectId = examForm.subjectId;
+
+      if (examForm.subjectId === 'other') {
+        if (!customSubject.trim()) {
+          toast({
+            variant: 'destructive',
+            title: 'Validation Error',
+            description: 'Please enter a subject name.',
+          });
+          setLoading(false);
+          return;
+        }
+
+        // Create new subject
+        const { data: newSubject, error: subjectError } = await supabase
+          .from('subjects')
+          .insert({
+            name: customSubject.trim(),
+            class_level: examForm.classLevel
+          })
+          .select()
+          .single();
+
+        if (subjectError) {
+          console.error('Error creating subject:', subjectError);
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Failed to create subject. Please try again.',
+          });
+          setLoading(false);
+          return;
+        }
+
+        finalSubjectName = customSubject.trim();
+        subjectId = newSubject.id;
+      } else {
+        // Find the selected subject name
+        const selectedSubject = subjects.find(s => s.id === examForm.subjectId);
+        finalSubjectName = selectedSubject?.name || '';
+      }
+
+      let finalTopicName = '';
+      if (examForm.topicId) {
+        const selectedTopic = topics.find(t => t.id === examForm.topicId);
+        finalTopicName = selectedTopic?.name || '';
+      }
+
+      // Get current user for created_by_teacher_id
+      const { data: currentUser } = await supabase.auth.getUser();
+      if (!currentUser.user) throw new Error('Not authenticated');
+
+      const newExam = {
+        title: examForm.title,
+        description: examForm.description,
+        exam_date: examForm.examDate,
+        exam_type: examForm.examType,
+        duration_minutes: examForm.durationMinutes,
+        class_level: examForm.classLevel,
+        subject: finalSubjectName,
+        subject_id: subjectId,
+        topic: finalTopicName,
+        topic_id: examForm.topicId || null,
+        max_marks: examForm.maxMarks,
+        passing_marks: examForm.passingMarks,
+        created_by_teacher_id: currentUser.user.id,
+        status: 'active'
+      };
+
+      const { data: createdExam, error: examError } = await supabase
+        .from('exams')
+        .insert(newExam)
+        .select()
+        .single();
+
+      if (examError) {
+        console.error('Error creating exam:', examError);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to create exam. Please try again.',
+        });
+        setLoading(false);
+        return;
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Exam created successfully!',
+      });
+
+      // Reset form and refresh exams
+      setExamForm({
+        title: '',
+        description: '',
+        examDate: format(new Date(), 'yyyy-MM-dd'),
+        examType: '',
+        durationMinutes: 60,
+        classLevel: 11,
+        subjectId: '',
+        topicId: '',
+        maxMarks: 100,
+        passingMarks: 35,
+      });
+      setCustomSubject('');
+      fetchExams();
+      setActiveTab('view-exams');
+    } catch (error) {
+      console.error('Error in handleCreateExam:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'An unexpected error occurred. Please try again.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExamSelect = async (exam: Exam) => {
+    setSelectedExam(exam);
+    await fetchExamResults(exam.id);
+  };
+
+  const handleSubjectChange = async (subjectId: string) => {
+    await fetchTopics(subjectId);
+    setExamForm(prev => ({ ...prev, subjectId, topicId: '' }));
+  };
+
+  const resetExamSelection = () => {
+    setSelectedExam(null);
+    setExamResults([]);
+  };
+
+  // Calculate percentage and grade for display
+  const calculatePercentage = (marksObtained: number, maxMarks: number) => {
+    return Math.round((marksObtained / maxMarks) * 100);
+  };
+
+  const determineGrade = (percentage: number) => {
+    if (percentage >= 90) return 'A+';
+    if (percentage >= 80) return 'A';
+    if (percentage >= 70) return 'B+';
+    if (percentage >= 60) return 'B';
+    if (percentage >= 50) return 'C';
+    if (percentage >= 40) return 'D';
+    return 'F';
+  };
+
+  // Authentication check
+  const checkAuth = async () => {
+    const { data } = await supabase.auth.getSession();
+    return !!data.session;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin mr-2" />
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto py-6">
+      <h1 className="text-3xl font-bold mb-6">Exam Management</h1>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="view-exams">View Exams</TabsTrigger>
+          <TabsTrigger value="create-exam">Create Exam</TabsTrigger>
+          <TabsTrigger value="manual-marks">Manual Mark Entry</TabsTrigger>
+          <TabsTrigger value="csv-upload">CSV Upload</TabsTrigger>
+        </TabsList>
+        
+        {/* View Exams Tab */}
+        <TabsContent value="view-exams">
+          {loadingExams ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="h-6 w-6 animate-spin mr-2" />
+              <p>Loading exams...</p>
+            </div>
+          ) : (
+            <>
+              {selectedExam ? (
+                <div>
+                  <Button variant="outline" onClick={resetExamSelection} className="mb-4">
+                    ← Back to All Exams
+                  </Button>
+                  
+                  <Card className="mb-6">
+                    <CardContent className="pt-6">
+                      <h2 className="text-2xl font-bold mb-2">{selectedExam.title}</h2>
+                      <p className="text-muted-foreground mb-4">{selectedExam.description}</p>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div>
+                          <h4 className="font-medium text-sm">Date</h4>
+                          <p>{format(new Date(selectedExam.exam_date), 'PPP')}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-sm">Type</h4>
+                          <p>{selectedExam.exam_type}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-sm">Duration</h4>
+                          <p>{selectedExam.duration_minutes} minutes</p>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-sm">Class Level</h4>
+                          <p>{selectedExam.class_level}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-sm">Subject</h4>
+                          <p>{selectedExam.subject}</p>
+                        </div>
+                        {selectedExam.topic && (
+                          <div>
+                            <h4 className="font-medium text-sm">Topic</h4>
+                            <p>{selectedExam.topic}</p>
+                          </div>
+                        )}
+                        <div>
+                          <h4 className="font-medium text-sm">Maximum Marks</h4>
+                          <p>{selectedExam.max_marks}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-sm">Passing Marks</h4>
+                          <p>{selectedExam.passing_marks || Math.round(selectedExam.max_marks * 0.35)}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <h3 className="text-xl font-bold mb-4">Results</h3>
+                  
+                  {examResults.length === 0 ? (
+                    <p className="text-muted-foreground">No results available for this exam yet.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="bg-muted">
+                            <th className="p-2 text-left">Student</th>
+                            <th className="p-2 text-left">Enrollment No</th>
+                            <th className="p-2 text-right">Marks</th>
+                            <th className="p-2 text-right">Percentage</th>
+                            <th className="p-2 text-center">Grade</th>
+                            <th className="p-2 text-left">Status</th>
+                            <th className="p-2 text-left">Remarks</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {examResults.map(({ student, result }) => {
+                            const percentage = calculatePercentage(result.marks_obtained, selectedExam.max_marks);
+                            const grade = result.grade || determineGrade(percentage);
+                            const passingMarks = selectedExam.passing_marks || Math.round(selectedExam.max_marks * 0.35);
+                            const isPassed = result.marks_obtained >= passingMarks;
+                            
+                            return (
+                              <tr key={result.id} className="border-b">
+                                <td className="p-2">{student.display_name}</td>
+                                <td className="p-2">{student.enrollment_no}</td>
+                                <td className="p-2 text-right">{result.marks_obtained} / {selectedExam.max_marks}</td>
+                                <td className="p-2 text-right">{percentage}%</td>
+                                <td className="p-2 text-center">
+                                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                    isPassed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                  }`}>
+                                    {grade}
+                                  </span>
+                                </td>
+                                <td className="p-2">
+                                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                    result.status === 'verified' 
+                                      ? 'bg-blue-100 text-blue-800' 
+                                      : (result.status === 'final' 
+                                        ? 'bg-green-100 text-green-800' 
+                                        : 'bg-yellow-100 text-yellow-800')
+                                  }`}>
+                                    {result.status || 'pending'}
+                                  </span>
+                                </td>
+                                <td className="p-2">{result.remarks || '-'}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  {exams.length === 0 ? (
+                    <div className="text-center py-10">
+                      <p className="text-muted-foreground mb-4">No exams found.</p>
+                      <Button onClick={() => setActiveTab('create-exam')}>
+                        Create your first exam
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {exams.map(exam => (
+                        <Card key={exam.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleExamSelect(exam)}>
+                          <CardContent className="pt-6">
+                            <h3 className="font-bold truncate">{exam.title}</h3>
+                            <p className="text-sm text-muted-foreground mb-4 truncate">{exam.description}</p>
+                            
+                            <div className="text-xs text-muted-foreground grid grid-cols-2 gap-2">
+                              <div>
+                                <span className="font-medium">Date:</span> {format(new Date(exam.exam_date), 'PP')}
+                              </div>
+                              <div>
+                                <span className="font-medium">Type:</span> {exam.exam_type}
+                              </div>
+                              <div>
+                                <span className="font-medium">Subject:</span> {exam.subject}
+                              </div>
+                              <div>
+                                <span className="font-medium">Class:</span> {exam.class_level}
+                              </div>
+                            </div>
+                            
+                            <div className="mt-4">
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                exam.status === 'active' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : (exam.status === 'upcoming' 
+                                    ? 'bg-blue-100 text-blue-800' 
+                                    : 'bg-gray-100 text-gray-800')
+                              }`}>
+                                {exam.status || 'active'}
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </TabsContent>
+        
+        {/* Create Exam Tab */}
+        <TabsContent value="create-exam">
+          <Card>
+            <CardContent className="pt-6">
+              <h2 className="text-xl font-bold mb-4">Create a New Exam</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="title">Exam Title</Label>
+                  <Input
+                    id="title"
+                    value={examForm.title}
+                    onChange={e => setExamForm({ ...examForm, title: e.target.value })}
+                    placeholder="Enter exam title"
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="examType">Exam Type</Label>
+                  <Select
+                    value={examForm.examType}
+                    onValueChange={value => setExamForm({ ...examForm, examType: value as ExamType })}
+                  >
+                    <SelectTrigger id="examType" className="mt-1">
+                      <SelectValue placeholder="Select exam type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="JEE">JEE</SelectItem>
+                      <SelectItem value="NEET">NEET</SelectItem>
+                      <SelectItem value="CET">CET</SelectItem>
+                      <SelectItem value="Boards">Boards</SelectItem>
+                      <SelectItem value="Internal">Internal</SelectItem>
+                      <SelectItem value="Quarterly">Quarterly</SelectItem>
+                      <SelectItem value="Half Yearly">Half Yearly</SelectItem>
+                      <SelectItem value="Annual">Annual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="examDate">Exam Date</Label>
+                  <Input
+                    id="examDate"
+                    type="date"
+                    value={examForm.examDate}
+                    onChange={e => setExamForm({ ...examForm, examDate: e.target.value })}
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="durationMinutes">Duration (minutes)</Label>
+                  <Input
+                    id="durationMinutes"
+                    type="number"
+                    value={examForm.durationMinutes}
+                    onChange={e => setExamForm({ ...examForm, durationMinutes: parseInt(e.target.value) || 0 })}
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="classLevel">Class Level</Label>
+                  <Select
+                    value={examForm.classLevel.toString()}
+                    onValueChange={value => setExamForm({ ...examForm, classLevel: parseInt(value) || 0 })}
+                  >
+                    <SelectTrigger id="classLevel" className="mt-1">
+                      <SelectValue placeholder="Select class level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[9, 10, 11, 12].map(level => (
+                        <SelectItem key={level} value={level.toString()}>
+                          Class {level}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="subject">Subject</Label>
+                  <Select
+                    value={examForm.subjectId}
+                    onValueChange={handleSubjectChange}
+                  >
+                    <SelectTrigger id="subject" className="mt-1">
+                      <SelectValue placeholder="Select subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjects.map(subject => (
+                        <SelectItem key={subject.id} value={subject.id}>
+                          {subject.name}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="other">Other (Create New)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {examForm.subjectId === 'other' && (
+                  <div>
+                    <Label htmlFor="customSubject">New Subject Name</Label>
+                    <Input
+                      id="customSubject"
+                      value={customSubject}
+                      onChange={e => setCustomSubject(e.target.value)}
+                      placeholder="Enter new subject name"
+                      className="mt-1"
+                    />
+                  </div>
+                )}
+                
+                {examForm.subjectId && examForm.subjectId !== 'other' && (
+                  <div>
+                    <Label htmlFor="topic">Topic (Optional)</Label>
+                    <Select
+                      value={examForm.topicId}
+                      onValueChange={value => setExamForm({ ...examForm, topicId: value })}
+                    >
+                      <SelectTrigger id="topic" className="mt-1">
+                        <SelectValue placeholder="Select topic (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">None</SelectItem>
+                        {topics.map(topic => (
+                          <SelectItem key={topic.id} value={topic.id}>
+                            {topic.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                
+                <div>
+                  <Label htmlFor="maxMarks">Maximum Marks</Label>
+                  <Input
+                    id="maxMarks"
+                    type="number"
+                    value={examForm.maxMarks}
+                    onChange={e => setExamForm({ ...examForm, maxMarks: parseInt(e.target.value) || 0 })}
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="passingMarks">Passing Marks</Label>
+                  <Input
+                    id="passingMarks"
+                    type="number"
+                    value={examForm.passingMarks}
+                    onChange={e => setExamForm({ ...examForm, passingMarks: parseInt(e.target.value) || 0 })}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-4">
+                <Label htmlFor="description">Description (Optional)</Label>
+                <textarea
+                  id="description"
+                  value={examForm.description}
+                  onChange={e => setExamForm({ ...examForm, description: e.target.value })}
+                  placeholder="Enter exam description"
+                  className="w-full p-2 border rounded-md mt-1 min-h-[100px]"
+                />
+              </div>
+              
+              <div className="mt-6 flex justify-end">
+                <Button type="button" onClick={handleCreateExam} disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Creating...
+                    </>
+                  ) : (
+                    'Create Exam'
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* Manual Mark Entry Tab */}
+        <TabsContent value="manual-marks">
+          <ManualMarkUpload 
+            exams={exams} 
+            students={students} 
+            onSuccess={() => {
+              toast({
+                title: "Success",
+                description: "Marks uploaded successfully",
+              });
+              if (selectedExam) {
+                fetchExamResults(selectedExam.id);
+              }
+            }}
+          />
+        </TabsContent>
+        
+        {/* CSV Upload Tab */}
+        <TabsContent value="csv-upload">
+          <CSVUploader 
+            exams={exams} 
+            onSuccess={() => {
+              toast({
+                title: "Success",
+                description: "CSV data uploaded successfully",
+              });
+              if (selectedExam) {
+                fetchExamResults(selectedExam.id);
+              }
+            }}
+          />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default ExamManagement;

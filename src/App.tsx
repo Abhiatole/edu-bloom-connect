@@ -107,12 +107,10 @@ const App = () => (
                     <DatabaseDiagnostics />
                   </ProtectedRoute>
                 } 
-              />
-
-              <Route 
+              />              <Route 
                 path="admin/exams" 
                 element={
-                  <ProtectedRoute allowedRoles={['superadmin']}>
+                  <ProtectedRoute allowedRoles={['superadmin', 'teacher']}>
                     <ExamManagement />
                   </ProtectedRoute>
                 } 

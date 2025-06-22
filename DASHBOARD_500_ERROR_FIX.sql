@@ -105,24 +105,42 @@ GRANT EXECUTE ON FUNCTION public.get_missing_tables TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_missing_tables TO anon;
 GRANT EXECUTE ON FUNCTION public.get_missing_tables TO service_role;
 
--- Fix the examiner_id column in exam_results if it doesn't exist
+-- Fix any missing columns in exam_results table
 DO $$
 BEGIN
+  -- Check if exam_results table exists
   IF EXISTS (
     SELECT FROM pg_tables 
     WHERE schemaname = 'public' 
     AND tablename = 'exam_results'
-  ) AND NOT EXISTS (
-    SELECT FROM pg_attribute a
-    JOIN pg_class c ON a.attrelid = c.oid
-    JOIN pg_namespace n ON c.relnamespace = n.oid
-    WHERE n.nspname = 'public'
-    AND c.relname = 'exam_results'
-    AND a.attname = 'examiner_id'
-    AND NOT a.attisdropped
   ) THEN
-    ALTER TABLE public.exam_results ADD COLUMN examiner_id UUID;
-    RAISE NOTICE 'Added examiner_id column to exam_results table';
+    -- Add examiner_id if missing
+    IF NOT EXISTS (
+      SELECT FROM pg_attribute a
+      JOIN pg_class c ON a.attrelid = c.oid
+      JOIN pg_namespace n ON c.relnamespace = n.oid
+      WHERE n.nspname = 'public'
+      AND c.relname = 'exam_results'
+      AND a.attname = 'examiner_id'
+      AND NOT a.attisdropped
+    ) THEN
+      ALTER TABLE public.exam_results ADD COLUMN examiner_id UUID;
+      RAISE NOTICE 'Added examiner_id column to exam_results table';
+    END IF;
+
+    -- Add status column if missing
+    IF NOT EXISTS (
+      SELECT FROM pg_attribute a
+      JOIN pg_class c ON a.attrelid = c.oid
+      JOIN pg_namespace n ON c.relnamespace = n.oid
+      WHERE n.nspname = 'public'
+      AND c.relname = 'exam_results'
+      AND a.attname = 'status'
+      AND NOT a.attisdropped
+    ) THEN
+      ALTER TABLE public.exam_results ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'GRADED';
+      RAISE NOTICE 'Added status column to exam_results table';
+    END IF;
   END IF;
 END $$;
 
@@ -165,6 +183,36 @@ BEGIN
       RAISE NOTICE 'Set up RLS policies for table: %', table_name;
     END IF;
   END LOOP;
+END $$;
+
+-- Add specific RLS policy for exams table to allow access by created_by_teacher_id
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT FROM pg_tables 
+    WHERE schemaname = 'public' 
+    AND tablename = 'exams'
+  ) THEN
+    -- Drop and recreate the exams table RLS policies
+    DROP POLICY IF EXISTS exams_select_policy ON public.exams;
+    DROP POLICY IF EXISTS exams_insert_policy ON public.exams;
+    DROP POLICY IF EXISTS exams_update_policy ON public.exams;
+      -- Create teacher-specific policies for exams
+    CREATE POLICY exams_select_policy ON public.exams
+      FOR SELECT USING (auth.role() = 'authenticated');
+    
+    CREATE POLICY exams_insert_policy ON public.exams
+      FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+    
+    CREATE POLICY exams_update_policy ON public.exams
+      FOR UPDATE USING (
+        auth.role() = 'authenticated' AND 
+        (created_by_teacher_id = auth.uid() OR 
+         EXISTS (SELECT 1 FROM teacher_profiles WHERE user_id = auth.uid()))
+      );
+    
+    RAISE NOTICE 'Set up specific RLS policies for exams table';
+  END IF;
 END $$;
 
 -- Grant permissions to all tables
