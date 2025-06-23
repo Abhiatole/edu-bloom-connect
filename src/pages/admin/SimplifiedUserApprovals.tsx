@@ -39,26 +39,40 @@ const SimplifiedUserApprovals = () => {
   useEffect(() => {
     fetchAllData();
   }, []);
-
   const fetchAllData = async () => {
     setLoading(true);
     try {
+      console.log('Starting to fetch all data...');
       await fetchUsers();
-    } catch (error) {
+      console.log('Successfully fetched all data');
+    } catch (error: any) {
       console.error('Error fetching data:', error);
+      
+      // More detailed error message for the user
+      let errorMessage = 'Failed to fetch user data.';
+      
+      if (error.message && (error.message.includes('permission denied') || error.message.includes('policy'))) {
+        errorMessage = 'Permission denied. Database policies need to be updated. Please run the FIX_USER_FETCH.sql script.';
+      } else if (error.code === 'PGRST301') {
+        errorMessage = 'Database connection error. Please check if Supabase is running.';
+      } else if (error.message) {
+        errorMessage = `Error: ${error.message}`;
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to fetch user data. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
-
   const fetchUsers = async () => {
     try {
-      // Fetch students and teachers
+      // Fetch students and teachers with explicit status handling
+      console.log('Fetching users...');
+      
       const [studentsResponse, teachersResponse] = await Promise.all([
         supabase
           .from('student_profiles')
@@ -70,8 +84,18 @@ const SimplifiedUserApprovals = () => {
           .order('created_at', { ascending: false })
       ]);
 
-      if (studentsResponse.error) throw studentsResponse.error;
-      if (teachersResponse.error) throw teachersResponse.error;
+      // Log responses for debugging
+      console.log('Student profiles response:', studentsResponse);
+      console.log('Teacher profiles response:', teachersResponse);
+      
+      if (studentsResponse.error) {
+        console.error('Student profiles fetch error:', studentsResponse.error);
+        throw studentsResponse.error;
+      }
+      if (teachersResponse.error) {
+        console.error('Teacher profiles fetch error:', teachersResponse.error);
+        throw teachersResponse.error;
+      }
 
       // Combine and normalize the data
       const allUsersData: UserWithProfile[] = [
