@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, UserCheck, GraduationCap, Lock } from 'lucide-react';
+import { User, Mail, Phone, School, Lock, Users, UserCheck, GraduationCap } from 'lucide-react';
+import { EmailConfirmationService } from '@/services/emailConfirmationService';
 
 const StudentRegister = () => {
   const [formData, setFormData] = useState({
@@ -48,9 +48,8 @@ const StudentRegister = () => {
             full_name: formData.fullName,
             class_level: parseInt(formData.classLevel),
             guardian_name: formData.guardianName,
-            guardian_mobile: formData.guardianMobile
-          },
-          emailRedirectTo: `${currentDomain}/auth/confirm`
+            guardian_mobile: formData.guardianMobile          },
+          emailRedirectTo: EmailConfirmationService.getConfirmationUrl()
         }
       });
 

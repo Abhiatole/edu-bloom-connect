@@ -17,12 +17,13 @@ export class EmailConfirmationService {
   static getCurrentDomain(): string {
     return window.location.origin;
   }
-
   /**
    * Get the confirmation redirect URL
    */
   static getConfirmationUrl(): string {
-    return `${this.getCurrentDomain()}/email-confirmed`;
+    const currentDomain = this.getCurrentDomain();
+    // Use a consistent path for all email confirmations
+    return `${currentDomain}/email-confirmed`;
   }
 
   /**

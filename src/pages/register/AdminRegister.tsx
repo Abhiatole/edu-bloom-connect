@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Shield, AlertTriangle, CheckCircle } from 'lucide-react';
+import { EmailConfirmationService } from '@/services/emailConfirmationService';
 
 const AdminRegister = () => {
   const [formData, setFormData] = useState({
@@ -46,12 +47,11 @@ const AdminRegister = () => {
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
-        options: {
-          data: {
+        options: {          data: {
             role: 'ADMIN',
             full_name: formData.fullName,
           },
-          emailRedirectTo: `${currentDomain}/email-confirmed`
+          emailRedirectTo: EmailConfirmationService.getConfirmationUrl()
         }
       });
 

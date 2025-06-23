@@ -23,13 +23,28 @@ export interface AdminRegistrationData extends RegistrationData {
   department?: string;
 }
 
+import { EmailConfirmationService } from './emailConfirmationService';
+
 export class RegistrationService {
+  /**
+   * Get the current domain for email redirects
+   */
+  private static getCurrentDomain(): string {
+    return window.location.origin;
+  }
+
+  /**
+   * Get the confirmation redirect URL
+   */
+  private static getConfirmationUrl(): string {
+    // Use EmailConfirmationService to ensure consistency
+    return EmailConfirmationService.getConfirmationUrl();
+  }
   /**
    * Register a new student
    */
   static async registerStudent(data: StudentRegistrationData) {
-    try {
-      const currentDomain = window.location.origin;
+    try {      const currentDomain = window.location.origin;
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -41,7 +56,7 @@ export class RegistrationService {
             guardian_name: data.guardianName,
             guardian_mobile: data.guardianMobile
           },
-          emailRedirectTo: `${currentDomain}/email-confirmed`
+          emailRedirectTo: this.getConfirmationUrl()
         }
       });
 
@@ -101,15 +116,14 @@ export class RegistrationService {
       }
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
-        password: data.password,
-        options: {
+        password: data.password,        options: {
           data: {
             role: 'TEACHER',
             full_name: data.fullName,
             subject_expertise: data.subjectExpertise,
             experience_years: data.experienceYears
           },
-          emailRedirectTo: `${currentDomain}/email-confirmed`
+          emailRedirectTo: this.getConfirmationUrl()
         }
       });
 
@@ -162,11 +176,10 @@ export class RegistrationService {
         email: data.email,
         password: data.password,
         options: {          data: {
-            role: 'ADMIN',
-            full_name: data.fullName
+            role: 'ADMIN',            full_name: data.fullName
             // Remove department field as it doesn't exist in the schema
           },
-          emailRedirectTo: `${currentDomain}/email-confirmed`
+          emailRedirectTo: this.getConfirmationUrl()
         }
       });
       if (authError) throw authError;

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Mail, RefreshCw, CheckCircle, ArrowLeft } from 'lucide-react';
+import { EmailConfirmationService } from '@/services/emailConfirmationService';
 
 const RegistrationSuccess = () => {
   const location = useLocation();
@@ -27,12 +28,11 @@ const RegistrationSuccess = () => {
     try {
       // Get the current domain for email redirect
       const currentDomain = window.location.origin;
-      
-      const { error } = await supabase.auth.resend({
+        const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email,
         options: {
-          emailRedirectTo: `${currentDomain}/auth/confirm`
+          emailRedirectTo: EmailConfirmationService.getConfirmationUrl()
         }
       });
 

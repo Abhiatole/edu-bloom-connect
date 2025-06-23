@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, BookOpen, Clock, Lock, GraduationCap } from 'lucide-react';
+import { EmailConfirmationService } from '@/services/emailConfirmationService';
 
 const TeacherRegister = () => {
   const [formData, setFormData] = useState({
@@ -54,9 +55,7 @@ const TeacherRegister = () => {
       }      console.log('Attempting teacher registration...');
 
       // Get the current domain for email redirect
-      const currentDomain = window.location.origin;
-
-      // Step 1: Create auth user first with email redirect
+      const currentDomain = window.location.origin;      // Step 1: Create auth user first with email redirect
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -67,7 +66,7 @@ const TeacherRegister = () => {
             subject_expertise: formData.subjectExpertise,
             experience_years: parseInt(formData.experienceYears)
           },
-          emailRedirectTo: `${currentDomain}/email-confirmed`
+          emailRedirectTo: EmailConfirmationService.getConfirmationUrl()
         }
       });
 
