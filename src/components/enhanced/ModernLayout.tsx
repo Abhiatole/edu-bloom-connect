@@ -69,8 +69,7 @@ const ModernLayout = () => {
               </div>
             </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-6">
+            {/* Desktop Navigation */}            <div className="hidden md:flex items-center space-x-6">
               {!userRole && (
                 <>
                   <Link to="/features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
@@ -81,6 +80,9 @@ const ModernLayout = () => {
                   </Link>
                   <Link to="/contact" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                     Contact
+                  </Link>
+                  <Link to="/ai-assistant" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                    AI Assistant
                   </Link>
                 </>
               )}
@@ -151,8 +153,7 @@ const ModernLayout = () => {
           {/* Mobile Menu */}
           {mobileMenuOpen && (
             <div className="md:hidden py-4 border-t">
-              <div className="flex flex-col space-y-3">
-                {!userRole && (
+              <div className="flex flex-col space-y-3">                {!userRole && (
                   <>
                     <Link to="/features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                       Features
@@ -162,6 +163,9 @@ const ModernLayout = () => {
                     </Link>
                     <Link to="/contact" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                       Contact
+                    </Link>
+                    <Link to="/ai-assistant" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                      AI Assistant
                     </Link>
                   </>
                 )}

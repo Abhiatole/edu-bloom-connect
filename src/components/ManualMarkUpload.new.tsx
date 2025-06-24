@@ -205,8 +205,7 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
               </Select>
             </div>
             
-            <div>
-              <Label htmlFor="student">Select Student</Label>
+            <div>              <Label htmlFor="student">Select Student</Label>
               <Select
                 value={markEntry.studentId}
                 onValueChange={(value) => setMarkEntry({ ...markEntry, studentId: value })}
@@ -217,7 +216,7 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
                 <SelectContent>
                   {students.map(student => (
                     <SelectItem key={student.id} value={student.id}>
-                      {student.display_name || student.enrollment_no}
+                      {student.display_name || 'Student'} - {student.enrollment_no}
                     </SelectItem>
                   ))}
                 </SelectContent>

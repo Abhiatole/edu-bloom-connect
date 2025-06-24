@@ -20,6 +20,7 @@ interface Student {
   id: string;
   enrollment_no: string;
   display_name?: string;
+  full_name?: string;
 }
 
 interface MarkEntry {
@@ -272,19 +273,19 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
     
     // Create header row
     const headerRow = 'enrollment_no,marks,remarks';
-    
-    // Get real enrollment numbers from students array
-    const realEnrollments = students.slice(0, 5).map(s => s.enrollment_no);
+      // Get real students for the sample
+    const realStudents = students.slice(0, 5);
     
     // Log all student enrollment numbers for debugging
     console.log('All available student enrollment numbers:', 
-      students.map(s => s.enrollment_no).join(', '));
+      students.map(s => `${s.display_name} (${s.enrollment_no})`).join(', '));
     
-    // Use real enrollment numbers, or fallback to generic ones if not enough students
+    // Use real students, or fallback to generic ones if not enough students
     const sampleRows = [];
     
-    // Add rows using real student enrollment numbers
-    for (let i = 0; i < Math.min(5, realEnrollments.length); i++) {
+    // Add rows using real student data
+    for (let i = 0; i < Math.min(5, realStudents.length); i++) {
+      const student = realStudents[i];
       const marks = Math.floor(maxMarks * (0.65 + (i * 0.05))); // Varying marks
       const remarks = [
         "Excellent work",
@@ -294,11 +295,11 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
         "Good understanding of concepts"
       ][i];
       
-      sampleRows.push(`${realEnrollments[i]},${marks},"${remarks}"`);
+      // Include both enrollment number and student name
+      sampleRows.push(`${student.enrollment_no},${marks},"${remarks} for ${student.display_name}"`);
     }
-    
-    // If we don't have 5 real enrollments, add generic ones with a clear prefix
-    for (let i = realEnrollments.length; i < 5; i++) {
+      // If we don't have 5 real students, add generic ones with a clear prefix
+    for (let i = realStudents.length; i < 5; i++) {
       const marks = Math.floor(maxMarks * (0.65 + (i * 0.05)));
       const remarks = [
         "Excellent work",
@@ -471,13 +472,13 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
       if (!student) {
         // Log which enrollment ID wasn't found for debugging
         console.warn(`Student not found: "${row.enrollmentNo}". Available IDs:`, 
-          students.slice(0, 5).map(s => s.enrollment_no));
+          students.slice(0, 5).map(s => `${s.display_name} (${s.enrollment_no})`));
           
         setUploadStatus(prev => ({
           ...prev,
           processed: prev.processed + 1,
           failed: prev.failed + 1,
-          errors: [...prev.errors, `Student with enrollment number "${row.enrollmentNo}" not found. Please check the enrollment number.`]
+          errors: [...prev.errors, `No student found with enrollment number "${row.enrollmentNo}"`]
         }));
         continue;
       }
@@ -638,8 +639,7 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
                     </SelectContent>
                   </Select>
                 </div>
-                
-                <div className="space-y-2">
+                  <div className="space-y-2">
                   <Label htmlFor="student">Student</Label>
                   <Select
                     value={markEntry.studentId}
@@ -648,10 +648,9 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
                     <SelectTrigger id="student">
                       <SelectValue placeholder="Select a student" />
                     </SelectTrigger>
-                    <SelectContent>
-                      {students.map(student => (
+                    <SelectContent>                      {students.map(student => (
                         <SelectItem key={student.id} value={student.id}>
-                          {student.display_name || 'Unknown'} ({student.enrollment_no})
+                          {student.display_name || 'Student'} • {student.enrollment_no}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -819,22 +818,34 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
                   <div className="border rounded-md p-4">
                     <h4 className="font-medium mb-2">Preview: {csvPreview.length} records</h4>
                     <div className="max-h-40 overflow-y-auto">
-                      <table className="w-full text-sm">
-                        <thead>
+                      <table className="w-full text-sm">                        <thead>
                           <tr className="border-b">
+                            <th className="text-left p-2">Student</th>
                             <th className="text-left p-2">Enrollment No.</th>
                             <th className="text-left p-2">Marks</th>
                             <th className="text-left p-2">Remarks</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {csvPreview.slice(0, 5).map((row, idx) => (
-                            <tr key={idx} className="border-b">
-                              <td className="p-2">{row.enrollmentNo}</td>
-                              <td className="p-2">{row.marks}</td>
-                              <td className="p-2">{row.remarks || '-'}</td>
-                            </tr>
-                          ))}
+                          {csvPreview.slice(0, 5).map((row, idx) => {
+                            // Find matching student for this row
+                            const student = students.find(s => {
+                              const normalizedEnrollment = s.enrollment_no.trim().toLowerCase();
+                              const normalizedRowEnrollment = row.enrollmentNo.trim().toLowerCase();
+                              return normalizedEnrollment === normalizedRowEnrollment;
+                            });
+                            
+                            return (
+                              <tr key={idx} className="border-b">
+                                <td className="p-2">
+                                  {student ? student.display_name : "Not found"}
+                                </td>
+                                <td className="p-2">{row.enrollmentNo}</td>
+                                <td className="p-2">{row.marks}</td>
+                                <td className="p-2">{row.remarks || '-'}</td>
+                              </tr>
+                            );
+                          })}
                           {csvPreview.length > 5 && (
                             <tr>
                               <td colSpan={3} className="p-2 text-center text-muted-foreground">

@@ -16,6 +16,7 @@ import {
   Eye,
   BarChart3
 } from 'lucide-react';
+import StudentManagement from '@/components/teacher/StudentManagement';
 
 const TeacherDashboard = () => {
   const [stats, setStats] = useState({
@@ -230,7 +231,8 @@ const TeacherDashboard = () => {
             ))}
           </div>
         </CardContent>
-      </Card>
+      </Card>      {/* Student Management */}
+      <StudentManagement />
 
       {/* Recent Exams */}
       <Card>

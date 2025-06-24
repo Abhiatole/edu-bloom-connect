@@ -146,13 +146,15 @@ const StudentDashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-6">      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Student Dashboard</h1>
           <p className="text-gray-600">
             Welcome back, {studentProfile?.full_name} • Class {studentProfile?.class_level}
+          </p>
+          <p className="text-sm text-gray-500">
+            Enrollment: <span className="font-medium">{studentProfile?.enrollment_no}</span>
           </p>
         </div>
         <Badge className="bg-blue-100 text-blue-800">

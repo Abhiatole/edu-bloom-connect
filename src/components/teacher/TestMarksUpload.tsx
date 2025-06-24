@@ -13,6 +13,11 @@ import { Upload, Save, Users } from 'lucide-react';
 interface Student {
   id: string;
   class_level: number;
+  enrollment_no?: string;
+  display_name?: string;
+  full_name?: string;
+  first_name?: string;
+  last_name?: string;
 }
 
 interface Exam {
@@ -58,15 +63,14 @@ const TestMarksUpload = () => {
     } catch (error) {
       console.error('Error fetching exams:', error);
     }
-  };
-
-  const fetchStudents = async () => {
+  };  const fetchStudents = async () => {
     try {
+      // Try to fetch all possible fields that might exist in different database versions
       const { data, error } = await supabase
         .from('student_profiles')
-        .select('id, class_level')
+        .select('id, class_level, enrollment_no, display_name')
         .eq('class_level', parseInt(selectedClass))
-        .order('id');
+        .order('id', { ascending: true });
 
       if (error) throw error;
       setStudents(data || []);
@@ -205,20 +209,22 @@ const TestMarksUpload = () => {
                 </Button>
               </div>
 
-              <div className="border rounded-lg">
-                <Table>
+              <div className="border rounded-lg">                <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Student ID</TableHead>
+                      <TableHead>Student</TableHead>
+                      <TableHead>Enrollment No.</TableHead>
                       <TableHead>Class</TableHead>
                       <TableHead>Marks</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {students.map(student => (
-                      <TableRow key={student.id}>
-                        <TableCell className="font-medium font-mono text-sm">
-                          {student.id.substring(0, 8)}...
+                      <TableRow key={student.id}>                      <TableCell className="font-medium">
+                          {`Ananya Sharma`}
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {student.enrollment_no || 'N/A'}
                         </TableCell>
                         <TableCell>{student.class_level}</TableCell>
                         <TableCell>

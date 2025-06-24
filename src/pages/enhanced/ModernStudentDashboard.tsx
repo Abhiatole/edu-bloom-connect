@@ -173,8 +173,7 @@ const ModernStudentDashboard = () => {
 
   return (
     <div className="space-y-8">
-      {/* Welcome Header */}
-      <div className="text-center space-y-4">
+      {/* Welcome Header */}      <div className="text-center space-y-4">
         <div className="flex items-center justify-center space-x-2">
           <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full">
             <Star className="h-6 w-6 text-white" />
@@ -186,9 +185,14 @@ const ModernStudentDashboard = () => {
         <p className="text-muted-foreground">
           Class {studentProfile?.class_level} • Your learning journey continues
         </p>
-        <Badge variant="outline" className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
-          Student Dashboard
-        </Badge>
+        <div className="flex flex-col items-center space-y-2">
+          <Badge variant="outline" className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
+            Student Dashboard
+          </Badge>
+          <div className="text-sm text-muted-foreground">
+            <span className="font-semibold">Enrollment ID:</span> {studentProfile?.enrollment_no}
+          </div>
+        </div>
       </div>
 
       {/* Key Metrics */}

@@ -31,7 +31,7 @@ interface Exam {
   max_marks: number;
 }
 
-const ExamManagement: React.FC = () => {
+function ExamManagement() {
   const { toast } = useToast();
   
   // State
@@ -438,8 +438,8 @@ const ExamManagement: React.FC = () => {
           <ErrorDetector />
         </div>
       )}
-    </div>  );
+    </div>
+  );
 }
 
-// Make sure to use this exact syntax for the default export
 export default ExamManagement;

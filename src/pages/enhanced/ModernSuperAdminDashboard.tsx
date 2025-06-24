@@ -9,8 +9,10 @@ import { ModernDashboardCard } from '@/components/enhanced/ModernDashboardCard';
 import { ModernActionCard } from '@/components/enhanced/ModernActionCard';
 import RLSError from '@/components/RLSError';
 import TeacherApprovalTool from '@/components/TeacherApprovalTool';
+import StudentNamesUpdater from '@/components/admin/StudentNamesUpdater';
 import {
   Users,
+  User,
   GraduationCap,
   BookOpen,
   TrendingUp,
@@ -414,8 +416,23 @@ const ModernSuperAdminDashboard = () => {  const [stats, setStats] = useState({
               </div>
             </div>
           </CardContent>
-        </Card>
-      </div>
+        </Card>      </div>
+
+      {/* Student Names Updater */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5 text-blue-600" />
+            Student Data Management
+          </CardTitle>
+          <CardDescription>
+            Update student names and enrollment numbers in the system
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <StudentNamesUpdater />
+        </CardContent>
+      </Card>
     </div>
   );
 };

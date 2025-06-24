@@ -16,6 +16,7 @@ import Contact from "./pages/Contact";
 import DeploymentDebug from "./pages/DeploymentDebug";
 import DatabaseFix from "./pages/DatabaseFix";
 import FixExamResultsTable from "./pages/FixExamResultsTable";
+import WebDiagnosticsPage from "./pages/diagnostics/WebDiagnosticsPage";
 
 // Enhanced Dashboards
 import ModernSuperAdminDashboard from "./pages/enhanced/ModernSuperAdminDashboard";
@@ -31,9 +32,9 @@ import EmailConfirmationSuccess from "./pages/EmailConfirmationSuccess";
 import RegistrationSuccess from "./pages/RegistrationSuccess";
 
 // Admin Pages
+import Analytics from "./pages/admin/Analytics";
 import UserApprovals from "./pages/admin/UserApprovals";
 import ExamManagement from "./pages/admin/ExamManagement";
-import Analytics from "./pages/admin/Analytics";
 
 // Teacher Pages
 import StudentInsights from "./pages/teacher/StudentInsights";
@@ -52,6 +53,8 @@ import SuperAdminSetup from "./pages/SuperAdminSetup";
 import QuickApprovalDashboard from "./pages/QuickApprovalDashboard";
 import ProfileDiagnostics from "./pages/ProfileDiagnostics";
 import DatabaseDiagnostics from "./pages/superadmin/DatabaseDiagnostics";
+import AIAssistantPage from "./pages/ai-assistant";
+import AIStudentInsightsPage from "./pages/ai-student-insights";
 
 const queryClient = new QueryClient();
 
@@ -68,10 +71,11 @@ const App = () => (
               <Route path="login" element={<Login />} />
               <Route path="forgot-password" element={<ForgotPassword />} />
               <Route path="about" element={<About />} />
-              <Route path="features" element={<Features />} />              <Route path="contact" element={<Contact />} />              <Route path="email-test" element={<EmailTest />} />
-              <Route path="debug" element={<DeploymentDebug />} />
+              <Route path="features" element={<Features />} />              <Route path="contact" element={<Contact />} />              <Route path="email-test" element={<EmailTest />} />              <Route path="debug" element={<DeploymentDebug />} />
               <Route path="database-fix" element={<DatabaseFix />} />
               <Route path="fix-exam-results" element={<FixExamResultsTable />} />
+              <Route path="ai-assistant" element={<AIAssistantPage />} />
+              <Route path="ai-student-insights" element={<AIStudentInsightsPage />} />
               
               {/* Registration Routes */}
               <Route path="register/student" element={<StudentRegister />} />
@@ -207,6 +211,15 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['superadmin']}>
                     <DatabaseDiagnostics />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="diagnostics/web" 
+                element={
+                  <ProtectedRoute allowedRoles={['superadmin', 'teacher']}>
+                    <WebDiagnosticsPage />
                   </ProtectedRoute>
                 } 
               />
