@@ -118,7 +118,6 @@ const ManualResultEntry: React.FC<ManualResultEntryProps> = ({
         exam_name: examDetails.title,
         marks_obtained: marksValue,
         max_marks: examDetails.max_marks,
-        percentage: Math.round((marksValue / examDetails.max_marks) * 100),
         feedback: feedback.trim() || null,
         created_at: new Date().toISOString()
       };

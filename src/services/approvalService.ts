@@ -44,7 +44,7 @@ export class ApprovalService {
             enrollmentNo: student.enrollment_no,
             classLevel: student.class_level,
             parentEmail: student.parent_email,
-            parentPhone: student.parent_phone,
+            parentPhone: (student as any).guardian_mobile,
             address: student.address
           }
         })),        ...(teachersResponse.data || []).map(teacher => ({
@@ -89,7 +89,7 @@ export class ApprovalService {
           enrollmentNo: student.enrollment_no,
           classLevel: student.class_level,
           parentEmail: student.parent_email,
-          parentPhone: student.parent_phone,
+          parentPhone: (student as any).guardian_mobile,
           address: student.address
         }
       }));

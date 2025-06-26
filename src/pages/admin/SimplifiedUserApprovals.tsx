@@ -6,10 +6,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, UserCheck, UserX, Clock, GraduationCap, RefreshCw, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Users, UserCheck, UserX, Clock, GraduationCap, RefreshCw, CheckCircle, AlertTriangle, MessageSquare } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 import StudentManagementPanel from '@/components/admin/StudentManagementPanel';
 import TeacherManagementPanel from '@/components/admin/TeacherManagementPanel';
+import WhatsAppMessaging from '@/components/messaging/WhatsAppMessaging';
+import WhatsAppTestPanel from '@/components/messaging/WhatsAppTestPanel';
+import WhatsAppDirectTest from '@/components/messaging/WhatsAppDirectTest';
 type StudentProfile = Database['public']['Tables']['student_profiles']['Row'];
 type TeacherProfile = Database['public']['Tables']['teacher_profiles']['Row'];
 interface UserWithProfile {
@@ -27,6 +30,7 @@ const SimplifiedUserApprovals = () => {
   const [allUsers, setAllUsers] = useState<UserWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: string; role: string } | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     type: 'approve' | 'reject';
@@ -34,9 +38,22 @@ const SimplifiedUserApprovals = () => {
     userName: string;
   } | null>(null);
   const { toast } = useToast();
+
   useEffect(() => {
+    fetchCurrentUser();
     fetchAllData();
   }, []);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUser({ id: user.id, role: 'ADMIN' });
+      }
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+    }
+  };
   const fetchAllData = async () => {
     setLoading(true);
     try {
@@ -337,7 +354,7 @@ const SimplifiedUserApprovals = () => {
         </Card>
       </div>
       <Tabs defaultValue="pending" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="pending" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             Pending ({pendingUsers.length})
@@ -353,6 +370,14 @@ const SimplifiedUserApprovals = () => {
           <TabsTrigger value="teachers" className="flex items-center gap-2">
             <GraduationCap className="h-4 w-4" />
             Teachers
+          </TabsTrigger>
+          <TabsTrigger value="whatsapp" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            WhatsApp
+          </TabsTrigger>
+          <TabsTrigger value="debug" className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            Debug WhatsApp
           </TabsTrigger>
         </TabsList>
 
@@ -412,6 +437,26 @@ const SimplifiedUserApprovals = () => {
 
         <TabsContent value="teachers">
           <TeacherManagementPanel />
+        </TabsContent>
+
+        <TabsContent value="whatsapp">
+          <div className="space-y-6">
+            {currentUser ? (
+              <WhatsAppMessaging 
+                userRole="ADMIN" 
+                userId={currentUser.id} 
+              />
+            ) : (
+              <Card>
+                <CardContent className="pt-6">
+                  <p className="text-center text-muted-foreground">Loading user information...</p>
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Test Panel for Development */}
+            <WhatsAppTestPanel />
+          </div>
         </TabsContent>
       </Tabs>
       <AlertDialog open={confirmDialog?.isOpen} onOpenChange={() => setConfirmDialog(null)}>

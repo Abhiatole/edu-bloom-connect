@@ -1,0 +1,21 @@
+{
+  "name": "edugrowhub-whatsapp-api",
+  "version": "1.0.0",
+  "description": "Server-side API for WhatsApp messaging via Twilio",
+  "main": "whatsapp-api.js",
+  "scripts": {
+    "start": "node whatsapp-api.js",
+    "dev": "nodemon whatsapp-api.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "twilio": "^4.19.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

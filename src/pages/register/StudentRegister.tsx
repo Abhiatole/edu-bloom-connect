@@ -9,6 +9,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, School, Lock, Users, UserCheck, GraduationCap } from 'lucide-react';
 import { EmailConfirmationService } from '@/services/emailConfirmationService';
+import SubjectSelection from '@/components/registration/SubjectSelection';
+import { SubjectService } from '@/services/subjectService';
 const StudentRegister = () => {
   const [formData, setFormData] = useState({
     fullName: '',
@@ -19,18 +21,32 @@ const StudentRegister = () => {
     guardianName: '',
     guardianMobile: ''
   });
+  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
+  const [subjectError, setSubjectError] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setSubjectError('');
+
     try {
+      // Validate form data
       if (formData.password !== formData.confirmPassword) {
         throw new Error('Passwords do not match');
       }
       if (formData.password.length < 6) {
         throw new Error('Password must be at least 6 characters long');
-      }      // Get the current domain for email redirect
+      }
+      
+      // Validate subject selection
+      if (selectedSubjects.length === 0) {
+        setSubjectError('Please select at least one subject');
+        setLoading(false);
+        return;
+      }
+
+      // Get the current domain for email redirect
       const currentDomain = window.location.origin;
       
       // Create auth user with profile data in metadata
@@ -45,7 +61,9 @@ const StudentRegister = () => {
             full_name: formData.fullName,
             class_level: parseInt(formData.classLevel),
             guardian_name: formData.guardianName,
-            guardian_mobile: formData.guardianMobile          },
+            guardian_mobile: formData.guardianMobile,
+            selected_subjects: selectedSubjects
+          },
           emailRedirectTo: EmailConfirmationService.getConfirmationUrl()
         }
       });
@@ -54,7 +72,7 @@ const StudentRegister = () => {
         // Check if email confirmation is required
         if (authData.session || authData.user.email_confirmed_at) {
           // User is immediately confirmed or email confirmation is disabled - create profile directly
-            // Generate enrollment number
+          // Generate enrollment number
           const enrollmentNo = `STU${Date.now()}`;
           
           const profileData = {
@@ -68,20 +86,42 @@ const StudentRegister = () => {
             status: 'PENDING' as const
           };
           
-          const { error: profileError } = await supabase
+          const { data: profileResult, error: profileError } = await supabase
             .from('student_profiles')
-            .insert(profileData);
+            .insert(profileData)
+            .select()
+            .single();
+          
           if (profileError) {
             throw new Error(`Profile creation failed: ${profileError.message}`);
           }
+
+          // Enroll student in selected subjects
+          if (profileResult && selectedSubjects.length > 0) {
+            const enrollResult = await SubjectService.enrollStudentInSubjects(
+              profileResult.id, 
+              selectedSubjects
+            );
+            
+            if (!enrollResult.success) {
+              // Profile created but subject enrollment failed - still proceed but warn
+              toast({
+                title: "Profile Created",
+                description: "Account created but subject enrollment had issues. Contact admin for help.",
+                variant: "destructive"
+              });
+            }
+          }
+          
           toast({
             title: "Registration Successful!",
-            description: "Your account has been created and is pending approval from the admin.",
+            description: "Your account has been created and is pending approval from teachers.",
           });
           
           navigate('/login');
         } else {
-          // Email confirmation is required - redirect to success page
+          // Email confirmation is required - store subjects in user metadata for later enrollment
+          // The subjects will be enrolled when email is confirmed
           
           navigate('/register/success', {
             state: {
@@ -203,6 +243,14 @@ const StudentRegister = () => {
                 className="mt-1"
               />
             </div>
+            
+            {/* Subject Selection */}
+            <SubjectSelection
+              selectedSubjects={selectedSubjects}
+              onSubjectsChange={setSelectedSubjects}
+              error={subjectError}
+            />
+            
             <div>
               <Label htmlFor="password" className="flex items-center gap-2">
                 <Lock className="h-4 w-4" />

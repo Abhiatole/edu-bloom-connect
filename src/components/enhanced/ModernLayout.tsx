@@ -33,10 +33,11 @@ const ModernLayout = () => {
   };
   const getDashboardLink = (role: string | null) => {
     switch (role) {
-      case 'superadmin': return '/superadmin/dashboard';
+      case 'superadmin': return '/admin/dashboard';
       case 'teacher': return '/teacher/dashboard';
       case 'student': return '/student/dashboard';
-      default: return '/';
+      case 'parent': return '/parent/dashboard';
+      default: return '/home';
     }
   };
   // Don't show layout on auth pages
@@ -50,8 +51,8 @@ const ModernLayout = () => {
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Brand Logo */}
-            <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+            {/* Brand Logo - Clickable */}
+            <Link to="/home" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
               <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg">
                 <GraduationCap className="h-6 w-6 text-white" />
               </div>
@@ -87,7 +88,7 @@ const ModernLayout = () => {
               
               {userRole ? (
                 <div className="flex items-center space-x-3">
-                  <Link to="/">
+                  <Link to="/home">
                     <Button variant="ghost" size="sm">
                       <Home className="h-4 w-4 mr-2" />
                       Home
@@ -142,28 +143,81 @@ const ModernLayout = () => {
           </div>
           {/* Mobile Menu */}
           {mobileMenuOpen && (
-            <div className="md:hidden py-4 border-t">
-              <div className="flex flex-col space-y-3">                {!userRole && (
+            <div className="md:hidden py-4 border-t bg-background/95 backdrop-blur">
+              <div className="flex flex-col space-y-4">
+                {!userRole && (
                   <>
-                    <Link to="/features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                    <Link 
+                      to="/features" 
+                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors rounded-md"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
                       Features
                     </Link>
-                    <Link to="/about" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                    <Link 
+                      to="/about" 
+                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors rounded-md"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
                       About
                     </Link>
-                    <Link to="/contact" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                    <Link 
+                      to="/contact" 
+                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors rounded-md"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
                       Contact
                     </Link>
-                    <Link to="/ai-assistant" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                    <Link 
+                      to="/ai-assistant" 
+                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors rounded-md"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
                       AI Assistant
                     </Link>
+                    <div className="px-4 pt-2 border-t">
+                      <div className="flex flex-col space-y-2">
+                        <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                          <Button variant="ghost" size="sm" className="w-full justify-start">
+                            Login
+                          </Button>
+                        </Link>
+                        <Link to="/register/student" onClick={() => setMobileMenuOpen(false)}>
+                          <Button size="sm" className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                            Register
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
                   </>
                 )}
                 {userRole && (
-                  <div className="flex items-center space-x-2 text-sm text-muted-foreground pt-2 border-t">
-                    <User className="h-4 w-4" />
-                    <span>{getRoleDisplayName(userRole)} • {userEmail}</span>
-                  </div>
+                  <>
+                    <Link to="/home" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="ghost" size="sm" className="w-full justify-start">
+                        <Home className="h-4 w-4 mr-2" />
+                        Home
+                      </Button>
+                    </Link>
+                    <Link to={getDashboardLink(userRole)} onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" size="sm" className="w-full justify-start">
+                        Dashboard
+                      </Button>
+                    </Link>
+                    <div className="px-4 py-2 border-t">
+                      <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-3">
+                        <User className="h-4 w-4" />
+                        <div className="flex flex-col">
+                          <span>{getRoleDisplayName(userRole)}</span>
+                          <span className="text-xs truncate">{userEmail}</span>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={handleLogout} className="w-full justify-start">
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Logout
+                      </Button>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -172,8 +226,10 @@ const ModernLayout = () => {
       </header>
       
       {/* Main Content */}
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Outlet />
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="min-h-[calc(100vh-200px)]">
+          <Outlet />
+        </div>
       </main>
       {/* Floating Admin Access Button - Only show on home page */}
       {location.pathname === '/' && (

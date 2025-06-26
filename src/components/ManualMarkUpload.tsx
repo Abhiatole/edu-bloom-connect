@@ -478,7 +478,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
               marks_obtained: row.marks,
               examiner_id: currentUser.user?.id,
               remarks: row.remarks || null,
-              percentage: parseFloat(((row.marks / selectedExam.max_marks) * 100).toFixed(2)),
               status: 'GRADED'
           };
           
@@ -503,7 +502,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
               marks_obtained: row.marks,
               examiner_id: currentUser.user?.id,
               remarks: row.remarks || null,
-              percentage: parseFloat(((row.marks / selectedExam.max_marks) * 100).toFixed(2)),
               status: 'GRADED'
           };
           

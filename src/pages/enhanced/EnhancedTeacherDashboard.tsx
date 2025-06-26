@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { BookOpen, Plus, Upload, Download, FileText, Send, Calendar, Clock, Target, Trash2, CheckSquare, Square } from 'lucide-react';
+import { BookOpen, Plus, Upload, Download, FileText, Send, Calendar, Clock, Target, Trash2, CheckSquare, Square, MessageSquare, Users, Bell, GraduationCap } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -17,6 +17,10 @@ import ExamCreationForm from '@/components/teacher/ExamCreationForm';
 import ExamResultsUpload from '@/components/teacher/ExamResultsUpload';
 import ManualResultEntry from '@/components/teacher/ManualResultEntry';
 import ParentNotificationSystem from '@/components/teacher/ParentNotificationSystem';
+import WhatsAppMessaging from '@/components/messaging/WhatsAppMessaging';
+import StudentApproval from '@/components/teacher/StudentApproval';
+import TeacherNotifications from '@/components/teacher/TeacherNotifications';
+import { SubjectService } from '@/services/subjectService';
 // Types
 interface Exam {
   id: string;
@@ -42,7 +46,7 @@ interface Student {
   full_name?: string;
   display_name?: string;
   class_level: number;
-  parent_phone?: string;
+  guardian_mobile?: string;
   status: 'APPROVED' | 'PENDING' | 'REJECTED';
   user_id?: string;
 }
@@ -89,6 +93,8 @@ const EnhancedTeacherDashboard = () => {
   const [selectedExam, setSelectedExam] = useState<string>('');
   const [selectedResultsExam, setSelectedResultsExam] = useState<string>('');
   const [uploadMode, setUploadMode] = useState<'manual' | 'excel'>('manual');
+  const [currentUser, setCurrentUser] = useState<{ id: string; role: string } | null>(null);
+  
   const { toast } = useToast();
   useEffect(() => {
     fetchInitialData();
@@ -121,6 +127,10 @@ const EnhancedTeacherDashboard = () => {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+      
+      // Set current user for WhatsApp messaging
+      setCurrentUser({ id: user.id, role: 'TEACHER' });
+      
       // Fetch teacher's exams
       const { data: examsData, error: examsError } = await supabase
         .from('exams')
@@ -144,7 +154,7 @@ const EnhancedTeacherDashboard = () => {
           enrollment_no: student.enrollment_no || `ENR-${student.id?.slice(0, 8)}`,
           full_name: student.full_name || student.display_name || `Student ${student.id?.slice(0, 8)}`,
           class_level: student.class_level || 11,
-          parent_phone: student.parent_phone,
+          guardian_mobile: student.guardian_mobile,
           status: student.status as 'APPROVED' | 'PENDING' | 'REJECTED',
           user_id: student.user_id
         }));
@@ -494,8 +504,16 @@ const EnhancedTeacherDashboard = () => {
       {renderDashboardStats()}
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            Notifications
+          </TabsTrigger>
+          <TabsTrigger value="approvals" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Student Approvals
+          </TabsTrigger>
           <TabsTrigger value="exams">My Exams</TabsTrigger>
           <TabsTrigger value="results">Results</TabsTrigger>
           <TabsTrigger value="communication">Parent Communication</TabsTrigger>
@@ -553,6 +571,18 @@ const EnhancedTeacherDashboard = () => {
             </Card>
           </div>
         </TabsContent>
+
+        <TabsContent value="notifications" className="space-y-6">
+          <TeacherNotifications 
+            teacherUserId={currentUser?.id || ''} 
+            onNavigateToTab={setActiveTab}
+          />
+        </TabsContent>
+
+        <TabsContent value="approvals" className="space-y-6">
+          <StudentApproval teacherUserId={currentUser?.id || ''} />
+        </TabsContent>
+
         <TabsContent value="exams" className="space-y-6">
           <Card>
             <CardHeader className="pb-4">
@@ -744,26 +774,43 @@ const EnhancedTeacherDashboard = () => {
           </Card>
         </TabsContent>
         <TabsContent value="communication" className="space-y-6">
-          <ParentNotificationSystem 
-            examResults={examResults
-              .filter(result => result.enrollment_no && result.student_name)
-              .map(result => ({
-                id: result.id,
-                exam_id: result.exam_id,
-                student_id: result.student_id,
-                enrollment_no: result.enrollment_no || 'N/A',
-                student_name: result.student_name || 'Unknown Student',
-                subject: result.subject || 'General',
-                marks_obtained: result.marks_obtained,
-                max_marks: result.max_marks || 100,
-                percentage: result.percentage || Math.round((result.marks_obtained / (result.max_marks || 100)) * 100),
-                feedback: result.feedback,
-                exam_name: result.exam_name || 'Exam',
-                created_at: result.created_at
-              }))
-            }
-            onNotificationSent={fetchInitialData}
-          />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Parent Notification System */}
+            <ParentNotificationSystem 
+              examResults={examResults
+                .filter(result => result.enrollment_no && result.student_name)
+                .map(result => ({
+                  id: result.id,
+                  exam_id: result.exam_id,
+                  student_id: result.student_id,
+                  enrollment_no: result.enrollment_no || 'N/A',
+                  student_name: result.student_name || 'Unknown Student',
+                  subject: result.subject || 'General',
+                  marks_obtained: result.marks_obtained,
+                  max_marks: result.max_marks || 100,
+                  percentage: result.percentage || Math.round((result.marks_obtained / (result.max_marks || 100)) * 100),
+                  feedback: result.feedback,
+                  exam_name: result.exam_name || 'Exam',
+                  created_at: result.created_at
+                }))
+              }
+              onNotificationSent={fetchInitialData}
+            />
+            
+            {/* WhatsApp Messaging */}
+            {currentUser ? (
+              <WhatsAppMessaging 
+                userRole="TEACHER" 
+                userId={currentUser.id} 
+              />
+            ) : (
+              <Card>
+                <CardContent className="pt-6">
+                  <p className="text-center text-muted-foreground">Loading user information...</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
       {/* Delete Confirmation Dialog */}

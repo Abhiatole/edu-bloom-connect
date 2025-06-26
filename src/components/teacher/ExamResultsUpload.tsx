@@ -212,7 +212,6 @@ const ExamResultsUpload: React.FC<ExamResultsUploadProps> = ({
           exam_name: selectedExamData.title,
           marks_obtained: row.marks,
           max_marks: selectedExamData.max_marks,
-          percentage: Math.round((row.marks / selectedExamData.max_marks) * 100),
           feedback: row.feedback || '',
           created_at: new Date().toISOString()
         };

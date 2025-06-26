@@ -62,7 +62,7 @@ export class RegistrationService {
             enrollment_no: enrollmentNo,
             class_level: data.classLevel,
             parent_email: data.email,
-            parent_phone: data.guardianMobile,
+            guardian_mobile: data.guardianMobile,
             address: `Guardian: ${data.guardianName}`,
             status: 'PENDING' as const
           };
@@ -206,7 +206,7 @@ export class RegistrationService {
           enrollment_no: enrollmentNo,
           class_level: userMetadata.class_level || 1,
           parent_email: currentUser.user.email,
-          parent_phone: userMetadata.guardian_mobile || '',
+          guardian_mobile: userMetadata.guardian_mobile || '',
           address: userMetadata.guardian_name ? `Guardian: ${userMetadata.guardian_name}` : '',
           status: 'PENDING' as const
         };
