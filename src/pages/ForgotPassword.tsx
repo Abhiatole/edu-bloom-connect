@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Mail, ArrowLeft, Key } from 'lucide-react';
-
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -16,7 +14,6 @@ const ForgotPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
@@ -27,7 +24,6 @@ const ForgotPassword = () => {
       });
       return;
     }
-
     setIsLoading(true);
     // Simulate OTP sending
     setTimeout(() => {
@@ -39,7 +35,6 @@ const ForgotPassword = () => {
       setIsLoading(false);
     }, 1000);
   };
-
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!otp || !newPassword) {
@@ -50,7 +45,6 @@ const ForgotPassword = () => {
       });
       return;
     }
-
     setIsLoading(true);
     // Simulate password reset
     setTimeout(() => {
@@ -62,7 +56,6 @@ const ForgotPassword = () => {
       setIsLoading(false);
     }, 1000);
   };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
       <Card className="w-full max-w-md">
@@ -148,5 +141,4 @@ const ForgotPassword = () => {
     </div>
   );
 };
-
 export default ForgotPassword;

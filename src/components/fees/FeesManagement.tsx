@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { DollarSign, Plus, CreditCard } from 'lucide-react';
-
 const FeesManagement = () => {
   const [feeStructures, setFeeStructures] = useState([]);
   const [feePayments, setFeePayments] = useState([]);
@@ -33,25 +32,20 @@ const FeesManagement = () => {
     payment_date: new Date().toISOString().split('T')[0]
   });
   const { toast } = useToast();
-
   useEffect(() => {
     fetchData();
   }, []);
-
   const fetchData = async () => {
     try {
       const [structuresResponse, paymentsResponse] = await Promise.all([
         supabase.from('fee_structures').select('*').order('class_level'),
         supabase.from('fee_payments').select('*').order('created_at', { ascending: false })
       ]);
-
       if (structuresResponse.error) throw structuresResponse.error;
       if (paymentsResponse.error) throw paymentsResponse.error;
-
       setFeeStructures(structuresResponse.data || []);
       setFeePayments(paymentsResponse.data || []);
     } catch (error) {
-      console.error('Error fetching fee data:', error);
       toast({
         title: "Error",
         description: "Failed to load fee data",
@@ -61,7 +55,6 @@ const FeesManagement = () => {
       setLoading(false);
     }
   };
-
   const handleCreateStructure = async (e) => {
     e.preventDefault();
     try {
@@ -76,14 +69,11 @@ const FeesManagement = () => {
           academic_year: newStructure.academic_year,
           description: newStructure.description
         }]);
-
       if (error) throw error;
-
       toast({
         title: "Success",
         description: "Fee structure created successfully"
       });
-
       setNewStructure({
         class_level: '',
         fee_type: '',
@@ -96,7 +86,6 @@ const FeesManagement = () => {
       
       fetchData();
     } catch (error) {
-      console.error('Error creating fee structure:', error);
       toast({
         title: "Error",
         description: "Failed to create fee structure",
@@ -104,7 +93,6 @@ const FeesManagement = () => {
       });
     }
   };
-
   const handleRecordPayment = async (e) => {
     e.preventDefault();
     try {
@@ -119,14 +107,11 @@ const FeesManagement = () => {
           transaction_id: newPayment.transaction_id,
           payment_date: newPayment.payment_date
         }]);
-
       if (error) throw error;
-
       toast({
         title: "Success",
         description: "Payment recorded successfully"
       });
-
       setNewPayment({
         student_id: '',
         structure_id: '',
@@ -139,7 +124,6 @@ const FeesManagement = () => {
       
       fetchData();
     } catch (error) {
-      console.error('Error recording payment:', error);
       toast({
         title: "Error",
         description: "Failed to record payment",
@@ -147,7 +131,6 @@ const FeesManagement = () => {
       });
     }
   };
-
   const getStatusColor = (status) => {
     switch (status) {
       case 'PAID': return 'bg-green-100 text-green-800';
@@ -157,11 +140,9 @@ const FeesManagement = () => {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
-
   if (loading) {
     return <div className="flex justify-center p-8">Loading fee data...</div>;
   }
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -170,7 +151,6 @@ const FeesManagement = () => {
           <p className="text-gray-600">Manage fee structures and payments</p>
         </div>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Create Fee Structure */}
         <Card>
@@ -259,7 +239,6 @@ const FeesManagement = () => {
             </form>
           </CardContent>
         </Card>
-
         {/* Record Payment */}
         <Card>
           <CardHeader>
@@ -339,7 +318,6 @@ const FeesManagement = () => {
           </CardContent>
         </Card>
       </div>
-
       {/* Fee Structures Table */}
       <Card>
         <CardHeader>
@@ -373,7 +351,6 @@ const FeesManagement = () => {
           </Table>
         </CardContent>
       </Card>
-
       {/* Recent Payments */}
       <Card>
         <CardHeader>
@@ -414,5 +391,4 @@ const FeesManagement = () => {
     </div>
   );
 };
-
 export default FeesManagement;

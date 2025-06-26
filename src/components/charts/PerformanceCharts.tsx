@@ -1,29 +1,23 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { TrendingUp, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
-
 interface PerformanceData {
   subject: string;
   average: number;
   count: number;
 }
-
 interface PerformanceChartsProps {
   data: PerformanceData[];
   title: string;
 }
-
 const PerformanceCharts = ({ data, title }: PerformanceChartsProps) => {
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
-
   const pieData = data.map(item => ({
     name: item.subject,
     value: item.average,
     count: item.count
   }));
-
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -47,7 +41,6 @@ const PerformanceCharts = ({ data, title }: PerformanceChartsProps) => {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -78,7 +71,6 @@ const PerformanceCharts = ({ data, title }: PerformanceChartsProps) => {
           </CardContent>
         </Card>
       </div>
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -102,5 +94,4 @@ const PerformanceCharts = ({ data, title }: PerformanceChartsProps) => {
     </div>
   );
 };
-
 export default PerformanceCharts;

@@ -1,6 +1,5 @@
 import React from 'react';
 import AIStudentInsights from '@/components/AIStudentInsights';
-
 const AIStudentInsightsPage = () => {
   return (
     <div className="container mx-auto py-8">
@@ -13,5 +12,4 @@ const AIStudentInsightsPage = () => {
     </div>
   );
 };
-
 export default AIStudentInsightsPage;

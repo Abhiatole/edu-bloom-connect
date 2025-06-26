@@ -4,22 +4,18 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
-
 const ProfileDiagnostics = () => {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
   const { toast } = useToast();
-
   useEffect(() => {
     const checkAuth = async () => {
       const { data } = await supabase.auth.getUser();
       setUserData(data.user);
     };
-
     checkAuth();
   }, []);
-
   const runDiagnostics = async () => {
     if (!userData) {
       toast({
@@ -29,7 +25,6 @@ const ProfileDiagnostics = () => {
       });
       return;
     }
-
     setLoading(true);
     try {
       const userId = userData.id;
@@ -71,13 +66,11 @@ const ProfileDiagnostics = () => {
         },
         metadata: userData.user_metadata
       });
-
       toast({
         title: 'Diagnostics Complete',
         description: 'Check the results below',
       });
     } catch (error: any) {
-      console.error('Diagnostics error:', error);
       toast({
         title: 'Diagnostics Failed',
         description: error.message || 'An error occurred',
@@ -87,7 +80,6 @@ const ProfileDiagnostics = () => {
       setLoading(false);
     }
   };
-
   const createMissingProfile = async () => {
     if (!userData) {
       toast({
@@ -97,32 +89,25 @@ const ProfileDiagnostics = () => {
       });
       return;
     }
-
     setLoading(true);
     try {
       const userMetadata = userData.user_metadata;
       const role = userMetadata?.role?.toUpperCase();
-
       if (!role || !['STUDENT', 'TEACHER', 'ADMIN'].includes(role)) {
         throw new Error('Invalid or missing role in user metadata');
       }
-
       // This will attempt to create the profile based on user metadata
       const { data, error } = await supabase.functions.invoke('create-profile', {
         body: { userId: userData.id, metadata: userMetadata },
       });
-
       if (error) throw error;
-
       toast({
         title: 'Profile Created',
         description: 'Your profile has been created successfully',
       });
-
       // Refresh the diagnostics
       runDiagnostics();
     } catch (error: any) {
-      console.error('Profile creation error:', error);
       toast({
         title: 'Profile Creation Failed',
         description: error.message || 'An error occurred',
@@ -132,7 +117,6 @@ const ProfileDiagnostics = () => {
       setLoading(false);
     }
   };
-
   return (
     <div className="container mx-auto p-6">
       <Card>
@@ -155,7 +139,6 @@ const ProfileDiagnostics = () => {
               <p>Please login to run diagnostics</p>
             </div>
           )}
-
           <div className="flex space-x-4">
             <Button onClick={runDiagnostics} disabled={loading || !userData}>
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -165,11 +148,9 @@ const ProfileDiagnostics = () => {
               Create Missing Profile
             </Button>
           </div>
-
           {results && (
             <div className="mt-8 space-y-6">
               <h3 className="text-lg font-bold">Diagnostic Results</h3>
-
               <div className="space-y-4">
                 <div className={`p-4 rounded-md ${results.student.exists ? 'bg-green-50' : 'bg-gray-50'}`}>
                   <h4 className="font-semibold">Student Profile</h4>
@@ -183,7 +164,6 @@ const ProfileDiagnostics = () => {
                     </pre>
                   )}
                 </div>
-
                 <div className={`p-4 rounded-md ${results.teacher.exists ? 'bg-green-50' : 'bg-gray-50'}`}>
                   <h4 className="font-semibold">Teacher Profile</h4>
                   <p>{results.teacher.exists ? 'Profile found' : 'No profile found'}</p>
@@ -196,7 +176,6 @@ const ProfileDiagnostics = () => {
                     </pre>
                   )}
                 </div>
-
                 <div className={`p-4 rounded-md ${results.admin.exists ? 'bg-green-50' : 'bg-gray-50'}`}>
                   <h4 className="font-semibold">Admin Profile</h4>
                   <p>{results.admin.exists ? 'Profile found' : 'No profile found'}</p>
@@ -209,7 +188,6 @@ const ProfileDiagnostics = () => {
                     </pre>
                   )}
                 </div>
-
                 <div className="p-4 rounded-md bg-blue-50">
                   <h4 className="font-semibold">User Metadata</h4>
                   <pre className="mt-2 p-2 bg-gray-100 rounded overflow-auto max-h-40 text-xs">
@@ -224,5 +202,4 @@ const ProfileDiagnostics = () => {
     </div>
   );
 };
-
 export default ProfileDiagnostics;

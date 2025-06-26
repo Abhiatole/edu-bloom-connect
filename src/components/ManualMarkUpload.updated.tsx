@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-
 // Updated Student interface to match the main component
 interface Student {
   id: string;
@@ -14,27 +13,18 @@ interface Student {
   class_level: number;
   display_name?: string; // This is a computed field, not in the database
 }
-
 interface MarkEntry {
   studentId: string;
   studentName: string;
   enrollmentNo?: string;
   marks: string;
 }
-
 interface ManualMarkUploadProps {
   students: Student[];
   examId: string;
   onSuccess: () => void;
 }
-
 const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ students, examId, onSuccess }) => {
-  console.log('ManualMarkUpload rendered with:', { 
-    examId, 
-    studentsCount: students.length,
-    sampleStudents: students.slice(0, 3)
-  });
-  
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [markEntries, setMarkEntries] = useState<MarkEntry[]>([]);
@@ -42,10 +32,8 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ students, examId, o
   const [uploading, setUploading] = useState(false);
   
   const { toast } = useToast();
-
   // Function to search students by display name or enrollment number
   const handleSearchStudents = (query: string) => {
-    console.log('Searching for:', query);
     setSearchQuery(query);
     
     if (!query.trim()) {
@@ -62,20 +50,17 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ students, examId, o
       return (nameMatch || enrollmentMatch) && classMatch;
     });
     
-    console.log('Found matches:', filtered.length);
     setFilteredStudents(filtered.slice(0, 10)); // Limit to first 10 results for performance
   };
   
   // Function to add a mark entry
   const addMarkEntry = (student: Student) => {
-    console.log('Adding mark entry for student:', student);
     
     // Check if student already has an entry
     const existingEntryIndex = markEntries.findIndex(entry => entry.studentId === student.id);
     
     if (existingEntryIndex >= 0) {
       // Update existing entry
-      console.log('Updating existing entry at index:', existingEntryIndex);
       const updatedEntries = [...markEntries];
       updatedEntries[existingEntryIndex] = {
         ...updatedEntries[existingEntryIndex],
@@ -85,7 +70,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ students, examId, o
       setMarkEntries(updatedEntries);
     } else {
       // Add new entry
-      console.log('Adding new entry');
       setMarkEntries([
         ...markEntries,
         {
@@ -101,7 +85,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ students, examId, o
     setSearchQuery('');
     setFilteredStudents([]);
   };
-
   // Function to update mark for a student
   const updateMark = (studentId: string, marks: string) => {
     const updatedEntries = markEntries.map(entry => {
@@ -113,13 +96,11 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ students, examId, o
     
     setMarkEntries(updatedEntries);
   };
-
   // Function to remove a mark entry
   const removeMarkEntry = (studentId: string) => {
     const updatedEntries = markEntries.filter(entry => entry.studentId !== studentId);
     setMarkEntries(updatedEntries);
   };
-
   // Function to submit manual entries
   const submitManualEntries = async () => {
     if (markEntries.length === 0 || !examId) {
@@ -164,7 +145,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ students, examId, o
       setMarkEntries([]);
       onSuccess();
     } catch (error: any) {
-      console.error('Error submitting marks:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to submit marks",
@@ -196,7 +176,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ students, examId, o
           </SelectContent>
         </Select>
       </div>
-
       <div className="mb-4">
         <Label htmlFor="studentSearch">Search Student (by Name or Enrollment Number)</Label>
         <div className="flex gap-2 mb-2">
@@ -315,5 +294,4 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ students, examId, o
     </div>
   );
 };
-
 export default ManualMarkUpload;

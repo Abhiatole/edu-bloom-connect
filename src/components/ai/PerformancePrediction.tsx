@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,27 +6,22 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { TrendingUp, TrendingDown, AlertTriangle, Brain, Target } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
 const PerformancePrediction = () => {
   const [insights, setInsights] = useState([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-
   useEffect(() => {
     fetchInsights();
   }, []);
-
   const fetchInsights = async () => {
     try {
       const { data, error } = await supabase
         .from('student_insights')
         .select('*')
         .order('created_at', { ascending: false });
-
       if (error) throw error;
       setInsights(data || []);
     } catch (error) {
-      console.error('Error fetching insights:', error);
       toast({
         title: "Error",
         description: "Failed to load performance insights",
@@ -37,7 +31,6 @@ const PerformancePrediction = () => {
       setLoading(false);
     }
   };
-
   const generateInsight = async (studentId: string, subject: string) => {
     try {
       // Generate AI insight based on existing student performance
@@ -51,13 +44,10 @@ const PerformancePrediction = () => {
         ai_comment: 'Student shows consistent improvement in recent assessments.',
         recommendations: 'Focus on practice problems and time management techniques.'
       };
-
       const { error } = await supabase
         .from('student_insights')
         .insert([mockInsight]);
-
       if (error) throw error;
-
       toast({
         title: "Success",
         description: "Performance insight generated successfully"
@@ -65,7 +55,6 @@ const PerformancePrediction = () => {
       
       fetchInsights();
     } catch (error) {
-      console.error('Error generating insight:', error);
       toast({
         title: "Error",
         description: "Failed to generate insight",
@@ -73,7 +62,6 @@ const PerformancePrediction = () => {
       });
     }
   };
-
   const getRiskColor = (performance: string) => {
     switch (performance) {
       case 'Poor': return 'bg-red-100 text-red-800 border-red-200';
@@ -84,7 +72,6 @@ const PerformancePrediction = () => {
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
-
   const mockChartData = [
     { month: 'Jan', predicted: 75, actual: 72 },
     { month: 'Feb', predicted: 78, actual: 76 },
@@ -92,11 +79,9 @@ const PerformancePrediction = () => {
     { month: 'Apr', predicted: 85, actual: null },
     { month: 'May', predicted: 87, actual: null },
   ];
-
   if (loading) {
     return <div className="flex justify-center p-8">Loading insights...</div>;
   }
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -109,7 +94,6 @@ const PerformancePrediction = () => {
           Generate Insight
         </Button>
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="pb-2">
@@ -127,7 +111,6 @@ const PerformancePrediction = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">Top Performers</CardTitle>
@@ -144,7 +127,6 @@ const PerformancePrediction = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">Total Insights</CardTitle>
@@ -160,7 +142,6 @@ const PerformancePrediction = () => {
           </CardContent>
         </Card>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -180,7 +161,6 @@ const PerformancePrediction = () => {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader>
             <CardTitle>Performance Distribution</CardTitle>
@@ -206,5 +186,4 @@ const PerformancePrediction = () => {
     </div>
   );
 };
-
 export default PerformancePrediction;

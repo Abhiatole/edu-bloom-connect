@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { Users, GraduationCap, BookOpen, TrendingUp, Award, AlertCircle } from 'lucide-react';
-
 interface AnalyticsData {
   totalStudents: number;
   totalTeachers: number;
@@ -16,7 +14,6 @@ interface AnalyticsData {
   classDistribution: Array<{ class: string; count: number }>;
   examPerformance: Array<{ exam: string; average: number; count: number }>;
 }
-
 const Analytics = () => {
   const [data, setData] = useState<AnalyticsData>({
     totalStudents: 0,
@@ -30,11 +27,9 @@ const Analytics = () => {
     examPerformance: []
   });
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     fetchAnalyticsData();
   }, []);
-
   const fetchAnalyticsData = async () => {
     try {
       // Fetch basic counts
@@ -45,7 +40,6 @@ const Analytics = () => {
         supabase.from('student_profiles').select('*', { count: 'exact' }).eq('status', 'PENDING'),
         supabase.from('teacher_profiles').select('*', { count: 'exact' }).eq('status', 'PENDING')
       ]);
-
       // Fetch approval status data
       const [approvedStudents, rejectedStudents, approvedTeachers, rejectedTeachers] = await Promise.all([
         supabase.from('student_profiles').select('*', { count: 'exact' }).eq('status', 'APPROVED'),
@@ -53,19 +47,16 @@ const Analytics = () => {
         supabase.from('teacher_profiles').select('*', { count: 'exact' }).eq('status', 'APPROVED'),
         supabase.from('teacher_profiles').select('*', { count: 'exact' }).eq('status', 'REJECTED')
       ]);
-
       // Fetch subject distribution
       const { data: subjectData } = await supabase
         .from('teacher_profiles')
         .select('subject_expertise')
         .eq('status', 'APPROVED');
-
       // Fetch class distribution
       const { data: classData } = await supabase
         .from('student_profiles')
         .select('class_level')
         .eq('status', 'APPROVED');
-
       // Fetch exam performance
       const { data: examResults } = await supabase
         .from('exam_results')
@@ -73,20 +64,17 @@ const Analytics = () => {
           marks_obtained,
           exams(title, max_marks)
         `);
-
       // Process subject distribution
       const subjectCounts: { [key: string]: number } = {};
       subjectData?.forEach(item => {
         subjectCounts[item.subject_expertise] = (subjectCounts[item.subject_expertise] || 0) + 1;
       });
-
       // Process class distribution
       const classCounts: { [key: string]: number } = {};
       classData?.forEach(item => {
         const className = `Class ${item.class_level}`;
         classCounts[className] = (classCounts[className] || 0) + 1;
       });
-
       // Process exam performance
       const examPerformanceMap: { [key: string]: { total: number; count: number } } = {};
       examResults?.forEach(result => {
@@ -101,7 +89,6 @@ const Analytics = () => {
           examPerformanceMap[examTitle].count += 1;
         }
       });
-
       // Generate mock registration trend data for the last 7 days
       const registrationTrend = [];
       for (let i = 6; i >= 0; i--) {
@@ -113,7 +100,6 @@ const Analytics = () => {
           teachers: Math.floor(Math.random() * 5) + 1
         });
       }
-
       setData({
         totalStudents: studentsResult.count || 0,
         totalTeachers: teachersResult.count || 0,
@@ -143,23 +129,19 @@ const Analytics = () => {
         })).slice(0, 5)
       });
     } catch (error) {
-      console.error('Error fetching analytics:', error);
     } finally {
       setLoading(false);
     }
   };
-
   if (loading) {
     return <div className="flex justify-center p-8">Loading analytics...</div>;
   }
-
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Analytics Dashboard</h2>
         <p className="text-gray-600">Overview of platform performance and metrics</p>
       </div>
-
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
@@ -173,7 +155,6 @@ const Analytics = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -185,7 +166,6 @@ const Analytics = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -197,7 +177,6 @@ const Analytics = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -210,7 +189,6 @@ const Analytics = () => {
           </CardContent>
         </Card>
       </div>
-
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
@@ -233,7 +211,6 @@ const Analytics = () => {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader>
             <CardTitle>Approval Status Distribution</CardTitle>
@@ -259,7 +236,6 @@ const Analytics = () => {
           </CardContent>
         </Card>
       </div>
-
       {/* Charts Row 2 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
@@ -278,7 +254,6 @@ const Analytics = () => {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader>
             <CardTitle>Class Distribution (Students)</CardTitle>
@@ -296,7 +271,6 @@ const Analytics = () => {
           </CardContent>
         </Card>
       </div>
-
       {/* Exam Performance */}
       {data.examPerformance.length > 0 && (
         <Card>
@@ -322,5 +296,4 @@ const Analytics = () => {
     </div>
   );
 };
-
 export default Analytics;

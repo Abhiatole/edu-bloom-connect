@@ -9,7 +9,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, BookOpen, Clock, Lock, GraduationCap } from 'lucide-react';
 import { EmailConfirmationService } from '@/services/emailConfirmationService';
-
 const TeacherRegister = () => {
   const [formData, setFormData] = useState({
     fullName: '',
@@ -22,38 +21,24 @@ const TeacherRegister = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-
   const subjects = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English', 'Other'];  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      // Enhanced validation with better debugging
-      console.log('Form data:', {
-        fullName: formData.fullName,
-        email: formData.email,
-        subjectExpertise: formData.subjectExpertise,
-        experienceYears: formData.experienceYears,
-        password: formData.password ? `[${formData.password.length} chars]` : 'empty',
-        confirmPassword: formData.confirmPassword ? `[${formData.confirmPassword.length} chars]` : 'empty',
-        passwordsMatch: formData.password === formData.confirmPassword
-      });
-
+      // Enhanced validation
       if (!formData.password || !formData.confirmPassword) {
         throw new Error('Please enter both password and confirm password');
       }
-
       if (formData.password !== formData.confirmPassword) {
         throw new Error('Passwords do not match');
       }
-
       if (formData.password.length < 6) {
         throw new Error('Password must be at least 6 characters long');
       }      // Validate all required fields
       if (!formData.fullName || !formData.email || !formData.subjectExpertise || !formData.experienceYears) {
         throw new Error('Please fill in all required fields');
-      }      console.log('Attempting teacher registration...');
-
+      }
+      
       // Get the current domain for email redirect
       const currentDomain = window.location.origin;      // Step 1: Create auth user first with email redirect
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -69,21 +54,14 @@ const TeacherRegister = () => {
           emailRedirectTo: EmailConfirmationService.getConfirmationUrl()
         }
       });
-
       if (authError) {
-        console.error('Auth signup error:', authError);
         throw authError;
       }
-
       if (!authData.user) {
         throw new Error('User creation failed - no user data returned');
       }
-
-      console.log('Auth user created successfully:', authData.user.id);
-
       // Step 2: Create profile with the returned user ID (not auth.uid())
       if (authData.session || authData.user.email_confirmed_at) {
-        console.log('User confirmed, creating profile with user ID:', authData.user.id);
         
         const profileData = {
           user_id: authData.user.id, // Use the actual user ID from signup
@@ -93,28 +71,19 @@ const TeacherRegister = () => {
           experience_years: parseInt(formData.experienceYears),
           status: 'PENDING' as const
         };
-
-        console.log('Creating profile with data:', profileData);
-
         const { error: profileError } = await supabase
           .from('teacher_profiles')
           .insert(profileData);
-
         if (profileError) {
-          console.error('Profile creation error:', profileError);
           
           // Clean up auth user if profile creation fails
           try {
-            console.log('Cleaning up auth user due to profile error');
             await supabase.auth.admin.deleteUser(authData.user.id);
           } catch (cleanupError) {
-            console.error('Cleanup error:', cleanupError);
           }
           
           throw new Error(`Profile creation failed: ${profileError.message}`);
         }
-
-        console.log('Profile created successfully');
         
         toast({
           title: "Registration Successful!",
@@ -123,7 +92,6 @@ const TeacherRegister = () => {
         
         navigate('/login');
       } else {
-        console.log('Email confirmation required');
         navigate('/register/success', {
           state: {
             email: formData.email,
@@ -132,7 +100,6 @@ const TeacherRegister = () => {
         });
       }
     } catch (error: any) {
-      console.error('Registration error:', error);
         // Provide more specific error messages
       let errorMessage = error.message || "An error occurred during registration";
       
@@ -157,11 +124,9 @@ const TeacherRegister = () => {
       setLoading(false);
     }
   };
-
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
@@ -189,7 +154,6 @@ const TeacherRegister = () => {
                 className="mt-1"
               />
             </div>
-
             <div>
               <Label htmlFor="email" className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
@@ -205,7 +169,6 @@ const TeacherRegister = () => {
                 className="mt-1"
               />
             </div>
-
             <div>
               <Label htmlFor="subjectExpertise" className="flex items-center gap-2">
                 <BookOpen className="h-4 w-4" />
@@ -222,7 +185,6 @@ const TeacherRegister = () => {
                 </SelectContent>
               </Select>
             </div>
-
             <div>
               <Label htmlFor="experienceYears" className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
@@ -240,7 +202,6 @@ const TeacherRegister = () => {
                 className="mt-1"
               />
             </div>
-
             <div>
               <Label htmlFor="password" className="flex items-center gap-2">
                 <Lock className="h-4 w-4" />
@@ -256,7 +217,6 @@ const TeacherRegister = () => {
                 className="mt-1"
               />
             </div>
-
             <div>
               <Label htmlFor="confirmPassword" className="flex items-center gap-2">
                 <Lock className="h-4 w-4" />
@@ -272,7 +232,6 @@ const TeacherRegister = () => {
                 className="mt-1"
               />
             </div>
-
             <Button 
               type="submit" 
               className="w-full bg-green-600 hover:bg-green-700" 
@@ -280,7 +239,6 @@ const TeacherRegister = () => {
             >
               {loading ? 'Creating Account...' : 'Register as Teacher'}
             </Button>
-
             <div className="text-center text-sm text-gray-600">
               Already have an account?{' '}
               <a href="/login" className="text-green-600 hover:underline">
@@ -293,5 +251,4 @@ const TeacherRegister = () => {
     </div>
   );
 };
-
 export default TeacherRegister;

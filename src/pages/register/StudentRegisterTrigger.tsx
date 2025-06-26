@@ -8,7 +8,6 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, UserCheck, GraduationCap, Lock } from 'lucide-react';
-
 const StudentRegisterTrigger = () => {
   const [formData, setFormData] = useState({
     fullName: '',
@@ -22,20 +21,16 @@ const StudentRegisterTrigger = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       if (formData.password !== formData.confirmPassword) {
         throw new Error('Passwords do not match');
       }
-
       if (formData.password.length < 6) {
         throw new Error('Password must be at least 6 characters long');
       }
-
       // Create auth user with all profile data in metadata
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
@@ -50,9 +45,7 @@ const StudentRegisterTrigger = () => {
           }
         }
       });
-
       if (authError) throw authError;
-
       if (authData.user) {
         // The trigger will automatically create the student profile
         // We just need to update it with the additional details
@@ -66,26 +59,20 @@ const StudentRegisterTrigger = () => {
                 guardian_mobile: formData.guardianMobile
               })
               .eq('user_id', authData.user.id);
-
             if (updateError) {
-              console.error('Profile update error:', updateError);
             }
           } catch (error) {
-            console.error('Profile update failed:', error);
           }
         }, 2000);
-
         toast({
           title: "Registration Successful!",
           description: "Your account has been created and is pending approval from the admin.",
         });
-
         navigate('/login');
       } else {
         throw new Error('User creation failed - no user data returned');
       }
     } catch (error: any) {
-      console.error('Registration error:', error);
       toast({
         title: "Registration Failed",
         description: error.message || "An error occurred during registration",
@@ -95,11 +82,9 @@ const StudentRegisterTrigger = () => {
       setLoading(false);
     }
   };
-
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
@@ -127,7 +112,6 @@ const StudentRegisterTrigger = () => {
                 className="mt-1"
               />
             </div>
-
             <div>
               <Label htmlFor="email" className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
@@ -143,7 +127,6 @@ const StudentRegisterTrigger = () => {
                 className="mt-1"
               />
             </div>
-
             <div>
               <Label htmlFor="classLevel" className="flex items-center gap-2">
                 <GraduationCap className="h-4 w-4" />
@@ -159,7 +142,6 @@ const StudentRegisterTrigger = () => {
                 </SelectContent>
               </Select>
             </div>
-
             <div>
               <Label htmlFor="guardianName" className="flex items-center gap-2">
                 <UserCheck className="h-4 w-4" />
@@ -175,7 +157,6 @@ const StudentRegisterTrigger = () => {
                 className="mt-1"
               />
             </div>
-
             <div>
               <Label htmlFor="guardianMobile" className="flex items-center gap-2">
                 <Phone className="h-4 w-4" />
@@ -191,7 +172,6 @@ const StudentRegisterTrigger = () => {
                 className="mt-1"
               />
             </div>
-
             <div>
               <Label htmlFor="password" className="flex items-center gap-2">
                 <Lock className="h-4 w-4" />
@@ -207,7 +187,6 @@ const StudentRegisterTrigger = () => {
                 className="mt-1"
               />
             </div>
-
             <div>
               <Label htmlFor="confirmPassword" className="flex items-center gap-2">
                 <Lock className="h-4 w-4" />
@@ -223,7 +202,6 @@ const StudentRegisterTrigger = () => {
                 className="mt-1"
               />
             </div>
-
             <Button 
               type="submit" 
               className="w-full bg-blue-600 hover:bg-blue-700" 
@@ -231,7 +209,6 @@ const StudentRegisterTrigger = () => {
             >
               {loading ? 'Creating Account...' : 'Register as Student'}
             </Button>
-
             <div className="text-center text-sm text-gray-600">
               Already have an account?{' '}
               <a href="/login" className="text-blue-600 hover:underline">
@@ -244,5 +221,4 @@ const StudentRegisterTrigger = () => {
     </div>
   );
 };
-
 export default StudentRegisterTrigger;

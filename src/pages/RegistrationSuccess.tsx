@@ -6,7 +6,6 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Mail, RefreshCw, CheckCircle, ArrowLeft } from 'lucide-react';
 import { EmailConfirmationService } from '@/services/emailConfirmationService';
-
 const RegistrationSuccess = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -15,7 +14,6 @@ const RegistrationSuccess = () => {
   
   // Get data passed from registration page
   const { email, userType } = location.state || {};
-
   const handleResendConfirmation = async () => {
     if (!email) {
       toast({
@@ -35,15 +33,12 @@ const RegistrationSuccess = () => {
           emailRedirectTo: EmailConfirmationService.getConfirmationUrl()
         }
       });
-
       if (error) throw error;
-
       toast({
         title: "Email Sent!",
         description: "A new confirmation email has been sent to your inbox.",
       });
     } catch (error: any) {
-      console.error('Resend error:', error);
       toast({
         title: "Failed to Resend",
         description: error.message || "Could not resend confirmation email",
@@ -53,11 +48,9 @@ const RegistrationSuccess = () => {
       setResending(false);
     }
   };
-
   const handleBackToRegistration = () => {
     navigate(`/register/${userType || 'student'}`);
   };
-
   if (!email) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -79,7 +72,6 @@ const RegistrationSuccess = () => {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
@@ -118,7 +110,6 @@ const RegistrationSuccess = () => {
               </ol>
             </div>
           </div>
-
           <div className="space-y-3">
             <Button 
               onClick={handleResendConfirmation}
@@ -138,14 +129,12 @@ const RegistrationSuccess = () => {
                 </>
               )}
             </Button>
-
             <Button 
               onClick={() => navigate('/login')}
               className="w-full bg-blue-600 hover:bg-blue-700"
             >
               Go to Login
             </Button>
-
             <Button 
               onClick={handleBackToRegistration}
               variant="ghost"
@@ -155,7 +144,6 @@ const RegistrationSuccess = () => {
               Back to Registration
             </Button>
           </div>
-
           <div className="text-center">
             <p className="text-xs text-gray-500">
               Didn't receive the email? Check your spam folder or try resending.
@@ -166,5 +154,4 @@ const RegistrationSuccess = () => {
     </div>
   );
 };
-
 export default RegistrationSuccess;

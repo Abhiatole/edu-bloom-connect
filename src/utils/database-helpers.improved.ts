@@ -1,8 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
-
 // Debug flag - set to true to log details about database operations
 const DEBUG = false;
-
 /**
  * Safely checks if a table exists without querying information_schema directly
  * Uses a multi-layered fallback approach that's compatible with Supabase RLS
@@ -98,12 +96,10 @@ export const checkTableExists = async (tableName: string): Promise<boolean> => {
     if (DEBUG) console.log(`Unable to definitively check table ${tableName}, assuming it exists with access issues`);
     return true;
   } catch (e) {
-    console.error(`Error checking if table ${tableName} exists:`, e);
     // In production, fail safe by assuming the table doesn't exist
     return false;
   }
 };
-
 /**
  * Gets a list of tables that don't exist from a given list
  * Uses the improved checkTableExists function with multi-layered fallbacks
@@ -146,12 +142,10 @@ export const getMissingTables = async (tableNames: string[]): Promise<string[]> 
     if (DEBUG) console.log(`Found missing tables via individual checks: ${missingTables.join(', ')}`);
     return missingTables;
   } catch (e) {
-    console.error('Error getting missing tables:', e);
     // In case of error, return all tables as missing to be safe
     return tableNames;
   }
 };
-
 /**
  * Checks if a column exists in a table
  * Uses a multi-layered fallback approach that's compatible with Supabase RLS
@@ -224,12 +218,10 @@ export const checkColumnExists = async (tableName: string, columnName: string): 
     if (DEBUG) console.log(`Assuming column ${columnName} exists in ${tableName} due to inconclusive checks`);
     return true;
   } catch (e) {
-    console.error(`Error checking if column ${columnName} exists in table ${tableName}:`, e);
     // In case of error, assume column exists to prevent UI breakage
     return true;
   }
 };
-
 /**
  * Creates all necessary dashboard tables if they don't exist
  * This is a utility function that can be called from components
@@ -370,14 +362,12 @@ export const createDashboardTables = async (): Promise<{success: boolean; messag
       
       throw new Error(`SQL execution error: ${error.message}`);
     } catch (rpcError: any) {
-      console.error('Error creating tables via RPC:', rpcError);
       return { 
         success: false, 
         message: `Could not create tables automatically. Please run the SQL script manually in the Supabase dashboard. Error: ${rpcError.message}` 
       };
     }
   } catch (e: any) {
-    console.error('Error in createDashboardTables:', e);
     return { 
       success: false, 
       message: `Unexpected error: ${e.message}. Please contact the administrator.` 

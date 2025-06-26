@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Search, Filter, Download, Eye, AlertCircle } from 'lucide-react';
-
 interface AuditLog {
   id: string;
   userId: string;
@@ -20,7 +18,6 @@ interface AuditLog {
   userAgent: string;
   createdAt: string;
 }
-
 const AuditLogsViewer = () => {
   const [logs, setLogs] = useState<AuditLog[]>([
     {
@@ -71,14 +68,11 @@ const AuditLogsViewer = () => {
       createdAt: '2024-01-15T14:30:00Z'
     }
   ]);
-
   const [searchTerm, setSearchTerm] = useState('');
   const [actionFilter, setActionFilter] = useState('all');
   const [tableFilter, setTableFilter] = useState('all');
-
   const actions = ['LOGIN', 'LOGOUT', 'CREATE', 'UPDATE', 'DELETE', 'VIEW'];
   const tables = ['users', 'students', 'attendance', 'class_schedule', 'notifications'];
-
   const filteredLogs = logs.filter(log => {
     const matchesSearch = searchTerm === '' || 
       log.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -90,7 +84,6 @@ const AuditLogsViewer = () => {
     
     return matchesSearch && matchesAction && matchesTable;
   });
-
   const getActionColor = (action: string) => {
     switch (action) {
       case 'LOGIN':
@@ -108,7 +101,6 @@ const AuditLogsViewer = () => {
         return 'bg-gray-100 text-gray-800';
     }
   };
-
   const getActionIcon = (action: string) => {
     switch (action) {
       case 'DELETE':
@@ -117,7 +109,6 @@ const AuditLogsViewer = () => {
         return <Eye className="h-3 w-3" />;
     }
   };
-
   const exportLogs = () => {
     const csvContent = [
       ['Timestamp', 'User', 'Action', 'Table', 'Record ID', 'IP Address'].join(','),
@@ -130,7 +121,6 @@ const AuditLogsViewer = () => {
         log.ipAddress
       ].join(','))
     ].join('\n');
-
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -141,7 +131,6 @@ const AuditLogsViewer = () => {
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
   };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -154,7 +143,6 @@ const AuditLogsViewer = () => {
           Export Logs
         </Button>
       </div>
-
       {/* Filters */}
       <Card>
         <CardHeader>
@@ -217,7 +205,6 @@ const AuditLogsViewer = () => {
           </div>
         </CardContent>
       </Card>
-
       {/* Logs Table */}
       <Card>
         <CardHeader>
@@ -293,5 +280,4 @@ const AuditLogsViewer = () => {
     </div>
   );
 };
-
 export default AuditLogsViewer;

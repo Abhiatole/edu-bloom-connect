@@ -1,7 +1,5 @@
-
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-
 interface GradeDistributionChartProps {
   data: Array<{
     grade: string;
@@ -9,7 +7,6 @@ interface GradeDistributionChartProps {
     percentage: number;
   }>;
 }
-
 const GradeDistributionChart: React.FC<GradeDistributionChartProps> = ({ data }) => {
   return (
     <ResponsiveContainer width="100%" height={300}>
@@ -30,5 +27,4 @@ const GradeDistributionChart: React.FC<GradeDistributionChartProps> = ({ data })
     </ResponsiveContainer>
   );
 };
-
 export default GradeDistributionChart;

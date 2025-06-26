@@ -6,7 +6,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { UserCheck, Users, Clock, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
-
 interface PendingUser {
   id: string;
   full_name: string;
@@ -16,7 +15,6 @@ interface PendingUser {
   user_type: 'student' | 'teacher';
   additional_info: string;
 }
-
 const QuickApprovalDashboard = () => {
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,11 +25,9 @@ const QuickApprovalDashboard = () => {
     totalApproved: 0
   });
   const { toast } = useToast();
-
   useEffect(() => {
     fetchPendingUsers();
   }, []);
-
   const fetchPendingUsers = async () => {
     try {
       const [studentsResult, teachersResult, approvedResult] = await Promise.all([
@@ -45,10 +41,8 @@ const QuickApprovalDashboard = () => {
           .select('*', { count: 'exact' })
           .eq('status', 'APPROVED')
       ]);
-
       if (studentsResult.error) throw studentsResult.error;
       if (teachersResult.error) throw teachersResult.error;
-
       // Transform data for unified display
       const students: PendingUser[] = (studentsResult.data || []).map(s => ({
         id: s.id,
@@ -59,7 +53,6 @@ const QuickApprovalDashboard = () => {
         user_type: 'student' as const,
         additional_info: `Class ${s.class_level} - Guardian: ${s.guardian_name}`
       }));
-
       const teachers: PendingUser[] = (teachersResult.data || []).map(t => ({
         id: t.id,
         full_name: t.full_name,
@@ -69,20 +62,16 @@ const QuickApprovalDashboard = () => {
         user_type: 'teacher' as const,
         additional_info: `${t.subject_expertise} (${t.experience_years} years exp.)`
       }));
-
       const allPending = [...students, ...teachers].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
-
       setPendingUsers(allPending);
       setStats({
         pendingStudents: students.length,
         pendingTeachers: teachers.length,
         totalApproved: approvedResult.count || 0
       });
-
     } catch (error) {
-      console.error('Error fetching pending users:', error);
       toast({
         title: "Error",
         description: "Failed to load pending users",
@@ -92,16 +81,13 @@ const QuickApprovalDashboard = () => {
       setLoading(false);
     }
   };
-
   const handleQuickAction = async (userId: string, userType: 'student' | 'teacher', action: 'approve' | 'reject') => {
     setActionLoading(userId);
     try {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error('Not authenticated');
-
       const table = userType === 'student' ? 'student_profiles' : 'teacher_profiles';
       const status = action === 'approve' ? 'APPROVED' : 'REJECTED';
-
       const { error } = await supabase
         .from(table)
         .update({
@@ -110,14 +96,11 @@ const QuickApprovalDashboard = () => {
           approval_date: new Date().toISOString()
         })
         .eq('id', userId);
-
       if (error) throw error;
-
       toast({
         title: `${action === 'approve' ? 'Approved' : 'Rejected'}!`,
         description: `${userType.charAt(0).toUpperCase() + userType.slice(1)} ${action}d successfully.`,
       });
-
       // Refresh data
       fetchPendingUsers();
     } catch (error: any) {
@@ -130,7 +113,6 @@ const QuickApprovalDashboard = () => {
       setActionLoading(null);
     }
   };
-
   const bulkApproveAll = async () => {
     if (pendingUsers.length === 0) return;
     
@@ -138,12 +120,9 @@ const QuickApprovalDashboard = () => {
     try {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error('Not authenticated');
-
       const students = pendingUsers.filter(u => u.user_type === 'student');
       const teachers = pendingUsers.filter(u => u.user_type === 'teacher');
-
       const updates = [];
-
       if (students.length > 0) {
         updates.push(
           supabase.from('student_profiles')
@@ -155,7 +134,6 @@ const QuickApprovalDashboard = () => {
             .in('id', students.map(s => s.id))
         );
       }
-
       if (teachers.length > 0) {
         updates.push(
           supabase.from('teacher_profiles')
@@ -167,19 +145,16 @@ const QuickApprovalDashboard = () => {
             .in('id', teachers.map(t => t.id))
         );
       }
-
       const results = await Promise.all(updates);
       
       // Check for errors
       results.forEach(result => {
         if (result.error) throw result.error;
       });
-
       toast({
         title: "Bulk Approval Complete!",
         description: `Approved ${pendingUsers.length} users successfully.`,
       });
-
       fetchPendingUsers();
     } catch (error: any) {
       toast({
@@ -191,7 +166,6 @@ const QuickApprovalDashboard = () => {
       setLoading(false);
     }
   };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -200,7 +174,6 @@ const QuickApprovalDashboard = () => {
       </div>
     );
   }
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -213,7 +186,6 @@ const QuickApprovalDashboard = () => {
           Refresh
         </Button>
       </div>
-
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -227,7 +199,6 @@ const QuickApprovalDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -239,7 +210,6 @@ const QuickApprovalDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -252,7 +222,6 @@ const QuickApprovalDashboard = () => {
           </CardContent>
         </Card>
       </div>
-
       {/* Bulk Actions */}
       {pendingUsers.length > 0 && (
         <Card>
@@ -274,7 +243,6 @@ const QuickApprovalDashboard = () => {
           </CardContent>
         </Card>
       )}
-
       {/* Pending Users List */}
       <Card>
         <CardHeader>
@@ -342,5 +310,4 @@ const QuickApprovalDashboard = () => {
     </div>
   );
 };
-
 export default QuickApprovalDashboard;

@@ -1,8 +1,6 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LucideIcon } from 'lucide-react';
-
 interface ModernDashboardCardProps {
   title: string;
   value: string | number;
@@ -14,7 +12,6 @@ interface ModernDashboardCardProps {
   };
   gradient?: string;
 }
-
 export const ModernDashboardCard: React.FC<ModernDashboardCardProps> = ({
   title,
   value,

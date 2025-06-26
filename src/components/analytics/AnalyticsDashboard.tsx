@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +15,6 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { DateRange } from 'react-day-picker';
-
 const AnalyticsDashboard = () => {
   const [analyticsData, setAnalyticsData] = useState({
     topPerformers: [],
@@ -28,11 +26,9 @@ const AnalyticsDashboard = () => {
   const [selectedMetric, setSelectedMetric] = useState('performance');
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-
   useEffect(() => {
     fetchAnalyticsData();
   }, [dateRange, selectedMetric]);
-
   const fetchAnalyticsData = async () => {
     try {
       // In a real app, these would be complex queries or cached analytics
@@ -66,10 +62,8 @@ const AnalyticsDashboard = () => {
           { course: 'Physics', enrolled: 75, completed: 65, rating: 4.1 }
         ]
       };
-
       setAnalyticsData(mockData);
     } catch (error) {
-      console.error('Error fetching analytics data:', error);
       toast({
         title: "Error",
         description: "Failed to load analytics data",
@@ -79,7 +73,6 @@ const AnalyticsDashboard = () => {
       setLoading(false);
     }
   };
-
   const exportData = () => {
     const data = JSON.stringify(analyticsData, null, 2);
     const blob = new Blob([data], { type: 'application/json' });
@@ -89,13 +82,11 @@ const AnalyticsDashboard = () => {
     a.download = `analytics-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
-
     toast({
       title: "Success",
       description: "Analytics data exported successfully"
     });
   };
-
   const performanceChartData = [
     { month: 'Jan', mathematics: 85, science: 82, english: 78, history: 80 },
     { month: 'Feb', mathematics: 87, science: 84, english: 80, history: 82 },
@@ -103,14 +94,12 @@ const AnalyticsDashboard = () => {
     { month: 'Apr', mathematics: 91, science: 88, english: 84, history: 86 },
     { month: 'May', mathematics: 93, science: 90, english: 86, history: 88 }
   ];
-
   const attendanceDistribution = [
     { name: 'Excellent (95-100%)', value: 35, color: '#10b981' },
     { name: 'Good (85-94%)', value: 40, color: '#3b82f6' },
     { name: 'Average (75-84%)', value: 20, color: '#f59e0b' },
     { name: 'Poor (<75%)', value: 5, color: '#ef4444' }
   ];
-
   const feeCollectionData = [
     { month: 'Jan', collected: 85000, pending: 15000 },
     { month: 'Feb', collected: 92000, pending: 8000 },
@@ -118,7 +107,6 @@ const AnalyticsDashboard = () => {
     { month: 'Apr', collected: 95000, pending: 5000 },
     { month: 'May', collected: 90000, pending: 10000 }
   ];
-
   const getRiskColor = (risk: string) => {
     switch (risk) {
       case 'high': return 'bg-red-100 text-red-800 border-red-200';
@@ -127,11 +115,9 @@ const AnalyticsDashboard = () => {
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
-
   if (loading) {
     return <div className="flex justify-center p-8">Loading analytics...</div>;
   }
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -147,7 +133,6 @@ const AnalyticsDashboard = () => {
           </Button>
         </div>
       </div>
-
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
@@ -164,7 +149,6 @@ const AnalyticsDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">Average Performance</CardTitle>
@@ -179,7 +163,6 @@ const AnalyticsDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">Fee Collection</CardTitle>
@@ -194,7 +177,6 @@ const AnalyticsDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">At-Risk Students</CardTitle>
@@ -210,7 +192,6 @@ const AnalyticsDashboard = () => {
           </CardContent>
         </Card>
       </div>
-
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
@@ -234,7 +215,6 @@ const AnalyticsDashboard = () => {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader>
             <CardTitle>Attendance Distribution</CardTitle>
@@ -260,7 +240,6 @@ const AnalyticsDashboard = () => {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader>
             <CardTitle>Fee Collection Trends</CardTitle>
@@ -280,7 +259,6 @@ const AnalyticsDashboard = () => {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader>
             <CardTitle>Course Popularity</CardTitle>
@@ -308,7 +286,6 @@ const AnalyticsDashboard = () => {
           </CardContent>
         </Card>
       </div>
-
       {/* Detailed Tables */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card>
@@ -333,7 +310,6 @@ const AnalyticsDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader>
             <CardTitle>Attendance Alerts</CardTitle>
@@ -358,7 +334,6 @@ const AnalyticsDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader>
             <CardTitle>Fee Defaulters</CardTitle>
@@ -384,5 +359,4 @@ const AnalyticsDashboard = () => {
     </div>
   );
 };
-
 export default AnalyticsDashboard;

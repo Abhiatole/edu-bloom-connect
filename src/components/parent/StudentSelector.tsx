@@ -1,29 +1,24 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Users } from 'lucide-react';
-
 interface LinkedStudent {
   id: string;
   full_name: string;
   class_level: number;
   relationship: string;
 }
-
 interface StudentSelectorProps {
   students: LinkedStudent[];
   selectedStudent: string;
   onStudentChange: (studentId: string) => void;
 }
-
 export const StudentSelector: React.FC<StudentSelectorProps> = ({
   students,
   selectedStudent,
   onStudentChange
 }) => {
   const selectedStudentData = students.find(s => s.id === selectedStudent);
-
   return (
     <Card className="border-0 shadow-lg">
       <CardHeader>

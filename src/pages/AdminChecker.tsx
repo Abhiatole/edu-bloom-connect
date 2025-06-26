@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Shield, User, CheckCircle, XCircle, AlertTriangle, Users, RefreshCw } from 'lucide-react';
-
 interface AdminStatus {
   hasAdmin: boolean;
   adminCount: number;
@@ -20,17 +18,14 @@ interface AdminStatus {
     createdAt: string;
   }[];
 }
-
 const AdminChecker = () => {
   const [status, setStatus] = useState<AdminStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
   const { toast } = useToast();
-
   useEffect(() => {
     checkAdminStatus();
   }, []);
-
   const checkAdminStatus = async () => {
     setLoading(true);
     try {
@@ -40,18 +35,14 @@ const AdminChecker = () => {
         .select('*')
         .eq('role', 'ADMIN')
         .order('created_at', { ascending: false });
-
       if (adminError) throw adminError;
-
       // Check pending users
       const [pendingStudentsResult, pendingTeachersResult] = await Promise.all([
         supabase.from('user_profiles').select('*', { count: 'exact' }).eq('status', 'PENDING').eq('role', 'STUDENT'),
         supabase.from('user_profiles').select('*', { count: 'exact' }).eq('status', 'PENDING').eq('role', 'TEACHER')
       ]);
-
       const pendingStudents = pendingStudentsResult.count || 0;
       const pendingTeachers = pendingTeachersResult.count || 0;
-
       setStatus({
         hasAdmin: (adminProfiles?.length || 0) > 0,
         adminCount: adminProfiles?.length || 0,
@@ -64,9 +55,7 @@ const AdminChecker = () => {
           createdAt: admin.created_at
         }))
       });
-
     } catch (error: any) {
-      console.error('Error checking admin status:', error);
       toast({
         title: "Error",
         description: "Failed to check admin status",
@@ -76,17 +65,14 @@ const AdminChecker = () => {
       setLoading(false);
     }
   };
-
   const bulkApproveAll = async () => {
     if (!status?.totalPending) return;
-
     setChecking(true);
     try {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) {
         throw new Error('You must be logged in as admin to approve users');
       }
-
       // Check if current user is admin
       const { data: adminProfile } = await supabase
         .from('user_profiles')
@@ -94,13 +80,10 @@ const AdminChecker = () => {
         .eq('user_id', currentUser.user.id)
         .eq('role', 'ADMIN')
         .single();
-
       if (!adminProfile) {
         throw new Error('You must be logged in as an admin to approve users');
       }
-
       const updates = [];
-
       if (status.pendingStudents > 0) {
         updates.push(
           supabase.from('user_profiles')
@@ -111,7 +94,6 @@ const AdminChecker = () => {
             .eq('role', 'STUDENT')
         );
       }
-
       if (status.pendingTeachers > 0) {
         updates.push(
           supabase.from('user_profiles')
@@ -122,22 +104,18 @@ const AdminChecker = () => {
             .eq('role', 'TEACHER')
         );
       }
-
       const results = await Promise.all(updates);
       
       // Check for errors
       results.forEach(result => {
         if (result.error) throw result.error;
       });
-
       toast({
         title: "Bulk Approval Complete!",
         description: `Approved ${status.totalPending} users successfully.`,
       });
-
       // Refresh status
       checkAdminStatus();
-
     } catch (error: any) {
       toast({
         title: "Approval Failed",
@@ -148,7 +126,6 @@ const AdminChecker = () => {
       setChecking(false);
     }
   };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -157,7 +134,6 @@ const AdminChecker = () => {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -194,7 +170,6 @@ const AdminChecker = () => {
                   </div>
                 </CardContent>
               </Card>
-
               <Card className={status?.totalPending ? 'border-yellow-200 bg-yellow-50' : 'border-gray-200 bg-gray-50'}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
@@ -212,7 +187,6 @@ const AdminChecker = () => {
                 </CardContent>
               </Card>
             </div>
-
             {/* Admin Details */}
             {status?.adminDetails && status.adminDetails.length > 0 && (
               <Card>
@@ -237,7 +211,6 @@ const AdminChecker = () => {
                 </CardContent>
               </Card>
             )}
-
             {/* Actions */}
             <div className="space-y-4">
               {!status?.hasAdmin && (
@@ -257,7 +230,6 @@ const AdminChecker = () => {
                   </AlertDescription>
                 </Alert>
               )}
-
               {status?.hasAdmin && status.totalPending > 0 && (
                 <Alert>
                   <Users className="h-4 w-4" />
@@ -268,13 +240,11 @@ const AdminChecker = () => {
                   </AlertDescription>
                 </Alert>
               )}
-
               <div className="flex flex-wrap gap-3">
                 <Button onClick={checkAdminStatus} variant="outline">
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Refresh Status
                 </Button>
-
                 {status?.hasAdmin && (
                   <>
                     <Button asChild>
@@ -283,13 +253,11 @@ const AdminChecker = () => {
                         Detailed Approvals
                       </a>
                     </Button>
-
                     <Button asChild variant="outline">
                       <a href="/quick-approvals">
                         Quick Approvals
                       </a>
                     </Button>
-
                     {status.totalPending > 0 && (
                       <Button 
                         onClick={bulkApproveAll}
@@ -302,7 +270,6 @@ const AdminChecker = () => {
                     )}
                   </>
                 )}
-
                 {!status?.hasAdmin && (
                   <Button asChild className="bg-purple-600 hover:bg-purple-700">
                     <a href="/setup-admin">
@@ -313,7 +280,6 @@ const AdminChecker = () => {
                 )}
               </div>
             </div>
-
             {status?.hasAdmin && status.totalPending === 0 && (
               <Alert>
                 <CheckCircle className="h-4 w-4" />
@@ -330,5 +296,4 @@ const AdminChecker = () => {
     </div>
   );
 };
-
 export default AdminChecker;

@@ -8,10 +8,10 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Users, UserCheck, UserX, Clock, GraduationCap, RefreshCw, CheckCircle, AlertTriangle } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
-
+import StudentManagementPanel from '@/components/admin/StudentManagementPanel';
+import TeacherManagementPanel from '@/components/admin/TeacherManagementPanel';
 type StudentProfile = Database['public']['Tables']['student_profiles']['Row'];
 type TeacherProfile = Database['public']['Tables']['teacher_profiles']['Row'];
-
 interface UserWithProfile {
   id: string;
   user_id: string;
@@ -23,7 +23,6 @@ interface UserWithProfile {
   created_at: string | null;
   profile_data: StudentProfile | TeacherProfile;
 }
-
 const SimplifiedUserApprovals = () => {
   const [allUsers, setAllUsers] = useState<UserWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,18 +34,14 @@ const SimplifiedUserApprovals = () => {
     userName: string;
   } | null>(null);
   const { toast } = useToast();
-
   useEffect(() => {
     fetchAllData();
   }, []);
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      console.log('Starting to fetch all data...');
       await fetchUsers();
-      console.log('Successfully fetched all data');
     } catch (error: any) {
-      console.error('Error fetching data:', error);
       
       // More detailed error message for the user
       let errorMessage = 'Failed to fetch user data.';
@@ -71,7 +66,6 @@ const SimplifiedUserApprovals = () => {
   const fetchUsers = async () => {
     try {
       // Fetch students and teachers with explicit status handling
-      console.log('Fetching users...');
       
       const [studentsResponse, teachersResponse] = await Promise.all([
         supabase
@@ -84,19 +78,12 @@ const SimplifiedUserApprovals = () => {
           .order('created_at', { ascending: false })
       ]);
 
-      // Log responses for debugging
-      console.log('Student profiles response:', studentsResponse);
-      console.log('Teacher profiles response:', teachersResponse);
-      
       if (studentsResponse.error) {
-        console.error('Student profiles fetch error:', studentsResponse.error);
         throw studentsResponse.error;
       }
       if (teachersResponse.error) {
-        console.error('Teacher profiles fetch error:', teachersResponse.error);
         throw teachersResponse.error;
       }
-
       // Combine and normalize the data
       const allUsersData: UserWithProfile[] = [
         ...(studentsResponse.data || []).map(student => ({
@@ -122,14 +109,11 @@ const SimplifiedUserApprovals = () => {
           profile_data: teacher
         }))
       ];
-
       setAllUsers(allUsersData);
     } catch (error) {
-      console.error('Error fetching users:', error);
       throw error;
     }
   };
-
   const handleApproval = async (userId: string, action: 'approve' | 'reject') => {
     setActionLoading(userId);
     try {
@@ -137,19 +121,15 @@ const SimplifiedUserApprovals = () => {
       if (!currentUser.user) {
         throw new Error('Not authenticated');
       }
-
       const userToUpdate = allUsers.find(u => u.user_id === userId);
       if (!userToUpdate) {
         throw new Error('User not found');
       }
-
       const status = action === 'approve' ? 'APPROVED' : 'REJECTED';
       const approvalDate = action === 'approve' ? new Date().toISOString() : null;
-
       // Update the appropriate table based on user role
       let updateError: any = null;
       let updateCount = 0;
-
       if (userToUpdate.role === 'STUDENT') {
         const { error, count } = await supabase
           .from('student_profiles')
@@ -175,15 +155,12 @@ const SimplifiedUserApprovals = () => {
         updateError = error;
         updateCount = count || 0;
       }
-
       if (updateError) {
         throw updateError;
       }
-
       if (updateCount === 0) {
         throw new Error('No rows were updated. This might be due to RLS policies preventing admin updates.');
       }
-
       // Update local state for immediate UI feedback
       setAllUsers(prevUsers => {
         const updatedUsers = prevUsers.map(user => 
@@ -197,12 +174,10 @@ const SimplifiedUserApprovals = () => {
         );
         return updatedUsers;
       });
-
       toast({
         title: action === 'approve' ? 'User Approved!' : 'User Rejected!',
         description: `${userToUpdate.display_name} has been ${action}d successfully.`,
       });
-
       // Refresh data from server to ensure consistency
       setTimeout(() => {
         fetchAllData();
@@ -226,11 +201,9 @@ const SimplifiedUserApprovals = () => {
       setConfirmDialog(null);
     }
   };
-
   const openConfirmDialog = (type: 'approve' | 'reject', userId: string, userName: string) => {
     setConfirmDialog({ isOpen: true, type, userId, userName });
   };
-
   const getStatusBadge = (user: UserWithProfile) => {
     if (user.is_approved) {
       return <Badge className="bg-green-100 text-green-800">Approved</Badge>;
@@ -238,7 +211,6 @@ const SimplifiedUserApprovals = () => {
       return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
     }
   };
-
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'STUDENT':
@@ -249,7 +221,6 @@ const SimplifiedUserApprovals = () => {
         return <Users className="h-4 w-4" />;
     }
   };
-
   const renderUserCard = (user: UserWithProfile, showActions: boolean = true) => (
     <div key={user.id} className="border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start">
@@ -307,11 +278,9 @@ const SimplifiedUserApprovals = () => {
       </div>
     </div>
   );
-
   // Filter users by status
   const pendingUsers = allUsers.filter(u => !u.is_approved);
   const approvedUsers = allUsers.filter(u => u.is_approved);
-
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -320,7 +289,6 @@ const SimplifiedUserApprovals = () => {
       </div>
     );
   }
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -333,7 +301,6 @@ const SimplifiedUserApprovals = () => {
           Refresh
         </Button>
       </div>
-
       {/* Setup Notice */}
       <Card className="border-orange-200 bg-orange-50">
         <CardContent className="p-4">
@@ -348,7 +315,6 @@ const SimplifiedUserApprovals = () => {
           </div>
         </CardContent>
       </Card>
-
       {/* Statistics */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <Card>
@@ -370,9 +336,8 @@ const SimplifiedUserApprovals = () => {
           </CardContent>
         </Card>
       </div>
-
       <Tabs defaultValue="pending" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="pending" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             Pending ({pendingUsers.length})
@@ -380,6 +345,14 @@ const SimplifiedUserApprovals = () => {
           <TabsTrigger value="approved" className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4" />
             Approved ({approvedUsers.length})
+          </TabsTrigger>
+          <TabsTrigger value="students" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Students
+          </TabsTrigger>
+          <TabsTrigger value="teachers" className="flex items-center gap-2">
+            <GraduationCap className="h-4 w-4" />
+            Teachers
           </TabsTrigger>
         </TabsList>
 
@@ -432,8 +405,15 @@ const SimplifiedUserApprovals = () => {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
 
+        <TabsContent value="students">
+          <StudentManagementPanel />
+        </TabsContent>
+
+        <TabsContent value="teachers">
+          <TeacherManagementPanel />
+        </TabsContent>
+      </Tabs>
       <AlertDialog open={confirmDialog?.isOpen} onOpenChange={() => setConfirmDialog(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -465,5 +445,4 @@ const SimplifiedUserApprovals = () => {
     </div>
   );
 };
-
 export default SimplifiedUserApprovals;

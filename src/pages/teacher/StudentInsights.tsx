@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,13 +7,11 @@ import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Responsi
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Brain, Target, TrendingUp, AlertTriangle, BookOpen, RefreshCw } from 'lucide-react';
-
 interface Student {
   id: string;
   full_name: string;
   class_level: number;
 }
-
 interface ExamResult {
   marks_obtained: number;
   percentage: number;
@@ -27,7 +24,6 @@ interface ExamResult {
     };
   };
 }
-
 interface StudentInsight {
   id: string;
   strength_level: number;
@@ -41,7 +37,6 @@ interface StudentInsight {
     name: string;
   };
 }
-
 const StudentInsights = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<string>('');
@@ -50,17 +45,14 @@ const StudentInsights = () => {
   const [loading, setLoading] = useState(true);
   const [generatingInsights, setGeneratingInsights] = useState(false);
   const { toast } = useToast();
-
   useEffect(() => {
     fetchStudents();
   }, []);
-
   useEffect(() => {
     if (selectedStudent) {
       fetchStudentData();
     }
   }, [selectedStudent]);
-
   const fetchStudents = async () => {
     try {
       const { data, error } = await supabase
@@ -68,11 +60,9 @@ const StudentInsights = () => {
         .select('id, full_name, class_level')
         .eq('status', 'APPROVED')
         .order('full_name');
-
       if (error) throw error;
       setStudents(data || []);
     } catch (error) {
-      console.error('Error fetching students:', error);
       toast({
         title: "Error",
         description: "Failed to load students",
@@ -82,7 +72,6 @@ const StudentInsights = () => {
       setLoading(false);
     }
   };
-
   const fetchStudentData = async () => {
     try {
       const [resultsResult, insightsResult] = await Promise.all([
@@ -107,14 +96,11 @@ const StudentInsights = () => {
           `)
           .eq('student_id', selectedStudent)
       ]);
-
       if (resultsResult.error) throw resultsResult.error;
       if (insightsResult.error) throw insightsResult.error;
-
       setExamResults(resultsResult.data || []);
       setInsights(insightsResult.data || []);
     } catch (error) {
-      console.error('Error fetching student data:', error);
       toast({
         title: "Error",
         description: "Failed to load student data",
@@ -122,15 +108,12 @@ const StudentInsights = () => {
       });
     }
   };
-
   const generateAIInsights = async () => {
     if (!selectedStudent) return;
-
     setGeneratingInsights(true);
     try {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error('Not authenticated');
-
       // Group exam results by subject
       const subjectPerformance: { [key: string]: { scores: number[]; subjectId: string } } = {};
       
@@ -143,7 +126,6 @@ const StudentInsights = () => {
           subjectPerformance[subject].scores.push(result.percentage || 0);
         }
       });
-
       // Generate insights for each subject
       const insightsToInsert = [];
       
@@ -152,16 +134,13 @@ const StudentInsights = () => {
         const trend = data.scores.length > 1 ? 
           (data.scores[data.scores.length - 1] > data.scores[0] ? 'improving' : 'declining') : 
           'stable';
-
         // Simple AI logic for generating insights
         let strengthLevel = Math.round(averageScore / 20); // Convert to 1-5 scale
         strengthLevel = Math.max(1, Math.min(5, strengthLevel));
-
         const weakAreas = [];
         const strongAreas = [];
         const focusTopics = [];
         let recommendations = '';
-
         if (averageScore < 40) {
           weakAreas.push('Basic concepts', 'Problem solving');
           focusTopics.push('Fundamental concepts', 'Practice problems');
@@ -176,12 +155,10 @@ const StudentInsights = () => {
           focusTopics.push('Complex problems', 'Time management');
           recommendations = `${subject}: Excellent performance. Focus on complex problems and exam strategies.`;
         }
-
         // Check if insight already exists for this student and subject
         const existingInsight = insights.find(insight => 
           insight.subjects?.name === subject
         );
-
         if (existingInsight) {
           // Update existing insight
           await supabase
@@ -210,23 +187,18 @@ const StudentInsights = () => {
           });
         }
       }
-
       if (insightsToInsert.length > 0) {
         const { error } = await supabase
           .from('student_insights')
           .insert(insightsToInsert);
-
         if (error) throw error;
       }
-
       toast({
         title: "Success",
         description: "AI insights generated successfully"
       });
-
       fetchStudentData();
     } catch (error: any) {
-      console.error('Error generating insights:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to generate insights",
@@ -236,7 +208,6 @@ const StudentInsights = () => {
       setGeneratingInsights(false);
     }
   };
-
   const getSubjectPerformanceData = () => {
     const subjectData: { [key: string]: number[] } = {};
     
@@ -249,20 +220,17 @@ const StudentInsights = () => {
         subjectData[subject].push(result.percentage || 0);
       }
     });
-
     return Object.entries(subjectData).map(([subject, scores]) => ({
       subject,
       average: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
       fullMark: 100
     }));
   };
-
   const getStrengthLevelColor = (level: number) => {
     if (level >= 4) return 'bg-green-100 text-green-800';
     if (level >= 3) return 'bg-yellow-100 text-yellow-800';
     return 'bg-red-100 text-red-800';
   };
-
   const getTrendIcon = (trend: string) => {
     switch (trend) {
       case 'improving':
@@ -273,11 +241,9 @@ const StudentInsights = () => {
         return <TrendingUp className="h-4 w-4 text-gray-600" />;
     }
   };
-
   if (loading) {
     return <div className="flex justify-center p-8">Loading student insights...</div>;
   }
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -310,7 +276,6 @@ const StudentInsights = () => {
           )}
         </div>
       </div>
-
       {selectedStudent ? (
         <div className="space-y-6">
           {/* Performance Overview */}
@@ -339,7 +304,6 @@ const StudentInsights = () => {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -360,7 +324,6 @@ const StudentInsights = () => {
               </CardContent>
             </Card>
           </div>
-
           {/* AI Insights */}
           {insights.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -394,7 +357,6 @@ const StudentInsights = () => {
                         ))}
                       </div>
                     </div>
-
                     <div>
                       <h4 className="font-semibold text-red-700 flex items-center gap-2 mb-2">
                         <AlertTriangle className="h-4 w-4" />
@@ -408,7 +370,6 @@ const StudentInsights = () => {
                         ))}
                       </div>
                     </div>
-
                     <div>
                       <h4 className="font-semibold text-blue-700 flex items-center gap-2 mb-2">
                         <Target className="h-4 w-4" />
@@ -422,14 +383,12 @@ const StudentInsights = () => {
                         ))}
                       </div>
                     </div>
-
                     <div>
                       <h4 className="font-semibold text-purple-700 mb-2">AI Recommendations</h4>
                       <p className="text-sm text-gray-700 bg-purple-50 p-3 rounded-lg">
                         {insight.ai_recommendations}
                       </p>
                     </div>
-
                     <div className="text-xs text-gray-500">
                       Last analyzed: {insight.last_analyzed ? new Date(insight.last_analyzed).toLocaleDateString() : 'Not available'}
                     </div>
@@ -471,5 +430,4 @@ const StudentInsights = () => {
     </div>
   );
 };
-
 export default StudentInsights;

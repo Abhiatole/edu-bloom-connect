@@ -6,7 +6,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Download, FileCode, Database, Play, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-
 // Import SQL scripts as strings
 const CREATE_EXAM_TABLES_SQL = `
 -- Create subjects table if it doesn't exist
@@ -17,7 +16,6 @@ CREATE TABLE IF NOT EXISTS public.subjects (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
-
 -- Create topics table if it doesn't exist
 CREATE TABLE IF NOT EXISTS public.topics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -27,7 +25,6 @@ CREATE TABLE IF NOT EXISTS public.topics (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
-
 -- Create exams table if it doesn't exist
 CREATE TABLE IF NOT EXISTS public.exams (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -44,7 +41,6 @@ CREATE TABLE IF NOT EXISTS public.exams (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
-
 -- Create exam_results table if it doesn't exist
 CREATE TABLE IF NOT EXISTS public.exam_results (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -58,13 +54,11 @@ CREATE TABLE IF NOT EXISTS public.exam_results (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );`;
-
 const DatabaseFix = () => {
   const [activeTab, setActiveTab] = useState('exam-tables');
   const [sql, setSql] = useState(CREATE_EXAM_TABLES_SQL);
   const [executing, setExecuting] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
-
   const executeSql = async () => {
     setExecuting(true);
     setResult(null);
@@ -77,7 +71,6 @@ const DatabaseFix = () => {
       });
       
       if (error) {
-        console.error("Error executing SQL:", error);
         setResult({
           success: false,
           message: `Error: ${error.message}. You may need to run this SQL directly in the Supabase dashboard.`
@@ -89,7 +82,6 @@ const DatabaseFix = () => {
         });
       }
     } catch (error) {
-      console.error("Exception executing SQL:", error);
       setResult({
         success: false,
         message: `Error: ${error.message}. You may need to run this SQL directly in the Supabase dashboard.`
@@ -98,7 +90,6 @@ const DatabaseFix = () => {
       setExecuting(false);
     }
   };
-
   const downloadSql = () => {
     const blob = new Blob([sql], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -110,7 +101,6 @@ const DatabaseFix = () => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
-
   return (
     <div className="container mx-auto py-8 max-w-4xl">
       <h1 className="text-3xl font-bold mb-6">Database Fix Utility</h1>
@@ -236,5 +226,4 @@ const DatabaseFix = () => {
     </div>
   );
 };
-
 export default DatabaseFix;

@@ -1,8 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
 interface DatabaseStats {
   userProfiles: number;
   studentProfiles: number;
@@ -16,12 +14,10 @@ interface DatabaseStats {
   parentLinks: number;
   securityLogs: number;
 }
-
 export const useDatabase = () => {
   const [stats, setStats] = useState<DatabaseStats | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-
   const fetchDatabaseStats = async () => {
     try {
       const [
@@ -49,7 +45,6 @@ export const useDatabase = () => {
         supabase.from('parent_links').select('*', { count: 'exact' }),
         supabase.from('security_logs').select('*', { count: 'exact' })
       ]);
-
       setStats({
         userProfiles: userProfilesResult.count || 0,
         studentProfiles: studentProfilesResult.count || 0,
@@ -64,7 +59,6 @@ export const useDatabase = () => {
         securityLogs: securityLogsResult.count || 0
       });
     } catch (error) {
-      console.error('Error fetching database stats:', error);
       toast({
         title: "Database Error",
         description: "Failed to fetch database statistics",
@@ -74,10 +68,8 @@ export const useDatabase = () => {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchDatabaseStats();
   }, []);
-
   return { stats, loading, refetch: fetchDatabaseStats };
 };

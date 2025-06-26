@@ -27,14 +27,12 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell } from 'recharts';
-
 // Custom type for performance distribution data
 type PerformanceData = {
   name: string;
   value: number;
   color: string;
 }
-
 // Interface for Exam data
 interface Exam {
   id: string;
@@ -55,7 +53,6 @@ interface Exam {
   topics?: { name: string };
   subject?: string;
 }
-
 // Interface for Exam Result data
 interface ExamResult {
   id: string;
@@ -70,7 +67,6 @@ interface ExamResult {
   created_at: string;
   updated_at?: string;
 }
-
 // Interface for Teacher Profile
 interface TeacherProfile {
   id: string;
@@ -82,7 +78,6 @@ interface TeacherProfile {
   created_at?: string;
   updated_at?: string;
 }
-
 const ModernTeacherDashboard = () => {
   const [stats, setStats] = useState({
     totalStudents: 0,
@@ -124,14 +119,12 @@ const ModernTeacherDashboard = () => {
       // Get current user
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error('Not authenticated');
-
       // Get teacher profile
       const { data: profile, error: profileError } = await supabase
         .from('teacher_profiles')
         .select('*')
         .eq('user_id', currentUser.user.id)
         .single();
-
       if (profileError) throw profileError;
       setTeacherProfile(profile);
       
@@ -146,15 +139,6 @@ const ModernTeacherDashboard = () => {
       const subjectsExist = !missing.includes('subjects');
       const resultsTableExists = !missing.includes('exam_results');
       const timetableExists = !missing.includes('timetables');
-      
-      console.log('Missing tables:', missing);
-      console.log('Tables available:', {
-        exams: examTablesExist,
-        topics: topicsExist,
-        subjects: subjectsExist,
-        exam_results: resultsTableExists,
-        timetables: timetableExists
-      });
       
       if (examTablesExist) {
         try {
@@ -192,20 +176,15 @@ const ModernTeacherDashboard = () => {
                       examData = complexExams as unknown as Exam[];
                     }
                   } catch (joinError) {
-                    console.warn('Join query failed:', joinError);
                   }
                 }
               } else {
-                console.error('Simple exams query error:', simpleError);
               }
             } catch (queryError) {
-              console.error('Error querying exams:', queryError);
             }
           } else {
-            console.warn('Exams table missing created_by column');
           }
         } catch (columnCheckError) {
-          console.error('Error checking column existence:', columnCheckError);
         }
       }
       
@@ -220,7 +199,6 @@ const ModernTeacherDashboard = () => {
           .select('*', { count: 'exact', head: true });
           
         if (!countError) {
-          console.log('Can access student_profiles, total count:', allStudentCount);
           
           // Now get the actual approved students
           const { data: students, error: studentsError } = await supabase
@@ -230,12 +208,9 @@ const ModernTeacherDashboard = () => {
             
           if (!studentsError) {
             studentCount = students?.length || 0;
-            console.log('Found approved students:', studentCount);
           } else {
-            console.error('Error fetching approved students:', studentsError);
           }
         } else {
-          console.error('Error checking student_profiles access:', countError);
           
           // Fallback approach - try a simpler query without filters
           const { data: allStudents, error: allStudentsError } = await supabase
@@ -245,11 +220,9 @@ const ModernTeacherDashboard = () => {
           if (!allStudentsError && allStudents) {
             // Filter in JavaScript instead of SQL
             studentCount = allStudents.filter(s => s.status === 'APPROVED').length;
-            console.log('Filtered students client-side, approved count:', studentCount);
           }
         }
       } catch (error) {
-        console.warn('Error fetching student count:', error);
       }
       
       // Only try to get exam count if the exams table exists
@@ -267,7 +240,6 @@ const ModernTeacherDashboard = () => {
             if (!examsCountError) {
               examCount = examsCount || 0;
             } else {
-              console.error('Error fetching exams count:', examsCountError);
               // Try a simpler query without filtering
               const { count: allExamsCount, error: allExamsError } = await (supabase as any)
                 .from('exams')
@@ -276,7 +248,6 @@ const ModernTeacherDashboard = () => {
               if (!allExamsError) {
                 // Just use total count as fallback
                 examCount = allExamsCount || 0;
-                console.log('Using fallback count for exams:', examCount);
               }
             }
           } else {
@@ -287,11 +258,9 @@ const ModernTeacherDashboard = () => {
               
             if (!allExamsError) {
               examCount = allExamsCount || 0;
-              console.log('No created_by column, using total exams count:', examCount);
             }
           }
         } catch (error) {
-          console.warn('Error fetching exam count:', error);
         }
       }
       
@@ -315,7 +284,6 @@ const ModernTeacherDashboard = () => {
             }
           } else {
             // Fallback query without examiner_id filter if the column doesn't exist
-            console.log('examiner_id column not found, using fallback query');
             const { data: allResults, error: allResultsError } = await (supabase as any)
               .from('exam_results')
               .select('*');
@@ -324,14 +292,11 @@ const ModernTeacherDashboard = () => {
               // This might return too many results, but it's better than none
               // In a real app, we might want to filter client-side if possible
               examResults = (allResults || []) as ExamResult[];
-              console.log('Fetched all results as fallback:', examResults.length);
             }
           }
         } catch (error) {
-          console.warn('Error fetching exam results:', error);
         }
       }
-
       // Get pending grading count (submissions that need to be graded)
       try {
         if (resultsTableExists) {
@@ -358,12 +323,10 @@ const ModernTeacherDashboard = () => {
               
             if (!pendingError) {
               pendingGradingCount = count || 0;
-              console.log('Using fallback for pending count (no examiner_id):', pendingGradingCount);
             }
           }
         }
       } catch (error) {
-        console.warn('Error fetching pending grading count:', error);
       }
       
       // Get active classes count
@@ -392,7 +355,6 @@ const ModernTeacherDashboard = () => {
           activeClassesCount = 4;
         }
       } catch (error) {
-        console.warn('Error fetching active classes count:', error);
         // Fallback to reasonable default
         activeClassesCount = 4;
       }
@@ -408,7 +370,6 @@ const ModernTeacherDashboard = () => {
           successRateValue = 85;
         }
       } catch (error) {
-        console.warn('Error calculating success rate:', error);
         successRateValue = 85; // Fallback value
       }
       
@@ -437,10 +398,8 @@ const ModernTeacherDashboard = () => {
           ]);
         }
       } catch (error) {
-        console.warn('Error calculating performance distribution:', error);
         // State already initialized with default values in useState
       }
-
       // Calculate performance data for charts
       const avgPerformance = examResults.length > 0 
         ? Math.round(examResults.reduce((sum, result) => sum + (result.percentage || 0), 0) / examResults.length)
@@ -455,9 +414,7 @@ const ModernTeacherDashboard = () => {
         acc[subject].count += 1;
         return acc;
       }, {});
-
       setPerformanceData(Object.values(subjectPerformance));
-
       setStats({
         totalStudents: studentCount,
         myExams: examCount,
@@ -469,7 +426,6 @@ const ModernTeacherDashboard = () => {
       });
       
     } catch (error) {
-      console.error('Error fetching teacher data:', error);
       toast({
         title: "Error",
         description: "Failed to load dashboard data",
@@ -479,7 +435,6 @@ const ModernTeacherDashboard = () => {
       setLoading(false);
     }
   };
-
   const quickActions = [
     {
       title: "Create New Exam",
@@ -510,9 +465,7 @@ const ModernTeacherDashboard = () => {
       link: "/admin/analytics"
     }
   ];
-
   const chartColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
-
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-96">
@@ -773,5 +726,4 @@ const ModernTeacherDashboard = () => {
     </div>
   );
 };
-
 export default ModernTeacherDashboard;

@@ -20,7 +20,6 @@ import {
   Award,
   AlertCircle
 } from 'lucide-react';
-
 const SuperAdminDashboard = () => {
   const [stats, setStats] = useState({
     totalStudents: 0,
@@ -33,11 +32,9 @@ const SuperAdminDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-
   useEffect(() => {
     fetchDashboardStats();
   }, []);
-
   const fetchDashboardStats = async () => {
     try {
       const [
@@ -57,7 +54,6 @@ const SuperAdminDashboard = () => {
         supabase.from('student_profiles').select('*', { count: 'exact' }).eq('status', 'APPROVED'),
         supabase.from('teacher_profiles').select('*', { count: 'exact' }).eq('status', 'APPROVED')
       ]);
-
       // Get recent exams (last 7 days)
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
@@ -65,7 +61,6 @@ const SuperAdminDashboard = () => {
         .from('exams')
         .select('*', { count: 'exact' })
         .gte('created_at', weekAgo.toISOString());
-
       setStats({
         totalStudents: studentsResult.count || 0,
         totalTeachers: teachersResult.count || 0,
@@ -76,7 +71,6 @@ const SuperAdminDashboard = () => {
         recentExams: recentExamsCount || 0
       });
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
       toast({
         title: "Error",
         description: "Failed to load dashboard statistics",
@@ -86,7 +80,6 @@ const SuperAdminDashboard = () => {
       setLoading(false);
     }
   };
-
   const quickActions = [
     {
       title: "User Approvals",
@@ -125,11 +118,9 @@ const SuperAdminDashboard = () => {
       count: null
     }
   ];
-
   if (loading) {
     return <div className="flex justify-center p-8">Loading dashboard...</div>;
   }
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -142,7 +133,6 @@ const SuperAdminDashboard = () => {
           Super Admin
         </Badge>
       </div>
-
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
@@ -157,7 +147,6 @@ const SuperAdminDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -170,7 +159,6 @@ const SuperAdminDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -183,7 +171,6 @@ const SuperAdminDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -197,7 +184,6 @@ const SuperAdminDashboard = () => {
           </CardContent>
         </Card>
       </div>
-
       {/* Quick Actions */}
       <Card>
         <CardHeader>
@@ -232,7 +218,6 @@ const SuperAdminDashboard = () => {
           </div>
         </CardContent>
       </Card>
-
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
@@ -264,7 +249,6 @@ const SuperAdminDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -299,5 +283,4 @@ const SuperAdminDashboard = () => {
     </div>
   );
 };
-
 export default SuperAdminDashboard;

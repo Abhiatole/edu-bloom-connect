@@ -1,14 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, BookOpen, Target, Award } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
-
 interface StudentPerformanceProps {
   studentId: string;
 }
-
 export const StudentPerformance: React.FC<StudentPerformanceProps> = ({ studentId }) => {
   const [performanceData, setPerformanceData] = useState([]);
   const [recentExams, setRecentExams] = useState([]);
@@ -18,7 +15,6 @@ export const StudentPerformance: React.FC<StudentPerformanceProps> = ({ studentI
     improvement: 0,
     rank: 0
   });
-
   useEffect(() => {
     // Mock data for demonstration
     const mockPerformanceData = [
@@ -29,25 +25,21 @@ export const StudentPerformance: React.FC<StudentPerformanceProps> = ({ studentI
       { month: 'May', score: 88, subject: 'Physics' },
       { month: 'Jun', score: 91, subject: 'Chemistry' }
     ];
-
     const mockRecentExams = [
       { id: 1, subject: 'Mathematics', score: 88, maxScore: 100, date: '2024-01-15', type: 'Test' },
       { id: 2, subject: 'Physics', score: 92, maxScore: 100, date: '2024-01-12', type: 'Quiz' },
       { id: 3, subject: 'Chemistry', score: 85, maxScore: 100, date: '2024-01-10', type: 'Test' }
     ];
-
     const mockStats = {
       averageScore: 88,
       totalExams: 15,
       improvement: 12,
       rank: 8
     };
-
     setPerformanceData(mockPerformanceData);
     setRecentExams(mockRecentExams);
     setStats(mockStats);
   }, [studentId]);
-
   return (
     <div className="space-y-6">
       {/* Performance Stats */}
@@ -63,7 +55,6 @@ export const StudentPerformance: React.FC<StudentPerformanceProps> = ({ studentI
             </div>
           </CardContent>
         </Card>
-
         <Card className="border-0 shadow-lg">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -76,7 +67,6 @@ export const StudentPerformance: React.FC<StudentPerformanceProps> = ({ studentI
           </CardContent>
         </Card>
       </div>
-
       {/* Performance Chart */}
       <Card className="border-0 shadow-lg">
         <CardHeader>
@@ -106,7 +96,6 @@ export const StudentPerformance: React.FC<StudentPerformanceProps> = ({ studentI
           </ResponsiveContainer>
         </CardContent>
       </Card>
-
       {/* Recent Exams */}
       <Card className="border-0 shadow-lg">
         <CardHeader>

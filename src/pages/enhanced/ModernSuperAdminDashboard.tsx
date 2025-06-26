@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,7 +28,6 @@ import {
   Activity
 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area, BarChart, Bar } from 'recharts';
-
 const ModernSuperAdminDashboard = () => {  const [stats, setStats] = useState({
     totalStudents: 0,
     totalTeachers: 0,
@@ -44,11 +42,9 @@ const ModernSuperAdminDashboard = () => {  const [stats, setStats] = useState({
   const [loading, setLoading] = useState(true);
   const [hasRLSError, setHasRLSError] = useState(false);
   const { toast } = useToast();
-
   useEffect(() => {
     fetchDashboardStats();
   }, []);
-
   const fetchDashboardStats = async () => {
     try {
       const [
@@ -68,7 +64,6 @@ const ModernSuperAdminDashboard = () => {  const [stats, setStats] = useState({
         supabase.from('student_profiles').select('*', { count: 'exact' }).eq('status', 'APPROVED'),
         supabase.from('teacher_profiles').select('*', { count: 'exact' }).eq('status', 'APPROVED')
       ]);
-
       // Get recent exams (last 7 days)
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
@@ -76,7 +71,6 @@ const ModernSuperAdminDashboard = () => {  const [stats, setStats] = useState({
         .from('exams')
         .select('*', { count: 'exact' })
         .gte('created_at', weekAgo.toISOString());
-
       // Generate mock growth data
       const mockGrowthData = Array.from({ length: 7 }, (_, i) => {
         const date = new Date();
@@ -87,7 +81,6 @@ const ModernSuperAdminDashboard = () => {  const [stats, setStats] = useState({
           exams: Math.floor(Math.random() * 10) + i * 2
         };
       });      setGrowthData(mockGrowthData);
-
       setStats({
         totalStudents: studentsResult.count || 0,
         totalTeachers: teachersResult.count || 0,
@@ -110,7 +103,6 @@ const ModernSuperAdminDashboard = () => {  const [stats, setStats] = useState({
       setHasRLSError(hasError);
       
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
       // Check if it's an RLS error
       if (error?.message?.includes('policy')) {
         setHasRLSError(true);
@@ -163,7 +155,6 @@ const ModernSuperAdminDashboard = () => {  const [stats, setStats] = useState({
       link: "/teacher/insights"
     }
   ];
-
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-96">
@@ -196,7 +187,6 @@ const ModernSuperAdminDashboard = () => {  const [stats, setStats] = useState({
           Super Administrator
         </Badge>
       </div>
-
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-6">
         <ModernDashboardCard
@@ -256,7 +246,6 @@ const ModernSuperAdminDashboard = () => {  const [stats, setStats] = useState({
           description="Monthly growth"
         />
       </div>
-
       {/* Growth Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-0 shadow-lg">
@@ -294,7 +283,6 @@ const ModernSuperAdminDashboard = () => {  const [stats, setStats] = useState({
             </ResponsiveContainer>
           </CardContent>
         </Card>
-
         <Card className="border-0 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -318,7 +306,6 @@ const ModernSuperAdminDashboard = () => {  const [stats, setStats] = useState({
           </CardContent>
         </Card>
       </div>
-
       {/* Quick Actions */}
       <Card className="border-0 shadow-lg">
         <CardHeader>
@@ -352,7 +339,6 @@ const ModernSuperAdminDashboard = () => {  const [stats, setStats] = useState({
           </div>
         </CardContent>
       </Card>
-
       {/* System Status */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-0 shadow-lg">
@@ -386,7 +372,6 @@ const ModernSuperAdminDashboard = () => {  const [stats, setStats] = useState({
             </div>
           </CardContent>
         </Card>
-
         <Card className="border-0 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -417,7 +402,6 @@ const ModernSuperAdminDashboard = () => {  const [stats, setStats] = useState({
             </div>
           </CardContent>
         </Card>      </div>
-
       {/* Student Names Updater */}
       <Card className="border-0 shadow-lg">
         <CardHeader>
@@ -436,5 +420,4 @@ const ModernSuperAdminDashboard = () => {  const [stats, setStats] = useState({
     </div>
   );
 };
-
 export default ModernSuperAdminDashboard;

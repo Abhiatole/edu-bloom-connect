@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, Save, Users } from 'lucide-react';
-
 interface Student {
   id: string;
   class_level: number;
@@ -19,7 +17,6 @@ interface Student {
   first_name?: string;
   last_name?: string;
 }
-
 interface Exam {
   id: string;
   title: string;
@@ -27,7 +24,6 @@ interface Exam {
   class_level: number;
   subject: string;
 }
-
 const TestMarksUpload = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [exams, setExams] = useState<Exam[]>([]);
@@ -36,32 +32,26 @@ const TestMarksUpload = () => {
   const [marks, setMarks] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-
   useEffect(() => {
     fetchExams();
   }, []);
-
   useEffect(() => {
     if (selectedClass) {
       fetchStudents();
     }
   }, [selectedClass]);
-
   const fetchExams = async () => {
     try {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) return;
-
       const { data, error } = await supabase
         .from('exams')
         .select('*')
         .eq('created_by_teacher_id', currentUser.user.id)
         .order('created_at', { ascending: false });
-
       if (error) throw error;
       setExams(data || []);
     } catch (error) {
-      console.error('Error fetching exams:', error);
     }
   };  const fetchStudents = async () => {
     try {
@@ -71,19 +61,15 @@ const TestMarksUpload = () => {
         .select('id, class_level, enrollment_no, display_name')
         .eq('class_level', parseInt(selectedClass))
         .order('id', { ascending: true });
-
       if (error) throw error;
       setStudents(data || []);
     } catch (error) {
-      console.error('Error fetching students:', error);
     }
   };
-
   const handleMarkChange = (studentId: string, mark: string) => {
     const numMark = parseInt(mark) || 0;
     setMarks(prev => ({ ...prev, [studentId]: numMark }));
   };
-
   const handleSaveMarks = async () => {
     if (!selectedExam) {
       toast({
@@ -93,10 +79,8 @@ const TestMarksUpload = () => {
       });
       return;
     }
-
     const selectedExamData = exams.find(e => e.id === selectedExam);
     if (!selectedExamData) return;
-
     setLoading(true);
     try {
       const resultsToInsert = students
@@ -107,7 +91,6 @@ const TestMarksUpload = () => {
           marks_obtained: marks[student.id],
           grade: getGrade((marks[student.id] / selectedExamData.total_marks) * 100)
         }));
-
       if (resultsToInsert.length === 0) {
         toast({
           title: "Warning",
@@ -116,24 +99,19 @@ const TestMarksUpload = () => {
         });
         return;
       }
-
       const { error } = await supabase
         .from('exam_results')
         .upsert(resultsToInsert, { 
           onConflict: 'exam_id,student_id',
           ignoreDuplicates: false 
         });
-
       if (error) throw error;
-
       toast({
         title: "Success",
         description: `Marks saved for ${resultsToInsert.length} students`
       });
-
       setMarks({});
     } catch (error: any) {
-      console.error('Error saving marks:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to save marks",
@@ -143,7 +121,6 @@ const TestMarksUpload = () => {
       setLoading(false);
     }
   };
-
   const getGrade = (percentage: number): string => {
     if (percentage >= 90) return 'A+';
     if (percentage >= 80) return 'A';
@@ -154,7 +131,6 @@ const TestMarksUpload = () => {
     if (percentage >= 35) return 'D';
     return 'F';
   };
-
   return (
     <div className="space-y-6">
       <Card>
@@ -178,7 +154,6 @@ const TestMarksUpload = () => {
                 </SelectContent>
               </Select>
             </div>
-
             <div>
               <Label htmlFor="exam">Select Exam</Label>
               <Select value={selectedExam} onValueChange={setSelectedExam}>
@@ -195,7 +170,6 @@ const TestMarksUpload = () => {
               </Select>
             </div>
           </div>
-
           {students.length > 0 && selectedExam && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -208,7 +182,6 @@ const TestMarksUpload = () => {
                   {loading ? 'Saving...' : 'Save All Marks'}
                 </Button>
               </div>
-
               <div className="border rounded-lg">                <Table>
                   <TableHeader>
                     <TableRow>
@@ -250,5 +223,4 @@ const TestMarksUpload = () => {
     </div>
   );
 };
-
 export default TestMarksUpload;

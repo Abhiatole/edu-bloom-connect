@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,7 +24,6 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
-
 interface UserProfile {
   id: string;
   user_id: string;
@@ -35,7 +33,6 @@ interface UserProfile {
   status: string;
   created_at: string;
 }
-
 const EnhancedUserApprovals = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
@@ -44,22 +41,18 @@ const EnhancedUserApprovals = () => {
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
   const { toast } = useToast();
   const { loading: deleteLoading, deleteStudents, deleteTeachers } = useDeleteOperations();
-
   useEffect(() => {
     fetchUsers();
   }, []);
-
   const fetchUsers = async () => {
     try {
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
         .order('created_at', { ascending: false });
-
       if (error) throw error;
       setUsers(data || []);
     } catch (error) {
-      console.error('Error fetching users:', error);
       toast({
         title: "Error",
         description: "Failed to load users",
@@ -69,24 +62,19 @@ const EnhancedUserApprovals = () => {
       setLoading(false);
     }
   };
-
   const handleApproval = async (userId: string, status: 'APPROVED' | 'REJECTED') => {
     try {
       const { error } = await supabase
         .from('user_profiles')
         .update({ status })
         .eq('user_id', userId);
-
       if (error) throw error;
-
       toast({
         title: "Success",
         description: `User ${status.toLowerCase()} successfully`
       });
-
       fetchUsers();
     } catch (error) {
-      console.error('Error updating user status:', error);
       toast({
         title: "Error",
         description: "Failed to update user status",
@@ -94,12 +82,10 @@ const EnhancedUserApprovals = () => {
       });
     }
   };
-
   const handleSingleDelete = (userId: string) => {
     setUserToDelete(userId);
     setDeleteDialogOpen(true);
   };
-
   const handleBulkDelete = () => {
     if (selectedUsers.length === 0) {
       toast({
@@ -112,16 +98,13 @@ const EnhancedUserApprovals = () => {
     setUserToDelete(null);
     setDeleteDialogOpen(true);
   };
-
   const confirmDelete = async () => {
     const usersToDelete = userToDelete ? [userToDelete] : selectedUsers;
     const usersData = users.filter(u => usersToDelete.includes(u.user_id));
     
     const students = usersData.filter(u => u.role === 'STUDENT').map(u => u.user_id);
     const teachers = usersData.filter(u => u.role === 'TEACHER').map(u => u.user_id);
-
     let success = true;
-
     if (students.length > 0) {
       success = await deleteStudents(students) && success;
     }
@@ -129,16 +112,13 @@ const EnhancedUserApprovals = () => {
     if (teachers.length > 0) {
       success = await deleteTeachers(teachers) && success;
     }
-
     if (success) {
       setSelectedUsers([]);
       await fetchUsers();
     }
-
     setDeleteDialogOpen(false);
     setUserToDelete(null);
   };
-
   const handleSelectUser = (userId: string, checked: boolean) => {
     if (checked) {
       setSelectedUsers([...selectedUsers, userId]);
@@ -146,7 +126,6 @@ const EnhancedUserApprovals = () => {
       setSelectedUsers(selectedUsers.filter(id => id !== userId));
     }
   };
-
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedUsers(users.map(u => u.user_id));
@@ -154,7 +133,6 @@ const EnhancedUserApprovals = () => {
       setSelectedUsers([]);
     }
   };
-
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'APPROVED':
@@ -165,7 +143,6 @@ const EnhancedUserApprovals = () => {
         return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
     }
   };
-
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'STUDENT':
@@ -176,11 +153,9 @@ const EnhancedUserApprovals = () => {
         return <UserCheck className="h-4 w-4" />;
     }
   };
-
   if (loading) {
     return <div className="flex justify-center p-8">Loading users...</div>;
   }
-
   return (
     <div className="space-y-6">
       <Card>
@@ -288,7 +263,6 @@ const EnhancedUserApprovals = () => {
               ))}
             </TableBody>
           </Table>
-
           {users.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               No users found
@@ -296,7 +270,6 @@ const EnhancedUserApprovals = () => {
           )}
         </CardContent>
       </Card>
-
       <DeleteConfirmationDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
@@ -313,5 +286,4 @@ const EnhancedUserApprovals = () => {
     </div>
   );
 };
-
 export default EnhancedUserApprovals;

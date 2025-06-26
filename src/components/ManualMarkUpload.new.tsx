@@ -7,19 +7,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
-
 interface Exam {
   id: string;
   title: string;
   max_marks: number;
 }
-
 interface Student {
   id: string;
   enrollment_no: string;
   display_name?: string;
 }
-
 interface MarkEntry {
   examId: string;
   studentId: string;
@@ -27,13 +24,11 @@ interface MarkEntry {
   remarks: string;
   grade: string;
 }
-
 interface ManualMarkUploadProps {
   exams: Exam[];
   students: Student[];
   onSuccess: () => void;
 }
-
 const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, onSuccess }) => {  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [markEntry, setMarkEntry] = useState<MarkEntry>({
@@ -43,11 +38,9 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
     remarks: '',
     grade: '',
   });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       if (!markEntry.examId || !markEntry.studentId) {
         toast({
@@ -57,7 +50,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
         });
         return;
       }
-
       const selectedExam = exams.find(e => e.id === markEntry.examId);
       if (!selectedExam) {
         toast({
@@ -67,7 +59,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
         });
         return;
       }
-
       // Validate marks
       if (markEntry.marks < 0 || markEntry.marks > selectedExam.max_marks) {
         toast({
@@ -77,7 +68,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
         });
         return;
       }
-
       // Check if entry already exists
       const { data: existingResult } = await supabase
         .from('exam_results')
@@ -117,11 +107,8 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
             submitted_at: new Date().toISOString()
           });
       }
-
       const { error } = await operation;
-
       if (error) {
-        console.error('Error saving marks:', error);
         toast({
           variant: 'destructive',
           title: 'Error',
@@ -129,12 +116,10 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
         });
         return;
       }
-
       toast({
         title: 'Success',
         description: 'Marks saved successfully!',
       });
-
       // Reset form
       setMarkEntry({
         examId: markEntry.examId, // Keep the same exam selected
@@ -143,11 +128,9 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
         remarks: '',
         grade: '',
       });
-
       // Notify parent component
       onSuccess();
     } catch (error) {
-      console.error('Error in handleSubmit:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -157,7 +140,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
       setLoading(false);
     }
   };
-
   // Generate grade based on percentage
   const calculateGrade = (marks: number, maxMarks: number) => {
     const percentage = (marks / maxMarks) * 100;
@@ -170,7 +152,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
     if (percentage >= 40) return 'D';
     return 'F';
   };
-
   const handleMarksChange = (marks: number) => {
     const selectedExam = exams.find(e => e.id === markEntry.examId);
     if (!selectedExam) return;
@@ -178,7 +159,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
     const grade = calculateGrade(marks, selectedExam.max_marks);
     setMarkEntry(prev => ({ ...prev, marks, grade }));
   };
-
   return (
     <Card>
       <CardContent className="pt-6">
@@ -281,5 +261,4 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
     </Card>
   );
 };
-
 export default ManualMarkUpload;

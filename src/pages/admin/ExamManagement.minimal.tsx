@@ -17,20 +17,17 @@ import { supabase } from '@/integrations/supabase/client';
 import ManualMarkUpload from '@/components/ManualMarkUpload';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
-
 // Minimal interfaces to match ManualMarkUpload component
 interface Student {
   id: string;
   enrollment_no: string;
   display_name: string;
 }
-
 interface Exam {
   id: string;
   title: string;
   max_marks: number;
 }
-
 const ExamManagement: React.FC = () => {
   const { toast } = useToast();
   
@@ -66,7 +63,6 @@ const ExamManagement: React.FC = () => {
         
         setStudents(mappedStudents);
       } catch (err) {
-        console.error('Error loading students:', err);
         // Fallback to empty array
         setStudents([]);
       }
@@ -89,12 +85,10 @@ const ExamManagement: React.FC = () => {
         
         setExams(mappedExams);
       } catch (err) {
-        console.error('Error loading exams:', err);
         // Fallback to empty array
         setExams([]);
       }
     } catch (err) {
-      console.error('Error in loadData:', err);
       toast({
         title: 'Error',
         description: 'Failed to load data',
@@ -133,7 +127,6 @@ const ExamManagement: React.FC = () => {
         .select();
       
       if (error) {
-        console.error('Error creating exam:', error);
         toast({
           title: 'Error',
           description: 'Failed to create exam',
@@ -159,7 +152,6 @@ const ExamManagement: React.FC = () => {
         ]);
       }
     } catch (err) {
-      console.error('Error in handleCreateExam:', err);
       toast({
         title: 'Error',
         description: 'An unexpected error occurred',
@@ -248,5 +240,4 @@ const ExamManagement: React.FC = () => {
     </div>
   );
 };
-
 export default ExamManagement;

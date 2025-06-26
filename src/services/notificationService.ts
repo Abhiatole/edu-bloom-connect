@@ -1,5 +1,4 @@
 import { supabase } from '@/integrations/supabase/client';
-
 export interface NotificationData {
   to: string;
   subject: string;
@@ -7,14 +6,12 @@ export interface NotificationData {
   templateData: Record<string, any>;
   priority?: 'low' | 'medium' | 'high';
 }
-
 export interface EmailTemplate {
   name: string;
   subject: string;
   htmlContent: string;
   textContent?: string;
 }
-
 export class NotificationService {
   // Email templates for different scenarios
   private static templates: Record<string, EmailTemplate> = {
@@ -49,7 +46,6 @@ export class NotificationService {
         </div>
       `
     },
-
     'teacher-registration-pending': {
       name: 'Teacher Registration Pending',
       subject: 'Registration Received - EduBloom Connect',
@@ -83,7 +79,6 @@ export class NotificationService {
         </div>
       `
     },
-
     'student-approved': {
       name: 'Student Approved',
       subject: 'Account Approved - Welcome to EduBloom Connect! 🎉',
@@ -121,7 +116,6 @@ export class NotificationService {
         </div>
       `
     },
-
     'teacher-approved': {
       name: 'Teacher Approved',
       subject: 'Welcome Aboard - EduBloom Connect! 🎉',
@@ -160,7 +154,6 @@ export class NotificationService {
         </div>
       `
     },
-
     'registration-rejected': {
       name: 'Registration Update',
       subject: 'Registration Update - EduBloom Connect',
@@ -194,7 +187,6 @@ export class NotificationService {
         </div>
       `
     },
-
     'admin-new-registration': {
       name: 'New Registration Alert',
       subject: 'New User Registration - Action Required',
@@ -226,7 +218,6 @@ export class NotificationService {
       `
     }
   };
-
   /**
    * Send registration confirmation email
    */
@@ -238,7 +229,6 @@ export class NotificationService {
       if (!template) {
         throw new Error(`Template ${templateName} not found`);
       }
-
       const notification: NotificationData = {
         to: templateData.email,
         subject: template.subject,
@@ -246,25 +236,21 @@ export class NotificationService {
         templateData,
         priority: 'medium'
       };
-
       // In a real implementation, you would integrate with an email service like:
       // - SendGrid
       // - Mailgun  
       // - AWS SES
       // - Supabase Edge Functions for email
       
-      console.log('📧 Sending registration confirmation:', notification);
       
       // Placeholder for actual email sending
       // await this.sendEmail(notification);
       
       return { success: true, message: 'Registration confirmation sent' };
     } catch (error: any) {
-      console.error('Error sending registration confirmation:', error);
       throw error;
     }
   }
-
   /**
    * Send approval notification email
    */
@@ -276,7 +262,6 @@ export class NotificationService {
       if (!template) {
         throw new Error(`Template ${templateName} not found`);
       }
-
       const notification: NotificationData = {
         to: templateData.email,
         subject: template.subject,
@@ -288,19 +273,15 @@ export class NotificationService {
         },
         priority: 'high'
       };
-
-      console.log('📧 Sending approval notification:', notification);
       
       // Placeholder for actual email sending
       // await this.sendEmail(notification);
       
       return { success: true, message: 'Approval notification sent' };
     } catch (error: any) {
-      console.error('Error sending approval notification:', error);
       throw error;
     }
   }
-
   /**
    * Send rejection notification email
    */
@@ -318,19 +299,15 @@ export class NotificationService {
         },
         priority: 'high'
       };
-
-      console.log('📧 Sending rejection notification:', notification);
       
       // Placeholder for actual email sending
       // await this.sendEmail(notification);
       
       return { success: true, message: 'Rejection notification sent' };
     } catch (error: any) {
-      console.error('Error sending rejection notification:', error);
       throw error;
     }
   }
-
   /**
    * Notify administrators of new registration
    */
@@ -357,7 +334,6 @@ export class NotificationService {
         
         approvers = admins || [];
       }
-
       const template = this.templates['admin-new-registration'];
       
       for (const approver of approvers) {
@@ -376,8 +352,6 @@ export class NotificationService {
           },
           priority: 'medium'
         };
-
-        console.log('📧 Notifying admin/teacher:', notification);
         
         // Placeholder for actual email sending
         // await this.sendEmail(notification);
@@ -385,18 +359,15 @@ export class NotificationService {
       
       return { success: true, message: 'Admin notifications sent' };
     } catch (error: any) {
-      console.error('Error notifying admins:', error);
       throw error;
     }
   }
-
   /**
    * Get template by name
    */
   static getTemplate(templateName: string): EmailTemplate | null {
     return this.templates[templateName] || null;
   }
-
   /**
    * Render template with data
    */
@@ -405,7 +376,6 @@ export class NotificationService {
     if (!template) {
       throw new Error(`Template ${templateName} not found`);
     }
-
     let rendered = template.htmlContent;
     
     // Simple template variable replacement
@@ -413,10 +383,8 @@ export class NotificationService {
       const regex = new RegExp(`{{${key}}}`, 'g');
       rendered = rendered.replace(regex, data[key] || '');
     });
-
     return rendered;
   }
-
   /**
    * Private method to actually send email (to be implemented with email service)
    */
@@ -437,13 +405,5 @@ export class NotificationService {
     if (error) throw error;
     return data;
     */
-    
-    // For now, just log the email
-    console.log('📧 Email would be sent:', {
-      to: notification.to,
-      subject: notification.subject,
-      template: notification.templateName,
-      priority: notification.priority
-    });
   }
 }

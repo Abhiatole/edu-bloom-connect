@@ -6,24 +6,20 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckCircle, XCircle, Clock, Mail, User, Shield } from 'lucide-react';
-
 interface TestResult {
   step: string;
   status: 'success' | 'error' | 'pending' | 'info';
   message: string;
   data?: any;
 }
-
 const TeacherFlowTest = () => {
   const [testEmail, setTestEmail] = useState('');
   const [testPassword, setTestPassword] = useState('testteacher123');
   const [results, setResults] = useState<TestResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
-
   const addResult = (result: TestResult) => {
     setResults(prev => [...prev, result]);
   };
-
   const runCompleteTest = async () => {
     if (!testEmail) {
       addResult({
@@ -33,10 +29,8 @@ const TeacherFlowTest = () => {
       });
       return;
     }
-
     setIsRunning(true);
     setResults([]);
-
     try {
       // Step 1: Check if email confirmation is enabled
       addResult({
@@ -44,14 +38,12 @@ const TeacherFlowTest = () => {
         status: 'info',
         message: 'Checking if email confirmation is enabled...'
       });
-
       // Step 2: Register a test teacher
       addResult({
         step: 'Step 2: Teacher Registration',
         status: 'info',
         message: 'Attempting to register test teacher...'
       });
-
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: testEmail,
         password: testPassword,
@@ -64,7 +56,6 @@ const TeacherFlowTest = () => {
           }
         }
       });
-
       if (signUpError) {
         addResult({
           step: 'Step 2: Teacher Registration',
@@ -73,7 +64,6 @@ const TeacherFlowTest = () => {
         });
         return;
       }
-
       if (!signUpData.user) {
         addResult({
           step: 'Step 2: Teacher Registration',
@@ -82,9 +72,7 @@ const TeacherFlowTest = () => {
         });
         return;
       }
-
       const needsConfirmation = !signUpData.user.email_confirmed_at && !signUpData.session;
-
       addResult({
         step: 'Step 2: Teacher Registration',
         status: 'success',
@@ -95,23 +83,19 @@ const TeacherFlowTest = () => {
           hasSession: !!signUpData.session
         }
       });
-
       // Step 3: Check if profile was created
       addResult({
         step: 'Step 3: Profile Creation',
         status: 'info',
         message: 'Checking if teacher profile was created...'
       });
-
       // Wait a moment for potential triggers
       await new Promise(resolve => setTimeout(resolve, 2000));
-
       const { data: profileData, error: profileError } = await supabase
         .from('teacher_profiles')
         .select('*')
         .eq('user_id', signUpData.user.id)
         .single();
-
       if (profileError || !profileData) {
         // Try to create profile manually
         const { error: createError } = await supabase
@@ -124,7 +108,6 @@ const TeacherFlowTest = () => {
             experience_years: 5,
             status: 'PENDING'
           });
-
         if (createError) {
           addResult({
             step: 'Step 3: Profile Creation',
@@ -146,7 +129,6 @@ const TeacherFlowTest = () => {
           data: profileData
         });
       }
-
       // Step 4: Test login flow
       if (!needsConfirmation) {
         addResult({
@@ -154,12 +136,10 @@ const TeacherFlowTest = () => {
           status: 'info',
           message: 'Testing login flow...'
         });
-
         const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
           email: testEmail,
           password: testPassword
         });
-
         if (loginError) {
           addResult({
             step: 'Step 4: Login Test',
@@ -172,14 +152,12 @@ const TeacherFlowTest = () => {
             status: 'success',
             message: 'Login successful! Teacher can authenticate.'
           });
-
           // Check profile status
           const { data: profileCheck } = await supabase
             .from('teacher_profiles')
             .select('status, full_name')
             .eq('user_id', loginData.user.id)
             .single();
-
           if (profileCheck) {
             addResult({
               step: 'Step 5: Profile Status',
@@ -195,17 +173,14 @@ const TeacherFlowTest = () => {
           message: 'Email confirmation is enabled. Teacher would need to confirm email before login.'
         });
       }
-
       // Cleanup - remove test user
       addResult({
         step: 'Cleanup',
         status: 'info',
         message: 'Cleaning up test data...'
       });
-
       // Sign out and try to delete the test user (this might not work due to RLS)
       await supabase.auth.signOut();
-
     } catch (error: any) {
       addResult({
         step: 'Error',
@@ -216,7 +191,6 @@ const TeacherFlowTest = () => {
       setIsRunning(false);
     }
   };
-
   const getStatusIcon = (status: TestResult['status']) => {
     switch (status) {
       case 'success':
@@ -229,7 +203,6 @@ const TeacherFlowTest = () => {
         return <Mail className="h-4 w-4 text-blue-600" />;
     }
   };
-
   const getStatusColor = (status: TestResult['status']) => {
     switch (status) {
       case 'success':
@@ -242,7 +215,6 @@ const TeacherFlowTest = () => {
         return 'bg-blue-50 border-blue-200';
     }
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -286,7 +258,6 @@ const TeacherFlowTest = () => {
             </Button>
           </CardContent>
         </Card>
-
         {results.length > 0 && (
           <Card>
             <CardHeader>
@@ -322,7 +293,6 @@ const TeacherFlowTest = () => {
             </CardContent>
           </Card>
         )}
-
         <Alert>
           <Shield className="h-4 w-4" />
           <AlertDescription>
@@ -341,5 +311,4 @@ const TeacherFlowTest = () => {
     </div>
   );
 };
-
 export default TeacherFlowTest;

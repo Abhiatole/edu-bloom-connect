@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Users, Plus, BookOpen, UserPlus } from 'lucide-react';
-
 const StudentEnrollment = () => {
   const [students, setStudents] = useState([
     { id: 1, name: 'Mike Johnson', email: 'mike@student.com', class: 'Grade 10A', subjects: ['Math', 'Physics'] },
@@ -22,10 +20,8 @@ const StudentEnrollment = () => {
     subject: ''
   });
   const { toast } = useToast();
-
   const subjects = ['Math', 'Physics', 'Chemistry', 'Biology', 'English', 'History'];
   const classes = ['Grade 9A', 'Grade 9B', 'Grade 10A', 'Grade 10B', 'Grade 11A', 'Grade 11B'];
-
   const handleEnrollStudent = (e: React.FormEvent) => {
     e.preventDefault();
     if (!enrollData.studentName || !enrollData.studentEmail || !enrollData.class || !enrollData.subject) {
@@ -36,7 +32,6 @@ const StudentEnrollment = () => {
       });
       return;
     }
-
     const existingStudent = students.find(s => s.email === enrollData.studentEmail);
     
     if (existingStudent) {
@@ -58,7 +53,6 @@ const StudentEnrollment = () => {
       };
       setStudents([...students, newStudent]);
     }
-
     setEnrollData({ studentName: '', studentEmail: '', class: '', subject: '' });
     setShowEnrollForm(false);
     toast({
@@ -66,7 +60,6 @@ const StudentEnrollment = () => {
       description: "Student enrolled successfully"
     });
   };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -79,7 +72,6 @@ const StudentEnrollment = () => {
           Enroll Student
         </Button>
       </div>
-
       {showEnrollForm && (
         <Card>
           <CardHeader>
@@ -145,7 +137,6 @@ const StudentEnrollment = () => {
           </CardContent>
         </Card>
       )}
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -179,7 +170,6 @@ const StudentEnrollment = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -205,5 +195,4 @@ const StudentEnrollment = () => {
     </div>
   );
 };
-
 export default StudentEnrollment;

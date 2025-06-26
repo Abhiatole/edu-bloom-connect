@@ -1,9 +1,7 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { LucideIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
 interface ModernActionCardProps {
   title: string;
   description: string;
@@ -12,7 +10,6 @@ interface ModernActionCardProps {
   gradient?: string;
   count?: number;
 }
-
 export const ModernActionCard: React.FC<ModernActionCardProps> = ({
   title,
   description,

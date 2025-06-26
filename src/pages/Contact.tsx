@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Mail, Phone, MapPin, Clock, Send } from 'lucide-react';
-
 const Contact = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -17,11 +15,9 @@ const Contact = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     // Simulate form submission
     setTimeout(() => {
       toast({
@@ -32,14 +28,12 @@ const Contact = () => {
       setIsLoading(false);
     }, 1000);
   };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
     }));
   };
-
   const contactInfo = [
     {
       icon: Mail,
@@ -66,7 +60,6 @@ const Contact = () => {
       description: "We're here when you need us"
     }
   ];
-
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -76,7 +69,6 @@ const Contact = () => {
           Have questions about EduGrowHub? We're here to help. Reach out to our team and we'll get back to you as soon as possible.
         </p>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
         {/* Contact Form */}
         <Card>
@@ -148,7 +140,6 @@ const Contact = () => {
             </form>
           </CardContent>
         </Card>
-
         {/* Contact Information */}
         <div className="space-y-6">
           <Card>
@@ -173,7 +164,6 @@ const Contact = () => {
               ))}
             </CardContent>
           </Card>
-
           {/* FAQ Section */}
           <Card>
             <CardHeader>
@@ -199,5 +189,4 @@ const Contact = () => {
     </div>
   );
 };
-
 export default Contact;

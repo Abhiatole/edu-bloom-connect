@@ -4,7 +4,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-
 // Import our SQL script content - this will be executed when creating tables
 // This is simplified and avoids using functions to prevent naming conflicts
 const CREATE_EXAM_TABLES_SQL = `
@@ -27,7 +26,6 @@ BEGIN
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
     );
   END IF;
-
   -- Check if topics table exists
   IF NOT EXISTS (
     SELECT FROM information_schema.tables 
@@ -43,7 +41,6 @@ BEGIN
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
     );
   END IF;
-
   -- Check if exams table exists
   IF NOT EXISTS (
     SELECT FROM information_schema.tables 
@@ -66,7 +63,6 @@ BEGIN
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
     );
   END IF;
-
   -- Check if exam_results table exists
   IF NOT EXISTS (
     SELECT FROM information_schema.tables 
@@ -89,7 +85,6 @@ BEGIN
   END IF;
 END
 $$;
-
   IF NOT public.table_exists('topics') THEN
     CREATE TABLE public.topics (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -100,7 +95,6 @@ $$;
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
     );
   END IF;
-
   IF NOT public.table_exists('exams') THEN
     CREATE TABLE public.exams (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -118,7 +112,6 @@ $$;
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
     );
   END IF;
-
   IF NOT public.table_exists('exam_results') THEN
     CREATE TABLE public.exam_results (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -134,19 +127,16 @@ $$;
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
     );
   END IF;
-
   -- Grant access to the function
   GRANT EXECUTE ON FUNCTION public.table_exists TO authenticated;
   GRANT EXECUTE ON FUNCTION public.table_exists TO anon;
 END
 $$;
 `;
-
 interface MissingTablesAlertProps {
   missingTables: string[];
   onTablesCreated?: () => void;
 }
-
 const MissingTablesAlert = ({ missingTables, onTablesCreated }: MissingTablesAlertProps) => {
   const [isCreating, setIsCreating] = useState(false);
   const [result, setResult] = useState<{success: boolean; message: string} | null>(null);
@@ -161,10 +151,8 @@ const MissingTablesAlert = ({ missingTables, onTablesCreated }: MissingTablesAle
         // @ts-ignore - Direct RPC call to check if our function is available
         const { data, error } = await supabase.rpc('table_exists', { table_name: 'exams' });
         if (!error) {
-          console.log("RPC function table_exists is available:", data);
         }
       } catch (rpcError) {
-        console.warn("RPC function not available, will create it:", rpcError);
       }
       
       // First try direct execution using supabase.rpc method
@@ -187,7 +175,6 @@ const MissingTablesAlert = ({ missingTables, onTablesCreated }: MissingTablesAle
           return;
         }
       } catch (execError) {
-        console.warn("SQL execution via RPC failed, trying alternative approach:", execError);
       }        // Fallback: If direct execution fails, use the REST API to run raw SQL
       try {
         // Use the Supabase URL from environment
@@ -220,7 +207,6 @@ const MissingTablesAlert = ({ missingTables, onTablesCreated }: MissingTablesAle
         // Notify parent component
         if (onTablesCreated) onTablesCreated();
       } catch (restError) {
-        console.error("REST API approach failed:", restError);
         setResult({ 
           success: false, 
           message: `Could not create tables automatically. Please run the SQL script manually in the Supabase dashboard.
@@ -228,7 +214,6 @@ const MissingTablesAlert = ({ missingTables, onTablesCreated }: MissingTablesAle
         });
       }
     } catch (error) {
-      console.error("Exception creating tables:", error);
       setResult({ 
         success: false, 
         message: `Error executing SQL: ${error.message}. Please run the SQL script manually in the Supabase dashboard.` 
@@ -237,7 +222,6 @@ const MissingTablesAlert = ({ missingTables, onTablesCreated }: MissingTablesAle
       setIsCreating(false);
     }
   };
-
   return (
     <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20 mb-6">
       <CardContent className="p-6">
@@ -313,5 +297,4 @@ const MissingTablesAlert = ({ missingTables, onTablesCreated }: MissingTablesAle
     </Card>
   );
 };
-
 export default MissingTablesAlert;

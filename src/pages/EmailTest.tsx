@@ -4,21 +4,17 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Alert, AlertDescription } from '../components/ui/alert';
-
 export default function EmailTest() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
   const testEmailConfirmation = async () => {
     if (!email) {
       setMessage('Please enter an email address');
       return;
     }
-
     setIsLoading(true);
     setMessage('');
-
     try {
       // Try to sign up with a test account
       const { data, error } = await supabase.auth.signUp({
@@ -30,12 +26,10 @@ export default function EmailTest() {
           }
         }
       });
-
       if (error) {
         setMessage(`Error: ${error.message}`);
         return;
       }
-
       if (data.user) {
         if (data.user.email_confirmed_at) {
           setMessage('✅ Email confirmation is DISABLED - users can sign up immediately');
@@ -49,11 +43,9 @@ export default function EmailTest() {
       setIsLoading(false);
     }
   };
-
   const checkAuthSettings = async () => {
     setIsLoading(true);
     setMessage('');
-
     try {
       // Try to get current session to see auth state
       const { data: session } = await supabase.auth.getSession();
@@ -71,7 +63,6 @@ Current auth state:
       setIsLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -109,7 +100,6 @@ Current auth state:
               Check Current Auth State
             </Button>
           </div>
-
           {message && (
             <Alert>
               <AlertDescription>
@@ -117,7 +107,6 @@ Current auth state:
               </AlertDescription>
             </Alert>
           )}
-
           <div className="text-sm text-gray-600 space-y-2">
             <p><strong>If email confirmation is enabled but no emails are sent:</strong></p>
             <ul className="list-disc list-inside text-xs space-y-1">

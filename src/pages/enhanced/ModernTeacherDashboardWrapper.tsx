@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { AlertTriangle, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ModernTeacherDashboard from '@/pages/enhanced/ModernTeacherDashboard';
-
 // This component wraps the dashboard to catch and diagnose errors
 const ModernTeacherDashboardWrapper = () => {
   const [hasError, setHasError] = useState(false);
@@ -21,13 +20,10 @@ const ModernTeacherDashboardWrapper = () => {
       super(props);
       this.state = { hasError: false, error: null };
     }
-
     static getDerivedStateFromError(error: Error) {
       return { hasError: true, error };
     }
-
     componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-      console.error('Dashboard error caught:', error, errorInfo);
       setHasError(true);
       setErrorInfo(error.message || 'Unknown error occurred');
       
@@ -37,7 +33,6 @@ const ModernTeacherDashboardWrapper = () => {
         variant: "destructive"
       });
     }
-
     render() {
       if (this.state.hasError) {
         return (
@@ -78,11 +73,9 @@ const ModernTeacherDashboardWrapper = () => {
           </Card>
         );
       }
-
       return this.props.children;
     }
   }
-
   return (
     <div className="space-y-8">
       <Card className="border-blue-300 bg-blue-50 dark:bg-blue-900/10">
@@ -110,5 +103,4 @@ const ModernTeacherDashboardWrapper = () => {
     </div>
   );
 };
-
 export default ModernTeacherDashboardWrapper;

@@ -1,7 +1,5 @@
-
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-
 interface PerformanceChartProps {
   data: Array<{
     month: string;
@@ -10,7 +8,6 @@ interface PerformanceChartProps {
     performance: number;
   }>;
 }
-
 const PerformanceChart: React.FC<PerformanceChartProps> = ({ data }) => {
   return (
     <ResponsiveContainer width="100%" height={300}>
@@ -45,5 +42,4 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({ data }) => {
     </ResponsiveContainer>
   );
 };
-
 export default PerformanceChart;

@@ -7,7 +7,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Users, UserCheck, UserX, Clock, GraduationCap, BookOpen, History, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
-
 interface UserProfile {
   id: string;
   user_id: string;
@@ -19,7 +18,6 @@ interface UserProfile {
   approved_by?: string;
   approval_date?: string;
 }
-
 interface ApprovalLog {
   id: string;
   approved_user_id: string;
@@ -31,7 +29,6 @@ interface ApprovalLog {
   created_at: string;
   reason?: string;
 }
-
 const EnhancedUserApprovalsWithHistory = () => {
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [approvalHistory, setApprovalHistory] = useState<ApprovalLog[]>([]);
@@ -44,11 +41,9 @@ const EnhancedUserApprovalsWithHistory = () => {
     userName: string;
   } | null>(null);
   const { toast } = useToast();
-
   useEffect(() => {
     fetchAllData();
   }, []);
-
   const fetchAllData = async () => {
     setLoading(true);
     try {
@@ -57,7 +52,6 @@ const EnhancedUserApprovalsWithHistory = () => {
         fetchApprovalHistory()
       ]);
     } catch (error) {
-      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
@@ -74,10 +68,8 @@ const EnhancedUserApprovalsWithHistory = () => {
           .select('*')
           .order('created_at', { ascending: false })
       ]);
-
       if (studentsResponse.error) throw studentsResponse.error;
       if (teachersResponse.error) throw teachersResponse.error;
-
       // Combine and normalize the data using actual database columns
       const allUsersData: UserProfile[] = [
         ...(studentsResponse.data || []).map(student => ({
@@ -103,10 +95,8 @@ const EnhancedUserApprovalsWithHistory = () => {
           approval_date: teacher.approval_date
         }))
       ];
-
       setAllUsers(allUsersData);
     } catch (error) {
-      console.error('Error fetching users:', error);
       toast({
         title: "Error",
         description: "Failed to fetch users. Please try again.",
@@ -117,10 +107,8 @@ const EnhancedUserApprovalsWithHistory = () => {
     try {
       // Since approval_logs table doesn't exist in types, we'll skip this for now
       // This will be available after running SETUP_APPROVAL_SYSTEM.sql
-      console.log('Approval history tracking not yet available - run SETUP_APPROVAL_SYSTEM.sql to enable');
       setApprovalHistory([]);
     } catch (error) {
-      console.error('Error fetching approval history:', error);
       setApprovalHistory([]);
     }
   };
@@ -129,12 +117,10 @@ const EnhancedUserApprovalsWithHistory = () => {
     try {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error('Not authenticated');
-
       const status = action === 'approve' ? 'APPROVED' : 'REJECTED';
       const userToUpdate = allUsers.find(u => u.user_id === userId);
       
       if (!userToUpdate) throw new Error('User not found');
-
       // Update the appropriate table based on user role
       let updateError;
       if (userToUpdate.role === 'STUDENT') {
@@ -160,19 +146,15 @@ const EnhancedUserApprovalsWithHistory = () => {
           .eq('user_id', userId);
         updateError = error;
       }
-
       if (updateError) throw updateError;      // Note: Approval logging will be available after running SETUP_APPROVAL_SYSTEM.sql
       // For now, basic approval/rejection works without logging
-
       toast({
         title: `${action === 'approve' ? 'Approved' : 'Rejected'}!`,
         description: `${userToUpdate.full_name} has been ${action}d successfully.`,
       });
-
       // Refresh data
       await fetchAllData();
     } catch (error: any) {
-      console.error('Approval error:', error);
       toast({
         title: "Error",
         description: error.message || `Failed to ${action} user`,
@@ -183,11 +165,9 @@ const EnhancedUserApprovalsWithHistory = () => {
       setConfirmDialog(null);
     }
   };
-
   const openConfirmDialog = (type: 'approve' | 'reject', userId: string, userName: string) => {
     setConfirmDialog({ isOpen: true, type, userId, userName });
   };
-
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'APPROVED':
@@ -198,7 +178,6 @@ const EnhancedUserApprovalsWithHistory = () => {
         return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
     }
   };
-
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'STUDENT':
@@ -211,7 +190,6 @@ const EnhancedUserApprovalsWithHistory = () => {
         return <Users className="h-4 w-4" />;
     }
   };
-
   const renderUserCard = (user: UserProfile, showActions: boolean = true) => (
     <div key={user.id} className="border rounded-lg p-4 bg-gray-50">
       <div className="flex justify-between items-start">
@@ -254,12 +232,10 @@ const EnhancedUserApprovalsWithHistory = () => {
       </div>
     </div>
   );
-
   // Filter users by status
   const pendingUsers = allUsers.filter(u => u.status === 'PENDING');
   const approvedUsers = allUsers.filter(u => u.status === 'APPROVED');
   const rejectedUsers = allUsers.filter(u => u.status === 'REJECTED');
-
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -268,7 +244,6 @@ const EnhancedUserApprovalsWithHistory = () => {
       </div>
     );
   }
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -281,7 +256,6 @@ const EnhancedUserApprovalsWithHistory = () => {
           Refresh
         </Button>
       </div>
-
       {/* Statistics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
@@ -309,7 +283,6 @@ const EnhancedUserApprovalsWithHistory = () => {
           </CardContent>
         </Card>
       </div>
-
       <Tabs defaultValue="pending" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="pending" className="flex items-center gap-2">
@@ -329,7 +302,6 @@ const EnhancedUserApprovalsWithHistory = () => {
             History
           </TabsTrigger>
         </TabsList>
-
         <TabsContent value="pending">
           <Card>
             <CardHeader>
@@ -354,7 +326,6 @@ const EnhancedUserApprovalsWithHistory = () => {
             </CardContent>
           </Card>
         </TabsContent>
-
         <TabsContent value="approved">
           <Card>
             <CardHeader>
@@ -379,7 +350,6 @@ const EnhancedUserApprovalsWithHistory = () => {
             </CardContent>
           </Card>
         </TabsContent>
-
         <TabsContent value="rejected">
           <Card>
             <CardHeader>
@@ -404,7 +374,6 @@ const EnhancedUserApprovalsWithHistory = () => {
             </CardContent>
           </Card>
         </TabsContent>
-
         <TabsContent value="history">
           <Card>
             <CardHeader>
@@ -463,7 +432,6 @@ const EnhancedUserApprovalsWithHistory = () => {
           </Card>
         </TabsContent>
       </Tabs>
-
       <AlertDialog open={confirmDialog?.isOpen} onOpenChange={() => setConfirmDialog(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -493,5 +461,4 @@ const EnhancedUserApprovalsWithHistory = () => {
     </div>
   );
 };
-
 export default EnhancedUserApprovalsWithHistory;

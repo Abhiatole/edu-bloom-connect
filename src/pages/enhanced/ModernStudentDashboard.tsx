@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,6 @@ import {
   Zap
 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area } from 'recharts';
-
 const ModernStudentDashboard = () => {
   const [stats, setStats] = useState({
     totalExams: 0,
@@ -37,26 +35,21 @@ const ModernStudentDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [studentProfile, setStudentProfile] = useState(null);
   const { toast } = useToast();
-
   useEffect(() => {
     fetchStudentData();
   }, []);
-
   const fetchStudentData = async () => {
     try {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error('Not authenticated');
-
       // Get student profile
       const { data: profile, error: profileError } = await supabase
         .from('student_profiles')
         .select('*')
         .eq('user_id', currentUser.user.id)
         .single();
-
       if (profileError) throw profileError;
       setStudentProfile(profile);
-
       // Get exam results with performance data
       const { data: results, error: resultsError } = await supabase
         .from('exam_results')
@@ -72,10 +65,8 @@ const ModernStudentDashboard = () => {
         .eq('student_id', profile.id)
         .order('submitted_at', { ascending: false })
         .limit(10);
-
       if (resultsError) throw resultsError;
       setRecentResults(results || []);
-
       // Generate performance chart data
       const chartData = (results || []).slice(0, 6).reverse().map((result, index) => ({
         exam: `Exam ${index + 1}`,
@@ -83,7 +74,6 @@ const ModernStudentDashboard = () => {
         subject: result.exams?.subjects?.name
       }));
       setPerformanceData(chartData);
-
       // Get AI insights
       const { data: insightsData, error: insightsError } = await supabase
         .from('student_insights')
@@ -92,10 +82,8 @@ const ModernStudentDashboard = () => {
           subjects(name)
         `)
         .eq('student_id', profile.id);
-
       if (insightsError) throw insightsError;
       setInsights(insightsData || []);
-
       // Calculate enhanced statistics
       const allResults = results || [];
       const scores = allResults.map(r => r.percentage || ((r.marks_obtained / (r.exams?.max_marks || 100)) * 100));
@@ -106,7 +94,6 @@ const ModernStudentDashboard = () => {
         ? Math.round(((recentScores.reduce((a, b) => a + b, 0) / recentScores.length) - 
                      (olderScores.reduce((a, b) => a + b, 0) / olderScores.length)))
         : 0;
-
       setStats({
         totalExams: allResults.length,
         averageScore: scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0,
@@ -121,7 +108,6 @@ const ModernStudentDashboard = () => {
         rank: Math.max(1, Math.ceil(Math.random() * 50)) // Mock rank for demo
       });
     } catch (error) {
-      console.error('Error fetching student data:', error);
       toast({
         title: "Error",
         description: "Failed to load dashboard data",
@@ -131,7 +117,6 @@ const ModernStudentDashboard = () => {
       setLoading(false);
     }
   };
-
   const quickActions = [
     {
       title: "Performance Analytics",
@@ -162,7 +147,6 @@ const ModernStudentDashboard = () => {
       link: "/student/performance"
     }
   ];
-
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-96">
@@ -170,7 +154,6 @@ const ModernStudentDashboard = () => {
       </div>
     );
   }
-
   return (
     <div className="space-y-8">
       {/* Welcome Header */}      <div className="text-center space-y-4">
@@ -194,7 +177,6 @@ const ModernStudentDashboard = () => {
           </div>
         </div>
       </div>
-
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
         <ModernDashboardCard
@@ -240,7 +222,6 @@ const ModernStudentDashboard = () => {
           description="Keep it up!"
         />
       </div>
-
       {/* Performance Chart */}
       {performanceData.length > 0 && (
         <Card className="border-0 shadow-lg">
@@ -282,7 +263,6 @@ const ModernStudentDashboard = () => {
           </CardContent>
         </Card>
       )}
-
       {/* Quick Actions */}
       <Card className="border-0 shadow-lg">
         <CardHeader>
@@ -309,7 +289,6 @@ const ModernStudentDashboard = () => {
           </div>
         </CardContent>
       </Card>
-
       {/* Recent Results and AI Insights */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Results */}
@@ -362,7 +341,6 @@ const ModernStudentDashboard = () => {
             )}
           </CardContent>
         </Card>
-
         {/* AI Insights Preview */}
         <Card className="border-0 shadow-lg">
           <CardHeader>
@@ -413,5 +391,4 @@ const ModernStudentDashboard = () => {
     </div>
   );
 };
-
 export default ModernStudentDashboard;

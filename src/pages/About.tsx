@@ -1,8 +1,6 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { GraduationCap, Users, BookOpen, Award, Target, Heart } from 'lucide-react';
-
 const About = () => {
   const values = [
     {
@@ -26,7 +24,6 @@ const About = () => {
       description: "Celebrating success and fostering continuous improvement"
     }
   ];
-
   return (
     <div className="space-y-8">
       {/* Hero Section */}
@@ -39,7 +36,6 @@ const About = () => {
           Empowering educational institutions with modern technology to enhance learning outcomes and streamline administrative processes.
         </p>
       </div>
-
       {/* Mission Section */}
       <Card className="max-w-4xl mx-auto">
         <CardHeader>
@@ -51,7 +47,6 @@ const About = () => {
           </p>
         </CardContent>
       </Card>
-
       {/* Values Grid */}
       <div className="max-w-6xl mx-auto">
         <h2 className="text-3xl font-bold text-center mb-8 text-gray-900">Our Values</h2>
@@ -71,7 +66,6 @@ const About = () => {
           ))}
         </div>
       </div>
-
       {/* Stats Section */}
       <div className="bg-blue-50 rounded-lg p-8 max-w-4xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
@@ -92,5 +86,4 @@ const About = () => {
     </div>
   );
 };
-
 export default About;

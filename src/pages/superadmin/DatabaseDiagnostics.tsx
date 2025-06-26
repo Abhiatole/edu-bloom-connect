@@ -6,14 +6,12 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle, AlertTriangle, DatabaseIcon, ShieldAlert, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-
 const DatabaseDiagnostics = () => {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
   const [executing, setExecuting] = useState(false);
   const [sqlResult, setSqlResult] = useState<any>(null);
   const { toast } = useToast();
-
   const runDiagnostics = async () => {
     setLoading(true);
     try {
@@ -35,13 +33,11 @@ const DatabaseDiagnostics = () => {
         user_profiles: userTest,
         rls_status: rlsStatus
       });
-
       toast({
         title: "Diagnostics Complete",
         description: "Database access diagnostics completed"
       });
     } catch (error: any) {
-      console.error('Diagnostics error:', error);
       toast({
         title: "Diagnostics Failed",
         description: error.message || "An error occurred",
@@ -106,7 +102,6 @@ const DatabaseDiagnostics = () => {
       };
     }
   };
-
   const getRLSStatus = async () => {
     try {
       // Unfortunately we can't directly query RLS status through the Supabase JS client
@@ -138,7 +133,6 @@ const DatabaseDiagnostics = () => {
         runDiagnostics();
       }, 5000);
     } catch (error: any) {
-      console.error('RLS fix error:', error);
       setSqlResult({ error: error.message || 'Failed to generate RLS fix instructions' });
       
       toast({
@@ -150,11 +144,9 @@ const DatabaseDiagnostics = () => {
       setExecuting(false);
     }
   };
-
   useEffect(() => {
     runDiagnostics();
   }, []);
-
   return (
     <div className="container p-4 mx-auto space-y-4">
       <Card>
@@ -191,7 +183,6 @@ const DatabaseDiagnostics = () => {
               RLS Reactivation Script
             </Button>
           </div>
-
           {results && (
             <Tabs defaultValue="student">
               <TabsList className="grid grid-cols-3">
@@ -221,7 +212,6 @@ const DatabaseDiagnostics = () => {
                 />
               </TabsContent>          </Tabs>
           )}
-
           {sqlResult && (
             <Card className="mt-4 border-red-300 bg-red-50 dark:bg-red-900/10">
               <CardHeader>
@@ -237,15 +227,12 @@ const DatabaseDiagnostics = () => {
                   <pre>
 {`-- EMERGENCY RLS FIX - EXECUTE THIS IN SUPABASE SQL EDITOR
 -- This script temporarily disables RLS to fix the issues with profile queries
-
 -- STEP 1: TEMPORARILY DISABLE RLS ON ALL PROFILE TABLES
 ALTER TABLE IF EXISTS student_profiles DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS teacher_profiles DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS user_profiles DISABLE ROW LEVEL SECURITY;
-
 -- STEP 2: DROP ALL EXISTING POLICIES
 -- Drop all student profiles policies, teacher profiles policies, and user profiles policies
-
 -- STEP 3: VERIFY RLS IS DISABLED
 SELECT tablename, rowsecurity 
 FROM pg_tables 
@@ -312,7 +299,6 @@ WHERE tablename IN ('student_profiles', 'teacher_profiles', 'user_profiles')
     </div>
   );
 };
-
 const TableDiagnostics = ({ title, result }: { title: string; result: any }) => {
   return (
     <div className="space-y-2">
@@ -348,5 +334,4 @@ const TableDiagnostics = ({ title, result }: { title: string; result: any }) => 
     </div>
   );
 };
-
 export default DatabaseDiagnostics;

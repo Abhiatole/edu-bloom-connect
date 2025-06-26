@@ -17,7 +17,6 @@ import {
   ArrowRight,
   Play
 } from 'lucide-react';
-
 const ModernHomePage = () => {
   const features = [
     {
@@ -45,14 +44,12 @@ const ModernHomePage = () => {
       gradient: "from-orange-500 to-red-600"
     }
   ];
-
   const stats = [
     { icon: Users, label: "Active Students", value: "10,000+", gradient: "from-blue-500 to-cyan-600" },
     { icon: GraduationCap, label: "Expert Teachers", value: "500+", gradient: "from-green-500 to-emerald-600" },
     { icon: BookOpen, label: "Assessments", value: "50,000+", gradient: "from-purple-500 to-pink-600" },
     { icon: Award, label: "Success Rate", value: "98%", gradient: "from-orange-500 to-red-600" }
   ];
-
   const testimonials = [
     {
       name: "Dr. Sarah Johnson",
@@ -76,7 +73,6 @@ const ModernHomePage = () => {
       rating: 5
     }
   ];
-
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -122,7 +118,6 @@ const ModernHomePage = () => {
           </div>
         </div>
       </section>
-
       {/* Stats Section */}
       <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4">
@@ -139,7 +134,6 @@ const ModernHomePage = () => {
           </div>
         </div>
       </section>
-
       {/* Features Section */}
       <section className="py-20">
         <div className="container mx-auto px-4">
@@ -171,7 +165,6 @@ const ModernHomePage = () => {
           </div>
         </div>
       </section>
-
       {/* Testimonials Section */}
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
@@ -209,7 +202,6 @@ const ModernHomePage = () => {
           </div>
         </div>
       </section>
-
       {/* CTA Section */}
       <section className="py-20">
         <div className="container mx-auto px-4 text-center">
@@ -256,7 +248,6 @@ const ModernHomePage = () => {
           </Card>
         </div>
       </section>
-
       {/* Admin Access Section */}
       <section className="py-8 bg-gray-50 dark:bg-gray-900 border-t">
         <div className="container mx-auto px-4 text-center">
@@ -294,5 +285,4 @@ const ModernHomePage = () => {
     </div>
   );
 };
-
 export default ModernHomePage;

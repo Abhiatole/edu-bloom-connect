@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Bug } from 'lucide-react';
-
 /**
  * A component that captures and displays JavaScript errors in the browser
  * This can be temporarily added to a page for debugging
@@ -11,7 +10,6 @@ import { AlertCircle, Bug } from 'lucide-react';
 const ErrorDetector = () => {
   const [errors, setErrors] = useState<Array<{message: string, stack?: string}>>([]);
   const [isCollecting, setIsCollecting] = useState(true);
-
   useEffect(() => {
     // Original error handler
     const originalOnError = window.onerror;
@@ -34,7 +32,6 @@ const ErrorDetector = () => {
       }
       return false;
     };
-
     // Setup promise rejection handling
     const handleRejection = (event: PromiseRejectionEvent) => {
       if (isCollecting) {
@@ -47,16 +44,13 @@ const ErrorDetector = () => {
         ]);
       }
     };
-
     window.addEventListener('unhandledrejection', handleRejection);
-
     // Cleanup
     return () => {
       window.onerror = originalOnError;
       window.removeEventListener('unhandledrejection', handleRejection);
     };
   }, [isCollecting]);
-
   return (
     <Card className="border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/50">
       <CardHeader>
@@ -109,5 +103,4 @@ const ErrorDetector = () => {
     </Card>
   );
 };
-
 export default ErrorDetector;

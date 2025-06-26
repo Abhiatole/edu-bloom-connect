@@ -1,13 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles: string[];
 }
-
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
@@ -32,7 +29,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
           }
         }
       } catch (error) {
-        console.error('Auth check error:', error);
       } finally {
         setLoading(false);
       }
@@ -54,5 +50,4 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   
   return <>{children}</>;
 };
-
 export default ProtectedRoute;

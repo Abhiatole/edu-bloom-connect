@@ -6,17 +6,14 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Settings, Mail, CheckCircle, XCircle } from 'lucide-react';
-
 const AuthTest = () => {
   const [testEmail, setTestEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const { toast } = useToast();
-
   const testAuthSettings = async () => {
     setLoading(true);
     setResult(null);
-
     try {
       // Test user creation
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -29,7 +26,6 @@ const AuthTest = () => {
           }
         }
       });
-
       const testResult = {
         success: !authError,
         error: authError?.message,
@@ -44,9 +40,7 @@ const AuthTest = () => {
           created_at: authData.user.created_at
         } : null
       };
-
       setResult(testResult);
-
       if (authError) {
         toast({
           title: "Test Failed",
@@ -59,9 +53,7 @@ const AuthTest = () => {
           description: authData.session ? "Email confirmation is disabled" : "Email confirmation is enabled",
         });
       }
-
     } catch (error: any) {
-      console.error('Test error:', error);
       setResult({
         success: false,
         error: error.message
@@ -70,7 +62,6 @@ const AuthTest = () => {
       setLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-lg shadow-xl">
@@ -98,7 +89,6 @@ const AuthTest = () => {
                 className="mt-1"
               />
             </div>
-
             <Button 
               onClick={testAuthSettings}
               disabled={loading || !testEmail}
@@ -107,7 +97,6 @@ const AuthTest = () => {
               {loading ? 'Testing...' : 'Test Auth Settings'}
             </Button>
           </div>
-
           {result && (
             <div className="space-y-4">
               <div className={`p-4 rounded-lg border ${result.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
@@ -127,7 +116,6 @@ const AuthTest = () => {
                     <strong>Error:</strong> {result.error}
                   </p>
                 )}
-
                 {result.success && (
                   <div className="space-y-2 text-sm">
                     <div className={`p-2 rounded ${result.hasSession ? 'bg-green-100' : 'bg-yellow-100'}`}>
@@ -145,7 +133,6 @@ const AuthTest = () => {
                     <div>
                       <strong>Needs Email Confirmation:</strong> {result.needsConfirmation ? 'Yes' : 'No'}
                     </div>
-
                     {result.needsConfirmation && (
                       <div className="p-2 bg-blue-100 rounded">
                         <div className="flex items-center">
@@ -157,7 +144,6 @@ const AuthTest = () => {
                   </div>
                 )}
               </div>
-
               {result.userData && (
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <h4 className="font-semibold mb-2">User Data:</h4>
@@ -168,7 +154,6 @@ const AuthTest = () => {
               )}
             </div>
           )}
-
           <div className="text-center">
             <p className="text-xs text-gray-500">
               This test will create a temporary user account to check your auth settings.
@@ -179,5 +164,4 @@ const AuthTest = () => {
     </div>
   );
 };
-
 export default AuthTest;

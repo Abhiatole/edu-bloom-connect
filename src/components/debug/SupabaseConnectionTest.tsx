@@ -5,11 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
-
 interface SupabaseConnectionTestProps {
   onConnectionStatus?: (isConnected: boolean) => void;
 }
-
 export const SupabaseConnectionTest: React.FC<SupabaseConnectionTestProps> = ({ 
   onConnectionStatus 
 }) => {
@@ -26,7 +24,6 @@ export const SupabaseConnectionTest: React.FC<SupabaseConnectionTestProps> = ({
     supabaseUrl: '',
     hasEnvironmentVars: false
   });
-
   const testConnection = async () => {
     setStatus(prev => ({ ...prev, loading: true, error: null }));
     
@@ -64,11 +61,9 @@ export const SupabaseConnectionTest: React.FC<SupabaseConnectionTestProps> = ({
       onConnectionStatus?.(false);
     }
   };
-
   useEffect(() => {
     testConnection();
   }, []);
-
   if (status.loading) {
     return (
       <Card className="w-full max-w-md mx-auto">
@@ -81,7 +76,6 @@ export const SupabaseConnectionTest: React.FC<SupabaseConnectionTestProps> = ({
       </Card>
     );
   }
-
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
@@ -114,7 +108,6 @@ export const SupabaseConnectionTest: React.FC<SupabaseConnectionTestProps> = ({
             </span>
           </div>
         </div>
-
         {status.error && (
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
@@ -128,7 +121,6 @@ export const SupabaseConnectionTest: React.FC<SupabaseConnectionTestProps> = ({
             </AlertDescription>
           </Alert>
         )}
-
         {!status.hasEnvironmentVars && (
           <Alert>
             <AlertTriangle className="h-4 w-4" />
@@ -141,7 +133,6 @@ export const SupabaseConnectionTest: React.FC<SupabaseConnectionTestProps> = ({
             </AlertDescription>
           </Alert>
         )}
-
         <Button 
           onClick={testConnection} 
           disabled={status.loading}
@@ -154,5 +145,4 @@ export const SupabaseConnectionTest: React.FC<SupabaseConnectionTestProps> = ({
     </Card>
   );
 };
-
 export default SupabaseConnectionTest;

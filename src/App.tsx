@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ModernLayout from "./components/enhanced/ModernLayout";
-
 // Pages
 import ModernHomePage from "./pages/enhanced/ModernHomePage";
 import Login from "./pages/Login";
@@ -17,12 +16,11 @@ import DeploymentDebug from "./pages/DeploymentDebug";
 import DatabaseFix from "./pages/DatabaseFix";
 import FixExamResultsTable from "./pages/FixExamResultsTable";
 import WebDiagnosticsPage from "./pages/diagnostics/WebDiagnosticsPage";
-
 // Enhanced Dashboards
 import ModernSuperAdminDashboard from "./pages/enhanced/ModernSuperAdminDashboard";
 import ModernTeacherDashboard from "./pages/enhanced/ModernTeacherDashboard";
+import EnhancedTeacherDashboard from "./pages/enhanced/EnhancedTeacherDashboard";
 import ModernStudentDashboard from "./pages/enhanced/ModernStudentDashboard";
-
 // Registration Pages
 import StudentRegister from "./pages/register/StudentRegister";
 import TeacherRegister from "./pages/register/TeacherRegister";
@@ -30,18 +28,14 @@ import AdminRegister from "./pages/register/AdminRegister";
 import EmailConfirmation from "./pages/EmailConfirmation";
 import EmailConfirmationSuccess from "./pages/EmailConfirmationSuccess";
 import RegistrationSuccess from "./pages/RegistrationSuccess";
-
 // Admin Pages
 import Analytics from "./pages/admin/Analytics";
 import UserApprovals from "./pages/admin/UserApprovals";
 import ExamManagement from "./pages/admin/ExamManagement";
-
 // Teacher Pages
 import StudentInsights from "./pages/teacher/StudentInsights";
-
 // Student Pages
 import Performance from "./pages/student/Performance";
-
 // Other Components
 import ParentPortal from "./components/parent/ParentPortal";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -55,9 +49,7 @@ import ProfileDiagnostics from "./pages/ProfileDiagnostics";
 import DatabaseDiagnostics from "./pages/superadmin/DatabaseDiagnostics";
 import AIAssistantPage from "./pages/ai-assistant";
 import AIStudentInsightsPage from "./pages/ai-student-insights";
-
 const queryClient = new QueryClient();
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
@@ -103,7 +95,6 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
-
               <Route 
                 path="superadmin/database-diagnostics" 
                 element={
@@ -119,7 +110,6 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
-
               <Route 
                 path="admin/analytics" 
                 element={
@@ -133,11 +123,18 @@ const App = () => (
                 path="teacher/dashboard" 
                 element={
                   <ProtectedRoute allowedRoles={['teacher']}>
+                    <EnhancedTeacherDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="teacher/dashboard/legacy" 
+                element={
+                  <ProtectedRoute allowedRoles={['teacher']}>
                     <ModernTeacherDashboard />
                   </ProtectedRoute>
                 } 
               />
-
               <Route 
                 path="teacher/insights" 
                 element={
@@ -155,7 +152,6 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
-
               <Route 
                 path="student/performance" 
                 element={
@@ -164,7 +160,6 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
-
               <Route 
                 path="parent/dashboard" 
                 element={
@@ -178,7 +173,6 @@ const App = () => (
                 path="setup-admin" 
                 element={<SuperAdminSetup />} 
               />
-
               <Route 
                 path="teacher/flow-test" 
                 element={
@@ -187,7 +181,6 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
-
               <Route 
                 path="quick-approvals" 
                 element={
@@ -235,5 +228,4 @@ const App = () => (
     </ThemeProvider>
   </QueryClientProvider>
 );
-
 export default App;

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Bell, Send, Mail, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
-
 interface Notification {
   id: string;
   userId: string;
@@ -21,7 +19,6 @@ interface Notification {
   sentAt?: string;
   createdAt: string;
 }
-
 const NotificationCenter = () => {
   const [notifications, setNotifications] = useState<Notification[]>([
     {
@@ -46,14 +43,12 @@ const NotificationCenter = () => {
       createdAt: '2024-01-15T11:00:00Z'
     }
   ]);
-
   const [newNotification, setNewNotification] = useState({
     type: 'email' as 'email' | 'sms' | 'push',
     recipients: 'all',
     title: '',
     message: ''
   });
-
   const sendNotification = () => {
     const notification: Notification = {
       id: Date.now().toString(),
@@ -65,7 +60,6 @@ const NotificationCenter = () => {
       status: 'pending',
       createdAt: new Date().toISOString()
     };
-
     setNotifications([notification, ...notifications]);
     setNewNotification({
       type: 'email',
@@ -73,7 +67,6 @@ const NotificationCenter = () => {
       title: '',
       message: ''
     });
-
     // Simulate sending
     setTimeout(() => {
       setNotifications(prev => 
@@ -85,7 +78,6 @@ const NotificationCenter = () => {
       );
     }, 2000);
   };
-
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'sent': return <CheckCircle className="h-4 w-4 text-green-600" />;
@@ -94,7 +86,6 @@ const NotificationCenter = () => {
       default: return <Clock className="h-4 w-4 text-gray-600" />;
     }
   };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'sent': return 'bg-green-100 text-green-800';
@@ -103,7 +94,6 @@ const NotificationCenter = () => {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
-
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'email': return <Mail className="h-4 w-4" />;
@@ -112,7 +102,6 @@ const NotificationCenter = () => {
       default: return <Bell className="h-4 w-4" />;
     }
   };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -121,13 +110,11 @@ const NotificationCenter = () => {
           <p className="text-gray-600">Send emails, SMS, and push notifications to users</p>
         </div>
       </div>
-
       <Tabs defaultValue="send" className="space-y-6">
         <TabsList>
           <TabsTrigger value="send">Send Notification</TabsTrigger>
           <TabsTrigger value="history">Notification History</TabsTrigger>
         </TabsList>
-
         <TabsContent value="send">
           <Card>
             <CardHeader>
@@ -174,7 +161,6 @@ const NotificationCenter = () => {
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div className="space-y-2">
                   <Label>Recipients</Label>
                   <Select 
@@ -196,7 +182,6 @@ const NotificationCenter = () => {
                   </Select>
                 </div>
               </div>
-
               <div className="space-y-2">
                 <Label>Title</Label>
                 <Input
@@ -205,7 +190,6 @@ const NotificationCenter = () => {
                   onChange={(e) => setNewNotification({...newNotification, title: e.target.value})}
                 />
               </div>
-
               <div className="space-y-2">
                 <Label>Message</Label>
                 <Textarea
@@ -215,7 +199,6 @@ const NotificationCenter = () => {
                   onChange={(e) => setNewNotification({...newNotification, message: e.target.value})}
                 />
               </div>
-
               <Button 
                 onClick={sendNotification}
                 disabled={!newNotification.title || !newNotification.message}
@@ -227,7 +210,6 @@ const NotificationCenter = () => {
             </CardContent>
           </Card>
         </TabsContent>
-
         <TabsContent value="history">
           <Card>
             <CardHeader>
@@ -289,5 +271,4 @@ const NotificationCenter = () => {
     </div>
   );
 };
-
 export default NotificationCenter;

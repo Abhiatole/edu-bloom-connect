@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { CheckCircle, Database, AlertCircle, Loader2 } from 'lucide-react';
-
 const EXAM_RESULTS_FIX_SQL = `
 -- Fix for exam_results table issue
 CREATE TABLE IF NOT EXISTS public.exam_results (
@@ -20,15 +19,12 @@ CREATE TABLE IF NOT EXISTS public.exam_results (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
-
 -- Make sure RLS is enabled
 ALTER TABLE public.exam_results ENABLE ROW LEVEL SECURITY;
-
 -- Create a simple access policy
 DROP POLICY IF EXISTS "Allow access to exam_results" ON public.exam_results;
 CREATE POLICY "Allow access to exam_results" ON public.exam_results
     FOR ALL USING (true);
-
 -- Create table_exists function needed by the app
 CREATE OR REPLACE FUNCTION public.table_exists(table_name text)
 RETURNS boolean
@@ -47,11 +43,9 @@ BEGIN
   RETURN table_exists;
 END;
 $$;
-
 -- Grant access to the function
 GRANT EXECUTE ON FUNCTION public.table_exists TO authenticated;
 GRANT EXECUTE ON FUNCTION public.table_exists TO anon;
-
 -- Function to get list of all public tables
 CREATE OR REPLACE FUNCTION public.get_public_tables()
 RETURNS TABLE (table_name text)
@@ -66,12 +60,10 @@ BEGIN
   AND tables.table_type = 'BASE TABLE';
 END;
 $$;
-
 -- Grant access to the function
 GRANT EXECUTE ON FUNCTION public.get_public_tables TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_public_tables TO anon;
 `;
-
 export default function FixExamResultsTable() {
   const [isFixing, setIsFixing] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -94,11 +86,9 @@ export default function FixExamResultsTable() {
         // If we get here without an error, the table exists
         setTableExists(true);
       } catch (error) {
-        console.error('Error checking if table exists:', error);
         setTableExists(false);
       }
     } catch (error) {
-      console.error('Exception checking if table exists:', error);
       setTableExists(false);
     } finally {
       setCheckingTable(false);
@@ -142,21 +132,17 @@ export default function FixExamResultsTable() {
           setTimeout(checkTableExists, 1000);
         }
       } catch (executionError) {
-        console.error("Execution error:", executionError);
         // We already set a result above, so we don't need to do anything here
       }
     } catch (error) {
-      console.error("Exception fixing exam_results table:", error);
     } finally {
       setIsFixing(false);
     }
   };
-
   // Check if the table exists when the component mounts
   useState(() => {
     checkTableExists();
   });
-
   return (
     <div className="container mx-auto py-8 max-w-3xl">
       <h1 className="text-3xl font-bold mb-6">Fix Exam Results Table</h1>

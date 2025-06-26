@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,6 @@ import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { Badge } from '@/components/ui/badge';
 import { Download, FileText, BarChart3, Calendar, Users } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
-
 interface ReportType {
   id: string;
   title: string;
@@ -15,14 +13,12 @@ interface ReportType {
   icon: React.ComponentType<any>;
   category: 'student' | 'attendance' | 'performance';
 }
-
 const PDFReportGenerator = () => {
   const [selectedReport, setSelectedReport] = useState<string>('');
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedStudent, setSelectedStudent] = useState<string>('');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [isGenerating, setIsGenerating] = useState(false);
-
   const reportTypes: ReportType[] = [
     {
       id: 'student-performance',
@@ -53,21 +49,18 @@ const PDFReportGenerator = () => {
       category: 'student'
     }
   ];
-
   const classes = [
     { id: 'grade-10a', name: 'Grade 10A' },
     { id: 'grade-10b', name: 'Grade 10B' },
     { id: 'grade-11a', name: 'Grade 11A' },
     { id: 'grade-11b', name: 'Grade 11B' }
   ];
-
   const students = [
     { id: '1', name: 'John Doe', class: 'grade-10a' },
     { id: '2', name: 'Jane Smith', class: 'grade-10a' },
     { id: '3', name: 'Mike Johnson', class: 'grade-10b' },
     { id: '4', name: 'Sarah Wilson', class: 'grade-11a' }
   ];
-
   const generatePDF = async () => {
     setIsGenerating(true);
     
@@ -81,7 +74,6 @@ const PDFReportGenerator = () => {
         timestamp: new Date().toISOString()
       };
       
-      console.log('Generating PDF with data:', reportData);
       
       // In a real implementation, you would:
       // 1. Send this data to your backend
@@ -99,12 +91,10 @@ const PDFReportGenerator = () => {
       setIsGenerating(false);
     }, 2000);
   };
-
   const getFilteredStudents = () => {
     if (!selectedClass) return students;
     return students.filter(student => student.class === selectedClass);
   };
-
   const isGenerateDisabled = () => {
     if (!selectedReport) return true;
     
@@ -117,7 +107,6 @@ const PDFReportGenerator = () => {
     
     return false;
   };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -126,7 +115,6 @@ const PDFReportGenerator = () => {
           <p className="text-gray-600">Generate and download comprehensive reports</p>
         </div>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Report Configuration */}
         <Card className="lg:col-span-2">
@@ -163,7 +151,6 @@ const PDFReportGenerator = () => {
                 ))}
               </div>
             </div>
-
             {/* Class Selection */}
             {(selectedReport === 'attendance-summary' || selectedReport === 'class-performance' || selectedReport === 'student-performance' || selectedReport === 'comprehensive-report') && (
               <div className="space-y-2">
@@ -180,7 +167,6 @@ const PDFReportGenerator = () => {
                 </Select>
               </div>
             )}
-
             {/* Student Selection */}
             {(selectedReport === 'student-performance' || selectedReport === 'comprehensive-report') && selectedClass && (
               <div className="space-y-2">
@@ -197,13 +183,11 @@ const PDFReportGenerator = () => {
                 </Select>
               </div>
             )}
-
             {/* Date Range */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Date Range (Optional)</label>
               <DatePickerWithRange date={dateRange} setDate={setDateRange} />
             </div>
-
             {/* Generate Button */}
             <Button 
               onClick={generatePDF} 
@@ -216,7 +200,6 @@ const PDFReportGenerator = () => {
             </Button>
           </CardContent>
         </Card>
-
         {/* Report Preview */}
         <Card>
           <CardHeader>
@@ -245,7 +228,6 @@ const PDFReportGenerator = () => {
                     )}
                   </div>
                 </div>
-
                 <div className="space-y-2">
                   <h5 className="font-medium text-gray-900">Will Include:</h5>
                   <ul className="text-sm text-gray-600 space-y-1">
@@ -292,5 +274,4 @@ const PDFReportGenerator = () => {
     </div>
   );
 };
-
 export default PDFReportGenerator;

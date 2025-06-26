@@ -3,16 +3,13 @@ import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
-
 interface RLSErrorProps {
   message?: string;
 }
-
 const RLSError: React.FC<RLSErrorProps> = ({ 
   message = "Database policies prevent this action. Please run the RLS fix script in Supabase."
 }) => {
   const navigate = useNavigate();
-
   return (
     <Card className="border-red-300 bg-red-50 dark:bg-red-900/10">
       <CardHeader className="pb-2">
@@ -44,5 +41,4 @@ const RLSError: React.FC<RLSErrorProps> = ({
     </Card>
   );
 };
-
 export default RLSError;

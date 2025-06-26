@@ -12,19 +12,16 @@ import { BookOpen, Plus, Upload, Download, Users, Target, AlertTriangle, Databas
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Link } from 'react-router-dom';
 import ManualMarkUpload from '@/components/ManualMarkUpload';
-
 interface Subject {
   id: string;
   name: string;
   class_level: number;
 }
-
 interface Topic {
   id: string;
   name: string;
   chapter_number: number;
 }
-
 interface Exam {
   id: string;
   title: string;
@@ -35,16 +32,13 @@ interface Exam {
   subjects: { name: string };
   topics: { name: string };
 }
-
 interface Student {
   id: string;
   full_name: string;
   class_level: number;
   roll_number?: string; // Optional since some students might not have it yet
 }
-
 type ExamType = 'JEE' | 'NEET' | 'CET' | 'Boards';
-
 const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [exams, setExams] = useState<Exam[]>([]);
@@ -72,10 +66,8 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
     classLevel: '11',
     maxMarks: '100'
   });
-
   const { toast } = useToast();
   const examTypes: ExamType[] = ['JEE', 'NEET', 'CET', 'Boards'];
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -87,7 +79,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
         const subjectsResult = await supabase.from('subjects').select('*').order('name');
         
         if (subjectsResult.error) {
-          console.error('Error fetching subjects:', subjectsResult.error);
           
           // Set default subjects if there was an error fetching
           setSubjects([
@@ -98,11 +89,9 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
             { id: '5', name: 'English', class_level: 11 }
           ]);
         } else {
-          console.log('Subjects loaded:', subjectsResult.data);
           
           // If no subjects found or empty array, set default subjects
           if (!subjectsResult.data || subjectsResult.data.length === 0) {
-            console.log('No subjects found, using defaults');
             setSubjects([
               { id: '1', name: 'Mathematics', class_level: 11 },
               { id: '2', name: 'Physics', class_level: 11 },
@@ -115,7 +104,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
           }
         }
       } catch (subjectError) {
-        console.error('Exception fetching subjects:', subjectError);
         // Set default subjects if there was an exception
         setSubjects([
           { id: '1', name: 'Mathematics', class_level: 11 },
@@ -133,14 +121,11 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
           .eq('status', 'APPROVED');
           
         if (studentsResult.error) {
-          console.error('Error fetching students:', studentsResult.error);
         } else {
           setStudents(studentsResult.data || []);
         }
       } catch (studentError) {
-        console.error('Exception fetching students:', studentError);
       }
-
       // Then fetch exams with a more robust approach
       try {
         // First try with all joins
@@ -157,7 +142,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
           setExams(examsResult.data || []);
         } else {
           // If that fails, try a simpler query without joins
-          console.warn('Complex exams query failed, falling back to simple query:', examsResult.error);
           
           const simpleExamsResult = await supabase
             .from('exams')
@@ -178,7 +162,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
           setExams(processedExams);
         }
       } catch (examsError) {
-        console.error('Error fetching exams:', examsError);
         toast({
           title: "Error",
           description: "Failed to load exams data",
@@ -187,7 +170,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
         setExams([]);
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
       toast({
         title: "Error",
         description: "Failed to load data",
@@ -205,11 +187,9 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
         .select('*')
         .eq('subject_id', subjectId)
         .order('chapter_number');
-
       if (error) throw error;
       setTopics(data || []);
     } catch (error) {
-      console.error('Error fetching topics:', error);
     }
   };
     // Handle subject change
@@ -230,7 +210,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
     try {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error('Not authenticated');
-
       if (!examForm.examType) {
         toast({
           title: "Error",
@@ -258,7 +237,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
         return;
       }
       
-      console.log('Creating exam with form data:', examForm);      
       
       // Get the actual subject name from the selected subject ID
       const selectedSubject = subjects.find(s => s.id === examForm.subjectId);
@@ -290,22 +268,16 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
         examData.topic_id = examForm.topicId;
       }
       
-      console.log('Exam data to insert:', examData);
-
       // Bypass TypeScript by using 'as any'
       const { error } = await supabase.from('exams').insert(examData as any);
-
       if (error) {
-        console.error('Error details:', error);
         throw error;
       }
-
       toast({
         title: "Success",
         description: "Exam created successfully",
         variant: "default"
       });
-
       // Reset form and close dialog
       setExamForm({
         title: '',
@@ -320,7 +292,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
       // Refresh data
       fetchData();
     } catch (error: any) {
-      console.error('Error creating exam:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to create exam",
@@ -339,7 +310,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
       });
       return;
     }
-
     // Set loading state
     setUploadingResults(true);
     
@@ -349,7 +319,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
       description: "Validating your CSV file...",
       variant: "default"
     });
-
     try {
       // Validate CSV format before processing
       await validateCsvFormat(csvFile);
@@ -380,7 +349,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
         description: "Validating student IDs...",
         variant: "default"
       });
-
       // Validate student IDs against the database
       const studentIds = [];
       const studentMarks = new Map();
@@ -414,16 +382,13 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
         .in('id', studentIds);
       
       if (studentCheckError) {
-        console.error('Error checking student IDs:', studentCheckError);
         // Continue anyway, but log the warning
-        console.warn('Proceeding without student validation');
       } else {
         // Check if all student IDs are valid
         const validStudentIds = new Set(validStudents.map(s => s.id));
         const invalidStudentIds = studentIds.filter(id => !validStudentIds.has(id));
         
         if (invalidStudentIds.length > 0) {
-          console.warn('Invalid student IDs:', invalidStudentIds);
           toast({
             title: "Warning",
             description: `${invalidStudentIds.length} student IDs are not valid in the database`,
@@ -476,13 +441,11 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
         try {
           const { error } = await supabase.from('exam_results').insert(batch as any);
           if (error) {
-            console.error('Error inserting batch:', error);
             errorCount += batch.length;
           } else {
             successCount += batch.length;
           }
         } catch (batchError) {
-          console.error('Exception inserting batch:', batchError);
           errorCount += batch.length;
         }
       }
@@ -493,7 +456,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
           description: `Uploaded ${successCount} exam results${errorCount > 0 ? ` (${errorCount} failed)` : ''}`,
           variant: "default"
         });
-
         setMarkResultsOpen(false);
         setCsvFile(null);
         setSelectedExam('');
@@ -504,7 +466,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
         throw new Error('Failed to upload any results');
       }
     } catch (error: any) {
-      console.error('Error uploading CSV:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to upload CSV",
@@ -514,7 +475,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
       setUploadingResults(false);
     }
   };
-
   // Download sample CSV
   const downloadSampleCsv = () => {
     const headers = ['student_id', 'marks'];
@@ -529,7 +489,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
     a.click();
     URL.revokeObjectURL(url);
   };
-
   // Export exam results
   const exportExamResults = async (examId: string) => {
     // Set loading state
@@ -551,7 +510,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
         .single();
       
       if (examError) {
-        console.error('Error fetching exam details:', examError);
         throw new Error('Could not fetch exam details');
       }
         
@@ -563,7 +521,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
         .eq('exam_id', examId);
       
       if (resultsError) {
-        console.error('Error fetching exam results:', resultsError);
         throw new Error('Could not fetch exam results');
       }
       
@@ -585,13 +542,11 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
         .in('id', studentIds);
           
       if (studentsError) {
-        console.error('Error fetching student profiles:', studentsError);
         // Continue with limited data
       }
       
       // Check if we found any students
       if (!studentsData || studentsData.length === 0) {
-        console.warn('No student profiles found for the results');
         toast({
           title: "Warning",
           description: "Student information is missing. Export will contain limited data.",
@@ -609,7 +564,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
           });
         });
       }
-
       // Process the data for CSV export
       const headers = ['Student Name', 'Class', 'Marks Obtained', 'Max Marks', 'Percentage'];
       const rows = resultsData.map(result => {
@@ -630,7 +584,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
           percentage
         ];
       });
-
       // Create and download CSV
       const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
       const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -640,14 +593,12 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
       a.download = `exam_results_${examData.title || examId}.csv`;
       a.click();
       URL.revokeObjectURL(url);
-
       toast({
         title: "Success",
         description: `Exported ${rows.length} results successfully`,
         variant: "default"
       });
     } catch (error: any) {
-      console.error('Error exporting results:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to export results",
@@ -658,7 +609,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
       setExportingExamId(null);
     }
   };
-
   // Handle adding custom subject
   const handleAddCustomSubject = async () => {
     if (!customSubject.trim()) return;
@@ -686,7 +636,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
       
       // No need to save to database due to TypeScript/schema mismatch
       // Just use the local state for now
-      console.log('Using local state only for subject:', newSubject);
       
       // Clear the input
       setCustomSubject('');
@@ -696,7 +645,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
         description: `"${customSubject}" has been added and selected`
       });
     } catch (error) {
-      console.error('Error adding custom subject:', error);
       toast({
         title: "Error",
         description: "Failed to add custom subject",
@@ -704,7 +652,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
       });
     }
   };
-
   // Validate CSV format
   const validateCsvFormat = (file: File): Promise<boolean> => {
     return new Promise((resolve, reject) => {
@@ -778,7 +725,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
     
     setFilteredStudents(filtered.slice(0, 10)); // Limit to first 10 results for performance
   };
-
   if (loading) {
     return <div className="flex justify-center p-8">Loading exam management...</div>;
   }
@@ -823,7 +769,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
               {/* Create Exam Form */}
             </DialogContent>
           </Dialog>
-
           <Dialog open={markResultsOpen} onOpenChange={setMarkResultsOpen}>
             <DialogTrigger asChild>
               <Button variant="outline">
@@ -858,7 +803,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
                     Note: Uploading results to an exam that already has results may create duplicates.
                   </p>
                 </div>
-
                 <Tabs defaultValue="csv" onValueChange={(value) => setManualEntryMode(value === 'manual')}>
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="csv">CSV Upload</TabsTrigger>
@@ -913,7 +857,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
                         </p>
                       )}
                     </div>
-
                     <div className="flex gap-2 my-4">
                       <Button onClick={downloadSampleCsv} variant="outline" size="sm">
                         <Download className="h-4 w-4 mr-2" />
@@ -962,7 +905,6 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
           </Dialog>
         </div>
       </div>
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -1028,5 +970,4 @@ const ExamManagement = () => {  const [subjects, setSubjects] = useState<Subject
     </div>
   );
 };
-
 export default ExamManagement;

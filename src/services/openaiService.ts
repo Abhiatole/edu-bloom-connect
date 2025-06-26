@@ -1,26 +1,22 @@
 // OpenAI service for the edu-bloom-connect application
 import OpenAI from 'openai';
 import { supabase } from '@/integrations/supabase/client';
-
 // Initialize the OpenAI client with the API key from environment variables
 const openai = new OpenAI({
   apiKey: import.meta.env.VITE_OPENAI_API_KEY,
   dangerouslyAllowBrowser: true // Enable client-side usage (use with caution)
 });
-
 export interface AICompletionParams {
   prompt: string;
   maxTokens?: number;
   temperature?: number;
   model?: string;
 }
-
 export interface AIAssistantResponse {
   content: string;
   isError: boolean;
   errorMessage?: string;
 }
-
 /**
  * Get a completion from OpenAI API
  * @param params Parameters for the completion
@@ -37,20 +33,17 @@ export async function getAICompletion({
     if (!import.meta.env.VITE_OPENAI_API_KEY) {
       throw new Error('OpenAI API key is not set in environment variables');
     }
-
     const response = await openai.chat.completions.create({
       model,
       messages: [{ role: 'user', content: prompt }],
       max_tokens: maxTokens,
       temperature,
     });
-
     return {
       content: response.choices[0]?.message?.content || 'No response generated',
       isError: false
     };
   } catch (error: any) {
-    console.error('Error getting AI completion:', error);
     return {
       content: '',
       isError: true,
@@ -58,7 +51,6 @@ export async function getAICompletion({
     };
   }
 }
-
 /**
  * Get educational content suggestions from AI
  * @param subject The subject to get content for
@@ -78,14 +70,12 @@ export async function getEducationalContent(
     4. Common misconceptions students have about this subject
     Format your response with clear headings and bullet points.
   `;
-
   return getAICompletion({
     prompt,
     maxTokens: 800,
     temperature: 0.6
   });
 }
-
 /**
  * Generate personalized feedback for a student
  * @param studentName The student's name
@@ -110,21 +100,18 @@ export async function generateStudentFeedback(
     The feedback should be positive, specific, and provide actionable suggestions.
     Keep it under 250 words and appropriate for a student.
   `;
-
   return getAICompletion({
     prompt,
     maxTokens: 500,
     temperature: 0.7
   });
 }
-
 export default {
   getAICompletion,
   getEducationalContent,
   generateStudentFeedback,
   generateAndSaveStudentInsights
 };
-
 /**
  * Generate and save AI insights for a student
  * @param studentId The UUID of the student profile
@@ -167,24 +154,20 @@ export async function generateAndSaveStudentInsights(
     if (!studentId) {
       throw new Error('Student ID is required');
     }
-
     // Create prompt for analysis
     const prompt = `
       You are an expert educational analyst. Based on the following student data, 
       provide insights on strengths, weaknesses, and recommendations:
-
       Exam Scores: ${performanceData.examScores.join(', ')}
       Subjects: ${performanceData.subjects.join(', ')}
       Attendance Rate: ${performanceData.attendanceRate}%
       Recent Performance: ${performanceData.recentPerformance}
-
       Format your response as a JSON object with these fields:
       1. strengths (array of strings): List 3 key strengths
       2. weaknesses (array of strings): List 3 areas for improvement
       3. recommendations (array of strings): List 3 specific, actionable recommendations
       4. performance_trend (string): A brief description of the overall trend
     `;
-
     // Get AI completion
     const aiResponse = await getAICompletion({
       prompt,
@@ -192,14 +175,12 @@ export async function generateAndSaveStudentInsights(
       temperature: 0.4,
       model: 'gpt-3.5-turbo'
     });
-
     if (aiResponse.isError) {
       return {
         ...aiResponse,
         savedToDatabase: false
       };
     }
-
     // Parse the JSON response
     let parsedInsights;
     try {
@@ -208,7 +189,6 @@ export async function generateAndSaveStudentInsights(
       const jsonContent = jsonMatch ? jsonMatch[0] : aiResponse.content;
       parsedInsights = JSON.parse(jsonContent);
     } catch (parseError) {
-      console.error('Failed to parse AI response as JSON:', parseError);
       // If parsing fails, create a structured format from the raw text
       parsedInsights = {
         strengths: ['Good overall performance'],
@@ -217,7 +197,6 @@ export async function generateAndSaveStudentInsights(
         performance_trend: 'Unable to determine from available data'
       };
     }
-
     // Get current user
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData.user?.id;    // Save to database with proper error handling for RLS
@@ -234,9 +213,7 @@ export async function generateAndSaveStudentInsights(
         last_analyzed: new Date().toISOString()
       })
       .select();
-
     if (insertError) {
-      console.error('Error saving insights to database:', insertError);
       return {
         content: aiResponse.content,
         isError: false,
@@ -244,14 +221,12 @@ export async function generateAndSaveStudentInsights(
         errorMessage: `Generated insights but failed to save to database: ${insertError.message}`
       };
     }
-
     return {
       content: aiResponse.content,
       isError: false,
       savedToDatabase: true
     };
   } catch (error: any) {
-    console.error('Error generating and saving student insights:', error);
     return {
       content: '',
       isError: true,

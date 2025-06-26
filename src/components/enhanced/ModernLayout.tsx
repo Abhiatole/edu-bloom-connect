@@ -5,7 +5,6 @@ import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { GraduationCap, LogOut, User, Bell, Home, Menu, X, Shield } from 'lucide-react';
 import { useState } from 'react';
-
 const ModernLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -14,7 +13,6 @@ const ModernLayout = () => {
   
   const userRole = localStorage.getItem('userRole');
   const userEmail = localStorage.getItem('userEmail');
-
   const handleLogout = () => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('userEmail');
@@ -25,7 +23,6 @@ const ModernLayout = () => {
     });
     navigate('/');
   };
-
   const getRoleDisplayName = (role: string | null) => {
     switch (role) {
       case 'superadmin': return 'Super Admin';
@@ -34,7 +31,6 @@ const ModernLayout = () => {
       default: return 'User';
     }
   };
-
   const getDashboardLink = (role: string | null) => {
     switch (role) {
       case 'superadmin': return '/superadmin/dashboard';
@@ -43,13 +39,11 @@ const ModernLayout = () => {
       default: return '/';
     }
   };
-
   // Don't show layout on auth pages
   if (location.pathname === '/login' || location.pathname === '/forgot-password' || 
       location.pathname.startsWith('/register') || location.pathname === '/auth/confirm') {
     return <Outlet />;
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 dark:from-background dark:to-muted/10">
       {/* Enhanced Header */}
@@ -68,7 +62,6 @@ const ModernLayout = () => {
                 <p className="text-xs text-muted-foreground">Learning Excellence</p>
               </div>
             </Link>
-
             {/* Desktop Navigation */}            <div className="hidden md:flex items-center space-x-6">
               {!userRole && (
                 <>
@@ -106,7 +99,6 @@ const ModernLayout = () => {
                       Dashboard
                     </Button>
                   </Link>
-
                   <div className="hidden lg:flex items-center space-x-2 text-sm text-muted-foreground">
                     <User className="h-4 w-4" />
                     <span>{getRoleDisplayName(userRole)}</span>
@@ -137,7 +129,6 @@ const ModernLayout = () => {
                   </Link>
                 </div>
               )}
-
               {/* Mobile Menu Button */}
               <Button 
                 variant="ghost" 
@@ -149,7 +140,6 @@ const ModernLayout = () => {
               </Button>
             </div>
           </div>
-
           {/* Mobile Menu */}
           {mobileMenuOpen && (
             <div className="md:hidden py-4 border-t">
@@ -185,7 +175,6 @@ const ModernLayout = () => {
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Outlet />
       </main>
-
       {/* Floating Admin Access Button - Only show on home page */}
       {location.pathname === '/' && (
         <div className="fixed bottom-6 right-6 z-50">
@@ -204,5 +193,4 @@ const ModernLayout = () => {
     </div>
   );
 };
-
 export default ModernLayout;

@@ -17,7 +17,6 @@ import {
   BarChart3
 } from 'lucide-react';
 import StudentManagement from '@/components/teacher/StudentManagement';
-
 const TeacherDashboard = () => {
   const [stats, setStats] = useState({
     totalStudents: 0,
@@ -29,26 +28,21 @@ const TeacherDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [teacherProfile, setTeacherProfile] = useState(null);
   const { toast } = useToast();
-
   useEffect(() => {
     fetchTeacherData();
   }, []);
-
   const fetchTeacherData = async () => {
     try {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error('Not authenticated');
-
       // Get teacher profile
       const { data: profile, error: profileError } = await supabase
         .from('teacher_profiles')
         .select('*')
         .eq('user_id', currentUser.user.id)
         .single();
-
       if (profileError) throw profileError;
       setTeacherProfile(profile);
-
       // Get teacher's exams
       const { data: exams, error: examsError } = await supabase
         .from('exams')
@@ -60,10 +54,8 @@ const TeacherDashboard = () => {
         .eq('created_by', currentUser.user.id)
         .order('created_at', { ascending: false })
         .limit(5);
-
       if (examsError) throw examsError;
       setRecentExams(exams || []);
-
       // Get statistics
       const [studentsResult, myExamsResult, resultsResult] = await Promise.all([
         supabase.from('student_profiles').select('*', { count: 'exact' }).eq('status', 'APPROVED'),
@@ -73,13 +65,11 @@ const TeacherDashboard = () => {
           exams(created_by)
         `).eq('exams.created_by', currentUser.user.id)
       ]);
-
       // Calculate average performance for teacher's exams
       const teacherResults = resultsResult.data?.filter(result => result.exams?.created_by === currentUser.user.id) || [];
       const avgPerformance = teacherResults.length > 0 
         ? Math.round(teacherResults.reduce((sum, result) => sum + (result.percentage || 0), 0) / teacherResults.length)
         : 0;
-
       setStats({
         totalStudents: studentsResult.count || 0,
         myExams: myExamsResult.count || 0,
@@ -87,7 +77,6 @@ const TeacherDashboard = () => {
         avgPerformance
       });
     } catch (error) {
-      console.error('Error fetching teacher data:', error);
       toast({
         title: "Error",
         description: "Failed to load dashboard data",
@@ -97,7 +86,6 @@ const TeacherDashboard = () => {
       setLoading(false);
     }
   };
-
   const quickActions = [
     {
       title: "Create New Exam",
@@ -132,11 +120,9 @@ const TeacherDashboard = () => {
       link: "/admin/analytics"
     }
   ];
-
   if (loading) {
     return <div className="flex justify-center p-8">Loading dashboard...</div>;
   }
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -151,7 +137,6 @@ const TeacherDashboard = () => {
           Teacher
         </Badge>
       </div>
-
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
@@ -165,7 +150,6 @@ const TeacherDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -177,7 +161,6 @@ const TeacherDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -189,7 +172,6 @@ const TeacherDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -202,7 +184,6 @@ const TeacherDashboard = () => {
           </CardContent>
         </Card>
       </div>
-
       {/* Quick Actions */}
       <Card>
         <CardHeader>
@@ -233,7 +214,6 @@ const TeacherDashboard = () => {
         </CardContent>
       </Card>      {/* Student Management */}
       <StudentManagement />
-
       {/* Recent Exams */}
       <Card>
         <CardHeader>
@@ -299,5 +279,4 @@ const TeacherDashboard = () => {
     </div>
   );
 };
-
 export default TeacherDashboard;

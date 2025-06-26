@@ -1,9 +1,7 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BookOpen, TrendingUp, Award, Calendar } from 'lucide-react';
-
 const GradeView = () => {
   const grades = [
     { 
@@ -47,14 +45,12 @@ const GradeView = () => {
       teacher: 'Mr. Johnson'
     }
   ];
-
   const getGradeColor = (grade: string) => {
     if (grade.startsWith('A')) return 'bg-green-100 text-green-800';
     if (grade.startsWith('B')) return 'bg-blue-100 text-blue-800';
     if (grade.startsWith('C')) return 'bg-yellow-100 text-yellow-800';
     return 'bg-red-100 text-red-800';
   };
-
   const getScoreColor = (score: number, maxScore: number) => {
     const percentage = (score / maxScore) * 100;
     if (percentage >= 90) return 'text-green-600';
@@ -62,12 +58,10 @@ const GradeView = () => {
     if (percentage >= 70) return 'text-yellow-600';
     return 'text-red-600';
   };
-
   const calculateAverage = () => {
     const total = grades.reduce((sum, grade) => sum + (grade.score / grade.maxScore) * 100, 0);
     return (total / grades.length).toFixed(1);
   };
-
   const subjectAverages = grades.reduce((acc, grade) => {
     if (!acc[grade.subject]) {
       acc[grade.subject] = { total: 0, count: 0, scores: [] };
@@ -77,14 +71,12 @@ const GradeView = () => {
     acc[grade.subject].scores.push(grade.score);
     return acc;
   }, {} as Record<string, { total: number; count: number; scores: number[] }>);
-
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-gray-900">My Grades</h2>
         <p className="text-gray-600">Track your academic performance</p>
       </div>
-
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
@@ -100,7 +92,6 @@ const GradeView = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -114,7 +105,6 @@ const GradeView = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -131,7 +121,6 @@ const GradeView = () => {
           </CardContent>
         </Card>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Grades */}
         <Card>
@@ -172,7 +161,6 @@ const GradeView = () => {
             </div>
           </CardContent>
         </Card>
-
         {/* Subject Performance */}
         <Card>
           <CardHeader>
@@ -212,5 +200,4 @@ const GradeView = () => {
     </div>
   );
 };
-
 export default GradeView;

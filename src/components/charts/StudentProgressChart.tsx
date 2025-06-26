@@ -1,7 +1,5 @@
-
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
 interface StudentProgressChartProps {
   data: Array<{
     assignment: string;
@@ -9,7 +7,6 @@ interface StudentProgressChartProps {
     average: number;
   }>;
 }
-
 const StudentProgressChart: React.FC<StudentProgressChartProps> = ({ data }) => {
   return (
     <ResponsiveContainer width="100%" height={300}>
@@ -38,5 +35,4 @@ const StudentProgressChart: React.FC<StudentProgressChartProps> = ({ data }) => 
     </ResponsiveContainer>
   );
 };
-
 export default StudentProgressChart;

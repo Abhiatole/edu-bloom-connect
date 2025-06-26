@@ -7,14 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Users, Database, Loader2, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
 export default function RLSDebugTool() {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [teacherProfile, setTeacherProfile] = useState<any>(null);
   const { toast } = useToast();
-
   const runDiagnostics = async () => {
     setIsLoading(true);
     setResults(null);
@@ -121,7 +119,6 @@ export default function RLSDebugTool() {
         description: `Found ${diagnostics.students.count} approved students out of ${diagnostics.students.all?.count || 0} total students.`,
       });
     } catch (error) {
-      console.error('Diagnostics failed:', error);
       toast({
         title: "Diagnostics Failed",
         description: error.message,
@@ -131,7 +128,6 @@ export default function RLSDebugTool() {
       setIsLoading(false);
     }
   };
-
   return (
     <Card>
       <CardHeader>

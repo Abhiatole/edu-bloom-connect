@@ -9,7 +9,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Shield, AlertTriangle, CheckCircle } from 'lucide-react';
 import { EmailConfirmationService } from '@/services/emailConfirmationService';
-
 const AdminRegister = () => {
   const [formData, setFormData] = useState({
     fullName: '',
@@ -22,21 +21,17 @@ const AdminRegister = () => {
   const [showAdminCode, setShowAdminCode] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       // Validation
       if (formData.password !== formData.confirmPassword) {
         throw new Error('Passwords do not match');
       }
-
       if (formData.password.length < 6) {
         throw new Error('Password must be at least 6 characters long');
       }
-
       // Optional: Check admin code if provided
       if (showAdminCode && formData.adminCode && formData.adminCode !== 'ADMIN2025') {
         throw new Error('Invalid admin verification code');
@@ -54,18 +49,13 @@ const AdminRegister = () => {
           emailRedirectTo: EmailConfirmationService.getConfirmationUrl()
         }
       });
-
       if (authError) throw authError;
-
       if (authData.user) {
-        console.log('Admin signup data:', authData);
-        console.log('Has session:', !!authData.session);
-        console.log('User confirmed:', authData.user.email_confirmed_at);
         
         // Check if email confirmation is required
         if (authData.session || authData.user.email_confirmed_at) {
           // User is immediately confirmed or email confirmation is disabled - create profile directly
-          console.log('Admin is confirmed or email confirmation disabled, creating profile directly');            const profileData = {
+          const profileData = {
             user_id: authData.user.id,
             full_name: formData.fullName,
             email: formData.email,
@@ -76,12 +66,9 @@ const AdminRegister = () => {
           const { error: profileError } = await supabase
             .from('user_profiles')
             .insert(profileData);
-
           if (profileError) {
-            console.error('Admin profile creation error:', profileError);
             // Continue anyway - the trigger should handle this
           }
-
           toast({
             title: "Admin Registration Successful!",
             description: "Your admin account has been created successfully. You can now login.",
@@ -90,7 +77,6 @@ const AdminRegister = () => {
           navigate('/login');
         } else {
           // Email confirmation is required - redirect to success page
-          console.log('Email confirmation required for admin, redirecting to success page');
           
           navigate('/register/success', {
             state: {
@@ -103,7 +89,6 @@ const AdminRegister = () => {
         throw new Error('Admin creation failed - no user data returned');
       }
     } catch (error: any) {
-      console.error('Admin registration error:', error);
       
       // Provide more specific error messages
       let errorMessage = error.message || "An error occurred during admin registration";
@@ -123,11 +108,9 @@ const AdminRegister = () => {
       setLoading(false);
     }
   };
-
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
@@ -145,7 +128,6 @@ const AdminRegister = () => {
               Admin accounts require verification and approval. Please ensure you have authorization to create an admin account.
             </AlertDescription>
           </Alert>
-
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="fullName" className="flex items-center gap-2">
@@ -162,7 +144,6 @@ const AdminRegister = () => {
                 className="mt-1"
               />
             </div>
-
             <div>
               <Label htmlFor="email" className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
@@ -178,7 +159,6 @@ const AdminRegister = () => {
                 className="mt-1"
               />
             </div>
-
             <div>
               <Label htmlFor="password" className="flex items-center gap-2">
                 <Lock className="h-4 w-4" />
@@ -194,7 +174,6 @@ const AdminRegister = () => {
                 className="mt-1"
               />
             </div>
-
             <div>
               <Label htmlFor="confirmPassword" className="flex items-center gap-2">
                 <Lock className="h-4 w-4" />
@@ -210,7 +189,6 @@ const AdminRegister = () => {
                 className="mt-1"
               />
             </div>
-
             {/* Optional Admin Code Section */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
@@ -225,7 +203,6 @@ const AdminRegister = () => {
                   I have an admin verification code
                 </Label>
               </div>
-
               {showAdminCode && (
                 <div>
                   <Label htmlFor="adminCode" className="flex items-center gap-2">
@@ -246,7 +223,6 @@ const AdminRegister = () => {
                 </div>
               )}
             </div>
-
             <Button 
               type="submit" 
               className="w-full bg-purple-600 hover:bg-purple-700" 
@@ -254,7 +230,6 @@ const AdminRegister = () => {
             >
               {loading ? 'Creating Admin Account...' : 'Register as Administrator'}
             </Button>
-
             <div className="text-center text-sm text-gray-600">
               Already have an account?{' '}
               <a href="/login" className="text-purple-600 hover:underline">
@@ -267,5 +242,4 @@ const AdminRegister = () => {
     </div>
   );
 };
-
 export default AdminRegister;

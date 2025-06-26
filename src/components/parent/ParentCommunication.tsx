@@ -1,15 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { MessageCircle, Send, Bell, User } from 'lucide-react';
-
 interface ParentCommunicationProps {
   studentId: string;
 }
-
 interface Message {
   id: string;
   from: string;
@@ -18,12 +15,10 @@ interface Message {
   timestamp: string;
   isRead: boolean;
 }
-
 export const ParentCommunication: React.FC<ParentCommunicationProps> = ({ studentId }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [notifications, setNotifications] = useState([]);
-
   useEffect(() => {
     // Mock communication data
     const mockMessages: Message[] = [
@@ -52,17 +47,14 @@ export const ParentCommunication: React.FC<ParentCommunicationProps> = ({ studen
         isRead: true
       }
     ];
-
     const mockNotifications = [
       { id: '1', message: 'New grade posted for Mathematics', time: '2 hours ago' },
       { id: '2', message: 'Assignment due tomorrow', time: '1 day ago' },
       { id: '3', message: 'Parent-teacher meeting reminder', time: '2 days ago' }
     ];
-
     setMessages(mockMessages);
     setNotifications(mockNotifications);
   }, [studentId]);
-
   const handleSendMessage = () => {
     if (newMessage.trim()) {
       const message: Message = {
@@ -77,7 +69,6 @@ export const ParentCommunication: React.FC<ParentCommunicationProps> = ({ studen
       setNewMessage('');
     }
   };
-
   const getMessageIcon = (fromType: string) => {
     switch (fromType) {
       case 'teacher':
@@ -90,7 +81,6 @@ export const ParentCommunication: React.FC<ParentCommunicationProps> = ({ studen
         return <User className="h-4 w-4 text-gray-600" />;
     }
   };
-
   return (
     <div className="space-y-6">
       {/* Notifications */}
@@ -112,7 +102,6 @@ export const ParentCommunication: React.FC<ParentCommunicationProps> = ({ studen
           </div>
         </CardContent>
       </Card>
-
       {/* Messages */}
       <Card className="border-0 shadow-lg">
         <CardHeader>
@@ -135,7 +124,6 @@ export const ParentCommunication: React.FC<ParentCommunicationProps> = ({ studen
               Send Message
             </Button>
           </div>
-
           {/* Message List */}
           <div className="space-y-3">
             <h4 className="font-medium">Recent Messages</h4>

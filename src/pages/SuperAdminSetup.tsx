@@ -7,7 +7,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Shield, User, Lock, Mail, CheckCircle, XCircle } from 'lucide-react';
-
 const SuperAdminSetup = () => {
   const [formData, setFormData] = useState({
     email: 'admin@edugrowhub.com',
@@ -21,14 +20,12 @@ const SuperAdminSetup = () => {
     userId?: string;
   } | null>(null);
   const { toast } = useToast();
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
     }));
   };
-
   const createSuperAdmin = async () => {
     if (!formData.email || !formData.password || !formData.fullName) {
       toast({
@@ -38,10 +35,8 @@ const SuperAdminSetup = () => {
       });
       return;
     }
-
     setIsLoading(true);
     setResult(null);
-
     try {
       // Step 1: Sign up the user
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -54,17 +49,13 @@ const SuperAdminSetup = () => {
           }
         }
       });
-
       if (signUpError) {
         throw signUpError;
       }
-
       if (!signUpData.user) {
         throw new Error('User creation failed - no user data returned');
       }
-
       const userId = signUpData.user.id;
-
       // Step 2: Create admin profile (if user is immediately confirmed)
       if (signUpData.user.email_confirmed_at || signUpData.session) {
         const { error: profileError } = await supabase
@@ -74,18 +65,14 @@ const SuperAdminSetup = () => {
             full_name: formData.fullName,
             email: formData.email,
           });
-
         if (profileError) {
-          console.error('Profile creation error:', profileError);
           // Continue anyway - we can create the profile manually
         }
-
         setResult({
           success: true,
           message: `Super Admin created successfully! You can now login with ${formData.email}`,
           userId: userId
         });
-
         toast({
           title: "Success!",
           description: "Super Admin account created successfully",
@@ -96,27 +83,22 @@ const SuperAdminSetup = () => {
           message: `User created but email confirmation required. Check ${formData.email} for confirmation email.`,
           userId: userId
         });
-
         toast({
           title: "Email Confirmation Required",
           description: "Check your email for confirmation link",
         });
       }
-
     } catch (error: any) {
-      console.error('Super Admin creation error:', error);
       
       let errorMessage = error.message || 'Failed to create Super Admin';
       
       if (error.message?.includes('User already registered')) {
         errorMessage = 'This email is already registered. If this is your admin email, you can promote an existing user instead.';
       }
-
       setResult({
         success: false,
         message: errorMessage
       });
-
       toast({
         title: "Creation Failed",
         description: errorMessage,
@@ -126,7 +108,6 @@ const SuperAdminSetup = () => {
       setIsLoading(false);
     }
   };
-
   const promoteExistingUser = async () => {
     if (!formData.email) {
       toast({
@@ -136,7 +117,6 @@ const SuperAdminSetup = () => {
       });
       return;
     }
-
     setIsLoading(true);
     setResult(null);    try {
       // Alternative: Try to create admin profile directly
@@ -148,10 +128,8 @@ const SuperAdminSetup = () => {
           full_name: formData.fullName,
           email: formData.email,
         });
-
       // This will fail, but gives us information about the user
       throw new Error('User promotion requires manual SQL execution. Please use the SQL method in your Supabase dashboard.');
-
     } catch (error: any) {
       setResult({
         success: false,
@@ -161,7 +139,6 @@ const SuperAdminSetup = () => {
       setIsLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl space-y-6">
@@ -192,7 +169,6 @@ const SuperAdminSetup = () => {
                   className="mt-1"
                 />
               </div>
-
               <div>
                 <Label htmlFor="email" className="flex items-center gap-2">
                   <Mail className="h-4 w-4" />
@@ -208,7 +184,6 @@ const SuperAdminSetup = () => {
                   className="mt-1"
                 />
               </div>
-
               <div>
                 <Label htmlFor="password" className="flex items-center gap-2">
                   <Lock className="h-4 w-4" />
@@ -228,7 +203,6 @@ const SuperAdminSetup = () => {
                 </p>
               </div>
             </div>
-
             <div className="space-y-3">
               <Button 
                 onClick={createSuperAdmin}
@@ -237,7 +211,6 @@ const SuperAdminSetup = () => {
               >
                 {isLoading ? 'Creating Super Admin...' : 'Create Super Admin'}
               </Button>
-
               <Button 
                 onClick={promoteExistingUser}
                 disabled={isLoading}
@@ -247,7 +220,6 @@ const SuperAdminSetup = () => {
                 Promote Existing User to Admin
               </Button>
             </div>
-
             {result && (
               <Alert className={result.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
                 {result.success ? (
@@ -265,7 +237,6 @@ const SuperAdminSetup = () => {
                 </AlertDescription>
               </Alert>
             )}
-
             <Alert>
               <Shield className="h-4 w-4" />
               <AlertDescription>
@@ -284,5 +255,4 @@ const SuperAdminSetup = () => {
     </div>
   );
 };
-
 export default SuperAdminSetup;

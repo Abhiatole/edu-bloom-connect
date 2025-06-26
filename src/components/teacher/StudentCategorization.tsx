@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Filter, Download, Users, TrendingDown, TrendingUp, Award } from 'lucide-react';
-
 interface StudentResult {
   id: string;
   student_id: string;
@@ -19,7 +17,6 @@ interface StudentResult {
   exam_title: string;
   max_marks: number;
 }
-
 const StudentCategorization = () => {
   const [results, setResults] = useState<StudentResult[]>([]);
   const [filteredResults, setFilteredResults] = useState<StudentResult[]>([]);
@@ -27,39 +24,31 @@ const StudentCategorization = () => {
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [exams, setExams] = useState<any[]>([]);
   const { toast } = useToast();
-
   useEffect(() => {
     fetchExams();
   }, []);
-
   useEffect(() => {
     if (selectedExam) {
       fetchResults();
     }
   }, [selectedExam]);
-
   useEffect(() => {
     applyFilter();
   }, [results, selectedFilter]);
-
   const fetchExams = async () => {
     try {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) return;
-
       const { data, error } = await supabase
         .from('exams')
         .select('*')
         .eq('created_by_teacher_id', currentUser.user.id)
         .order('created_at', { ascending: false });
-
       if (error) throw error;
       setExams(data || []);
     } catch (error) {
-      console.error('Error fetching exams:', error);
     }
   };
-
   const fetchResults = async () => {
     try {
       // Get exam results and calculate percentage manually
@@ -70,7 +59,6 @@ const StudentCategorization = () => {
         .single();
       
       if (examError) throw examError;
-
       const { data: resultsData, error: resultsError } = await supabase
         .from('exam_results')
         .select(`
@@ -78,9 +66,7 @@ const StudentCategorization = () => {
           student_profiles!inner(id, class_level)
         `)
         .eq('exam_id', selectedExam);
-
       if (resultsError) throw resultsError;
-
       // Transform the data to match our interface
       const transformedResults = resultsData.map(result => ({
         id: result.id,
@@ -92,13 +78,11 @@ const StudentCategorization = () => {
         exam_title: examData.title,
         max_marks: examData.total_marks
       }));
-
       // Sort by percentage descending
       transformedResults.sort((a, b) => b.percentage - a.percentage);
       
       setResults(transformedResults);
     } catch (error) {
-      console.error('Error fetching results:', error);
       toast({
         title: "Error",
         description: "Failed to load exam results",
@@ -106,10 +90,8 @@ const StudentCategorization = () => {
       });
     }
   };
-
   const applyFilter = () => {
     let filtered = [...results];
-
     switch (selectedFilter) {
       case 'below30':
         filtered = results.filter(r => r.percentage < 30);
@@ -129,10 +111,8 @@ const StudentCategorization = () => {
       default:
         filtered = results;
     }
-
     setFilteredResults(filtered);
   };
-
   const downloadCSV = () => {
     if (filteredResults.length === 0) {
       toast({
@@ -142,7 +122,6 @@ const StudentCategorization = () => {
       });
       return;
     }
-
     const headers = ['Student Name', 'Class', 'Marks Obtained', 'Max Marks', 'Percentage', 'Category'];
     const csvData = filteredResults.map(result => [
       result.student_name,
@@ -152,7 +131,6 @@ const StudentCategorization = () => {
       result.percentage.toFixed(2) + '%',
       getPerformanceCategory(result.percentage)
     ]);
-
     const csvContent = [headers, ...csvData].map(row => row.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -161,13 +139,11 @@ const StudentCategorization = () => {
     a.download = `student_results_${selectedFilter}_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-
     toast({
       title: "Success",
       description: `Exported ${filteredResults.length} student results`
     });
   };
-
   const getPerformanceCategory = (percentage: number) => {
     if (percentage >= 90) return 'Excellent';
     if (percentage >= 75) return 'Good';
@@ -176,7 +152,6 @@ const StudentCategorization = () => {
     if (percentage >= 30) return 'Poor';
     return 'Very Poor';
   };
-
   const getPerformanceBadge = (percentage: number) => {
     if (percentage >= 90) return <Badge className="bg-green-600">Excellent</Badge>;
     if (percentage >= 75) return <Badge className="bg-blue-600">Good</Badge>;
@@ -185,7 +160,6 @@ const StudentCategorization = () => {
     if (percentage >= 30) return <Badge className="bg-red-600">Poor</Badge>;
     return <Badge className="bg-gray-600">Very Poor</Badge>;
   };
-
   const filterOptions = [
     { value: 'all', label: 'All Students', icon: Users },
     { value: 'below30', label: 'Below 30%', icon: TrendingDown },
@@ -194,7 +168,6 @@ const StudentCategorization = () => {
     { value: 'top3', label: 'Top 3 Performers', icon: Award },
     { value: 'top10', label: 'Top 10 Performers', icon: TrendingUp }
   ];
-
   return (
     <div className="space-y-6">
       <Card>
@@ -220,7 +193,6 @@ const StudentCategorization = () => {
                 </SelectContent>
               </Select>
             </div>
-
             <div>
               <Select value={selectedFilter} onValueChange={setSelectedFilter}>
                 <SelectTrigger>
@@ -235,13 +207,11 @@ const StudentCategorization = () => {
                 </SelectContent>
               </Select>
             </div>
-
             <Button onClick={downloadCSV} disabled={filteredResults.length === 0}>
               <Download className="h-4 w-4 mr-2" />
               Download CSV
             </Button>
           </div>
-
           {filteredResults.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -252,7 +222,6 @@ const StudentCategorization = () => {
                   Average: {(filteredResults.reduce((sum, r) => sum + r.percentage, 0) / filteredResults.length).toFixed(1)}%
                 </div>
               </div>
-
               <div className="border rounded-lg">
                 <Table>
                   <TableHeader>
@@ -288,5 +257,4 @@ const StudentCategorization = () => {
     </div>
   );
 };
-
 export default StudentCategorization;

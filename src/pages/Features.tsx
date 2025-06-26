@@ -1,8 +1,6 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, BarChart3, Bell, Shield, Cloud, Smartphone, BookOpen, Calendar, MessageSquare, Award } from 'lucide-react';
-
 const Features = () => {
   const features = [
     {
@@ -66,7 +64,6 @@ const Features = () => {
       benefits: ["Progress monitoring", "Achievement badges", "Performance analytics"]
     }
   ];
-
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -76,7 +73,6 @@ const Features = () => {
           Discover the comprehensive suite of tools designed to transform your educational institution's management experience.
         </p>
       </div>
-
       {/* Features Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
         {features.map((feature, index) => (
@@ -103,7 +99,6 @@ const Features = () => {
           </Card>
         ))}
       </div>
-
       {/* CTA Section */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-8 text-center text-white max-w-4xl mx-auto">
         <h2 className="text-2xl font-bold mb-4">Ready to Transform Your Institution?</h2>
@@ -122,5 +117,4 @@ const Features = () => {
     </div>
   );
 };
-
 export default Features;

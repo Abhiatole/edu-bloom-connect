@@ -9,35 +9,29 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { Code, Database, Bug, Loader2, RefreshCcw, AlertCircle } from 'lucide-react';
-
 const WebDiagnosticsPage = () => {
   const { toast } = useToast();
   const [apiResponse, setApiResponse] = useState<any>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [sqlQuery, setSqlQuery] = useState<string>('SELECT * FROM student_profiles LIMIT 5');
-
   const runDatabaseQuery = async () => {
     setLoading(true);
     setApiResponse(null);
     setApiError(null);
-
     try {
       const { data, error } = await supabase.rpc('run_diagnostic_query', {
         query_text: sqlQuery
       });
-
       if (error) {
         throw error;
       }
-
       setApiResponse(data);
       toast({
         title: 'Query Executed',
         description: 'Database query executed successfully',
       });
     } catch (error: any) {
-      console.error('Database query error:', error);
       setApiError(error?.message || 'Failed to execute query');
       toast({
         variant: 'destructive',
@@ -48,29 +42,24 @@ const WebDiagnosticsPage = () => {
       setLoading(false);
     }
   };
-
   const checkStudentTable = async () => {
     setLoading(true);
     setApiResponse(null);
     setApiError(null);
-
     try {
       const { data, error } = await supabase
         .from('student_profiles')
         .select('id, enrollment_no, full_name, display_name, first_name, last_name')
         .limit(10);
-
       if (error) {
         throw error;
       }
-
       setApiResponse(data);
       toast({
         title: 'Student Data',
         description: `Retrieved ${data?.length || 0} student records`,
       });
     } catch (error: any) {
-      console.error('Student data error:', error);
       setApiError(error?.message || 'Failed to fetch student data');
       toast({
         variant: 'destructive',
@@ -81,12 +70,10 @@ const WebDiagnosticsPage = () => {
       setLoading(false);
     }
   };
-
   return (
     <div className="container mx-auto p-6 space-y-8">
       <h1 className="text-3xl font-bold">Web App Diagnostics</h1>
       <p className="text-muted-foreground">Use this page to diagnose issues with the web application</p>
-
       <Tabs defaultValue="errors">
         <TabsList>
           <TabsTrigger value="errors">
@@ -98,7 +85,6 @@ const WebDiagnosticsPage = () => {
             Data Explorer
           </TabsTrigger>
         </TabsList>
-
         <TabsContent value="errors" className="space-y-4">
           <Card>
             <CardHeader>
@@ -116,7 +102,6 @@ const WebDiagnosticsPage = () => {
             </CardContent>
           </Card>
         </TabsContent>
-
         <TabsContent value="data" className="space-y-4">
           <Card>
             <CardHeader>
@@ -162,7 +147,6 @@ const WebDiagnosticsPage = () => {
                   <p className="text-xs text-muted-foreground">Note: For security reasons, only SELECT queries are allowed</p>
                 </div>
               </div>
-
               {apiError && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
@@ -170,7 +154,6 @@ const WebDiagnosticsPage = () => {
                   <AlertDescription>{apiError}</AlertDescription>
                 </Alert>
               )}
-
               {apiResponse && (
                 <div className="mt-4">
                   <h3 className="text-lg font-semibold mb-2">Response</h3>
@@ -188,5 +171,4 @@ const WebDiagnosticsPage = () => {
     </div>
   );
 };
-
 export default WebDiagnosticsPage;

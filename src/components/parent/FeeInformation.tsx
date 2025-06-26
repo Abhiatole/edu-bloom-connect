@@ -1,14 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CreditCard, DollarSign, Calendar, Download } from 'lucide-react';
-
 interface FeeInformationProps {
   studentId: string;
 }
-
 interface FeeRecord {
   id: string;
   description: string;
@@ -17,12 +14,10 @@ interface FeeRecord {
   status: 'paid' | 'pending' | 'overdue';
   paymentDate?: string;
 }
-
 export const FeeInformation: React.FC<FeeInformationProps> = ({ studentId }) => {
   const [feeRecords, setFeeRecords] = useState<FeeRecord[]>([]);
   const [totalPaid, setTotalPaid] = useState(0);
   const [totalPending, setTotalPending] = useState(0);
-
   useEffect(() => {
     // Mock fee data
     const mockFeeRecords: FeeRecord[] = [
@@ -57,7 +52,6 @@ export const FeeInformation: React.FC<FeeInformationProps> = ({ studentId }) => 
         status: 'pending'
       }
     ];
-
     setFeeRecords(mockFeeRecords);
     
     const paid = mockFeeRecords
@@ -67,11 +61,9 @@ export const FeeInformation: React.FC<FeeInformationProps> = ({ studentId }) => 
     const pending = mockFeeRecords
       .filter(record => record.status !== 'paid')
       .reduce((sum, record) => sum + record.amount, 0);
-
     setTotalPaid(paid);
     setTotalPending(pending);
   }, [studentId]);
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid':
@@ -84,7 +76,6 @@ export const FeeInformation: React.FC<FeeInformationProps> = ({ studentId }) => 
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
     }
   };
-
   return (
     <Card className="border-0 shadow-lg">
       <CardHeader>
@@ -105,7 +96,6 @@ export const FeeInformation: React.FC<FeeInformationProps> = ({ studentId }) => 
               <DollarSign className="h-5 w-5 text-green-600" />
             </div>
           </div>
-
           <div className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800">
             <div className="flex items-center justify-between">
               <div>
@@ -116,7 +106,6 @@ export const FeeInformation: React.FC<FeeInformationProps> = ({ studentId }) => 
             </div>
           </div>
         </div>
-
         {/* Fee Records */}
         <div className="space-y-3">
           <h4 className="font-medium">Recent Transactions</h4>
@@ -142,7 +131,6 @@ export const FeeInformation: React.FC<FeeInformationProps> = ({ studentId }) => 
             </div>
           ))}
         </div>
-
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-3">
           <Button className="flex-1" variant="outline">

@@ -5,20 +5,17 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Database, CheckCircle, XCircle } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
-
 const ExamTablesSetup = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [log, setLog] = useState<string[]>([]);
   const { toast } = useToast();
-
   const setupExamTables = async () => {
     setLoading(true);
     setSuccess(false);
     setError(null);
     setLog([]);
-
     try {
       // Fetch the SQL script from the public folder
       const response = await fetch('/CREATE_EXAM_TABLES.sql');
@@ -74,11 +71,9 @@ const ExamTablesSetup = () => {
       setLoading(false);
     }
   };
-
   const addLog = (message: string) => {
     setLog((prev) => [...prev, `[${new Date().toLocaleTimeString()}] ${message}`]);
   };
-
   return (
     <Card>
       <CardHeader>
@@ -129,5 +124,4 @@ const ExamTablesSetup = () => {
     </Card>
   );
 };
-
 export default ExamTablesSetup;

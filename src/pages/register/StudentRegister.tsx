@@ -9,7 +9,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, School, Lock, Users, UserCheck, GraduationCap } from 'lucide-react';
 import { EmailConfirmationService } from '@/services/emailConfirmationService';
-
 const StudentRegister = () => {
   const [formData, setFormData] = useState({
     fullName: '',
@@ -25,12 +24,10 @@ const StudentRegister = () => {
   const navigate = useNavigate();  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       if (formData.password !== formData.confirmPassword) {
         throw new Error('Passwords do not match');
       }
-
       if (formData.password.length < 6) {
         throw new Error('Password must be at least 6 characters long');
       }      // Get the current domain for email redirect
@@ -52,16 +49,11 @@ const StudentRegister = () => {
           emailRedirectTo: EmailConfirmationService.getConfirmationUrl()
         }
       });
-
       if (authError) throw authError;      if (authData.user) {
-        console.log('User signup data:', authData);
-        console.log('Has session:', !!authData.session);
-        console.log('User confirmed:', authData.user.email_confirmed_at);
         
         // Check if email confirmation is required
         if (authData.session || authData.user.email_confirmed_at) {
           // User is immediately confirmed or email confirmation is disabled - create profile directly
-          console.log('User is confirmed or email confirmation disabled, creating profile directly');
             // Generate enrollment number
           const enrollmentNo = `STU${Date.now()}`;
           
@@ -79,12 +71,9 @@ const StudentRegister = () => {
           const { error: profileError } = await supabase
             .from('student_profiles')
             .insert(profileData);
-
           if (profileError) {
-            console.error('Profile creation error:', profileError);
             throw new Error(`Profile creation failed: ${profileError.message}`);
           }
-
           toast({
             title: "Registration Successful!",
             description: "Your account has been created and is pending approval from the admin.",
@@ -93,7 +82,6 @@ const StudentRegister = () => {
           navigate('/login');
         } else {
           // Email confirmation is required - redirect to success page
-          console.log('Email confirmation required, redirecting to success page');
           
           navigate('/register/success', {
             state: {
@@ -106,7 +94,6 @@ const StudentRegister = () => {
         throw new Error('User creation failed - no user data returned');
       }
     } catch (error: any) {
-      console.error('Registration error:', error);
       
       // Provide more specific error messages
       let errorMessage = error.message || "An error occurred during registration";
@@ -126,11 +113,9 @@ const StudentRegister = () => {
       setLoading(false);
     }
   };
-
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
@@ -158,7 +143,6 @@ const StudentRegister = () => {
                 className="mt-1"
               />
             </div>
-
             <div>
               <Label htmlFor="email" className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
@@ -174,7 +158,6 @@ const StudentRegister = () => {
                 className="mt-1"
               />
             </div>
-
             <div>
               <Label htmlFor="classLevel" className="flex items-center gap-2">
                 <GraduationCap className="h-4 w-4" />
@@ -190,7 +173,6 @@ const StudentRegister = () => {
                 </SelectContent>
               </Select>
             </div>
-
             <div>
               <Label htmlFor="guardianName" className="flex items-center gap-2">
                 <UserCheck className="h-4 w-4" />
@@ -206,7 +188,6 @@ const StudentRegister = () => {
                 className="mt-1"
               />
             </div>
-
             <div>
               <Label htmlFor="guardianMobile" className="flex items-center gap-2">
                 <Phone className="h-4 w-4" />
@@ -222,7 +203,6 @@ const StudentRegister = () => {
                 className="mt-1"
               />
             </div>
-
             <div>
               <Label htmlFor="password" className="flex items-center gap-2">
                 <Lock className="h-4 w-4" />
@@ -238,7 +218,6 @@ const StudentRegister = () => {
                 className="mt-1"
               />
             </div>
-
             <div>
               <Label htmlFor="confirmPassword" className="flex items-center gap-2">
                 <Lock className="h-4 w-4" />
@@ -254,7 +233,6 @@ const StudentRegister = () => {
                 className="mt-1"
               />
             </div>
-
             <Button 
               type="submit" 
               className="w-full bg-blue-600 hover:bg-blue-700" 
@@ -262,7 +240,6 @@ const StudentRegister = () => {
             >
               {loading ? 'Creating Account...' : 'Register as Student'}
             </Button>
-
             <div className="text-center text-sm text-gray-600">
               Already have an account?{' '}
               <a href="/login" className="text-blue-600 hover:underline">
@@ -275,5 +252,4 @@ const StudentRegister = () => {
     </div>
   );
 };
-
 export default StudentRegister;

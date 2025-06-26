@@ -5,10 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import SupabaseConnectionTest from '@/components/debug/SupabaseConnectionTest';
 import { Settings, Database, Key, Globe, AlertTriangle, CheckCircle } from 'lucide-react';
-
 const DeploymentDebug = () => {
   const [connectionStatus, setConnectionStatus] = React.useState<boolean | null>(null);
-
   const environmentInfo = {
     nodeEnv: import.meta.env.MODE,
     supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
@@ -17,7 +15,6 @@ const DeploymentDebug = () => {
     buildTime: new Date().toISOString(),
     currentUrl: window.location.origin
   };
-
   const deploymentChecklist = [
     {
       item: 'Environment Variables Set',
@@ -40,7 +37,6 @@ const DeploymentDebug = () => {
       description: 'Site should be served over HTTPS'
     }
   ];
-
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'success':
@@ -53,7 +49,6 @@ const DeploymentDebug = () => {
         return <Settings className="h-4 w-4 text-gray-400" />;
     }
   };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'success':
@@ -66,7 +61,6 @@ const DeploymentDebug = () => {
         return 'bg-gray-100 text-gray-800';
     }
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -78,7 +72,6 @@ const DeploymentDebug = () => {
             Troubleshoot your Netlify deployment issues
           </p>
         </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Environment Information */}
           <Card>
@@ -108,7 +101,6 @@ const DeploymentDebug = () => {
               </div>
             </CardContent>
           </Card>
-
           {/* Deployment Checklist */}
           <Card>
             <CardHeader>
@@ -133,10 +125,8 @@ const DeploymentDebug = () => {
             </CardContent>
           </Card>
         </div>
-
         {/* Connection Test */}
         <SupabaseConnectionTest onConnectionStatus={setConnectionStatus} />
-
         {/* Instructions */}
         <Card>
           <CardHeader>
@@ -162,7 +152,6 @@ const DeploymentDebug = () => {
                 </ol>
               </AlertDescription>
             </Alert>
-
             <div className="flex gap-2">
               <Button 
                 onClick={() => window.open('https://app.netlify.com/', '_blank')}
@@ -183,5 +172,4 @@ const DeploymentDebug = () => {
     </div>
   );
 };
-
 export default DeploymentDebug;

@@ -17,7 +17,6 @@ import {
   BookOpen,
   Settings
 } from 'lucide-react';
-
 const UserRegistrationWorkflowPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -32,7 +31,6 @@ const UserRegistrationWorkflowPage = () => {
             across all user roles in EduBloom Connect.
           </p>
         </div>
-
         {/* Workflow Overview */}
         <Card>
           <CardHeader>
@@ -87,7 +85,6 @@ const UserRegistrationWorkflowPage = () => {
                   </div>
                 </div>
               </div>
-
               {/* Teacher Workflow */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-4">
@@ -129,7 +126,6 @@ const UserRegistrationWorkflowPage = () => {
                   </div>
                 </div>
               </div>
-
               {/* Admin Workflow */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-4">
@@ -174,7 +170,6 @@ const UserRegistrationWorkflowPage = () => {
             </div>
           </CardContent>
         </Card>
-
         {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
@@ -188,7 +183,6 @@ const UserRegistrationWorkflowPage = () => {
               </p>
             </CardContent>
           </Card>
-
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-3">
@@ -200,7 +194,6 @@ const UserRegistrationWorkflowPage = () => {
               </p>
             </CardContent>
           </Card>
-
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-3">
@@ -212,7 +205,6 @@ const UserRegistrationWorkflowPage = () => {
               </p>
             </CardContent>
           </Card>
-
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-3">
@@ -225,7 +217,6 @@ const UserRegistrationWorkflowPage = () => {
             </CardContent>
           </Card>
         </div>
-
         {/* Main Interface */}
         <Tabs defaultValue="status" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -261,7 +252,6 @@ const UserRegistrationWorkflowPage = () => {
             </Card>
           </TabsContent>
         </Tabs>
-
         {/* Security & Features */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
@@ -291,7 +281,6 @@ const UserRegistrationWorkflowPage = () => {
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader>
               <CardTitle>System Features</CardTitle>
@@ -320,7 +309,6 @@ const UserRegistrationWorkflowPage = () => {
             </CardContent>
           </Card>
         </div>
-
         {/* Quick Actions */}
         <Card>
           <CardHeader>
@@ -352,5 +340,4 @@ const UserRegistrationWorkflowPage = () => {
     </div>
   );
 };
-
 export default UserRegistrationWorkflowPage;

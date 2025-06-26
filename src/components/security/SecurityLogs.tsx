@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,6 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { DateRange } from 'react-day-picker';
-
 const SecurityLogs = () => {
   const [logs, setLogs] = useState([]);
   const [filteredLogs, setFilteredLogs] = useState([]);  const [filters, setFilters] = useState({
@@ -31,15 +29,12 @@ const SecurityLogs = () => {
   });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-
   useEffect(() => {
     fetchSecurityLogs();
   }, []);
-
   useEffect(() => {
     applyFilters();
   }, [logs, filters]);
-
   const fetchSecurityLogs = async () => {
     try {
       const { data, error } = await supabase
@@ -47,9 +42,7 @@ const SecurityLogs = () => {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(1000);
-
       if (error) throw error;
-
       // Add mock data for demonstration
       const mockLogs = [
         {
@@ -110,10 +103,8 @@ const SecurityLogs = () => {
           metadata: { amount: 1200 }
         }
       ];
-
       const allLogs = [...(data || []), ...mockLogs];
       setLogs(allLogs);
-
       // Calculate stats
       const stats = {
         totalLogs: allLogs.length,
@@ -122,9 +113,7 @@ const SecurityLogs = () => {
         uniqueUsers: new Set(allLogs.map(log => log.user_id)).size
       };
       setStats(stats);
-
     } catch (error) {
-      console.error('Error fetching security logs:', error);
       toast({
         title: "Error",
         description: "Failed to load security logs",
@@ -134,10 +123,8 @@ const SecurityLogs = () => {
       setLoading(false);
     }
   };
-
   const applyFilters = () => {
     let filtered = [...logs];
-
     // Search filter
     if (filters.search) {
       filtered = filtered.filter(log => 
@@ -153,7 +140,6 @@ const SecurityLogs = () => {
     if (filters.success !== '' && filters.success !== 'all') {
       filtered = filtered.filter(log => log.success.toString() === filters.success);
     }
-
     // Date range filter
     if (filters.dateRange?.from) {
       filtered = filtered.filter(log => {
@@ -163,10 +149,8 @@ const SecurityLogs = () => {
         return logDate >= fromDate && logDate <= toDate;
       });
     }
-
     setFilteredLogs(filtered);
   };
-
   const exportLogs = () => {
     const csvHeaders = ['Timestamp', 'User ID', 'Action', 'Resource', 'IP Address', 'Success', 'Error Message'];
     const csvData = filteredLogs.map(log => [
@@ -178,11 +162,9 @@ const SecurityLogs = () => {
       log.success ? 'Success' : 'Failed',
       log.error_message || 'N/A'
     ]);
-
     const csvContent = [csvHeaders, ...csvData]
       .map(row => row.map(cell => `"${cell}"`).join(','))
       .join('\n');
-
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -190,30 +172,25 @@ const SecurityLogs = () => {
     a.download = `security-logs-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-
     toast({
       title: "Success",
       description: "Security logs exported successfully"
     });
   };
-
   const getActionIcon = (action: string) => {
     if (action.includes('LOGIN')) return <User className="h-4 w-4" />;
     if (action.includes('CREATE') || action.includes('UPDATE')) return <CheckCircle className="h-4 w-4" />;
     if (action.includes('DELETE')) return <XCircle className="h-4 w-4" />;
     return <Shield className="h-4 w-4" />;
   };
-
   const getStatusColor = (success: boolean) => {
     return success 
       ? 'bg-green-100 text-green-800 border-green-200' 
       : 'bg-red-100 text-red-800 border-red-200';
   };
-
   if (loading) {
     return <div className="flex justify-center p-8">Loading security logs...</div>;
   }
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -226,7 +203,6 @@ const SecurityLogs = () => {
           Export Logs
         </Button>
       </div>
-
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
@@ -243,7 +219,6 @@ const SecurityLogs = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">Successful Actions</CardTitle>
@@ -260,7 +235,6 @@ const SecurityLogs = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">Failed Actions</CardTitle>
@@ -275,7 +249,6 @@ const SecurityLogs = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">Active Users</CardTitle>
@@ -291,7 +264,6 @@ const SecurityLogs = () => {
           </CardContent>
         </Card>
       </div>
-
       {/* Filters */}
       <Card>
         <CardHeader>
@@ -313,7 +285,6 @@ const SecurityLogs = () => {
                 />
               </div>
             </div>
-
             <div>
               <Label htmlFor="action">Action</Label>
               <Select onValueChange={(value) => setFilters({ ...filters, action: value })}>
@@ -330,7 +301,6 @@ const SecurityLogs = () => {
                 </SelectContent>
               </Select>
             </div>
-
             <div>
               <Label htmlFor="success">Status</Label>
               <Select onValueChange={(value) => setFilters({ ...filters, success: value })}>
@@ -344,7 +314,6 @@ const SecurityLogs = () => {
                 </SelectContent>
               </Select>
             </div>
-
             <div>
               <Label>Date Range</Label>
               <DatePickerWithRange 
@@ -355,7 +324,6 @@ const SecurityLogs = () => {
           </div>
         </CardContent>
       </Card>
-
       {/* Logs Table */}
       <Card>
         <CardHeader>
@@ -412,5 +380,4 @@ const SecurityLogs = () => {
     </div>
   );
 };
-
 export default SecurityLogs;

@@ -6,7 +6,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Brain, BookOpen, GraduationCap, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { generateAndSaveStudentInsights } from '@/services/openaiService';
-
 interface StudentData {
   id: string;
   name: string;
@@ -15,7 +14,6 @@ interface StudentData {
   attendanceRate: number;
   recentPerformance: string;
 }
-
 // Sample student data - in a real app, this would come from the database
 const sampleStudents: StudentData[] = [
   {
@@ -43,7 +41,6 @@ const sampleStudents: StudentData[] = [
     recentPerformance: 'Improving in Mathematics, needs support with English composition'
   }
 ];
-
 const AIStudentInsights = () => {
   const [selectedStudent, setSelectedStudent] = useState<StudentData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -51,7 +48,6 @@ const AIStudentInsights = () => {
   const [error, setError] = useState('');
   const [saveStatus, setSaveStatus] = useState<boolean | null>(null);
   const { toast } = useToast();
-
   const generateInsights = async (student: StudentData) => {
     setSelectedStudent(student);
     setLoading(true);
@@ -104,7 +100,6 @@ const AIStudentInsights = () => {
       setLoading(false);
     }
   };
-
   return (
     <div className="container mx-auto py-6">
       <Card className="w-full">
@@ -224,5 +219,4 @@ const AIStudentInsights = () => {
     </div>
   );
 };
-
 export default AIStudentInsights;

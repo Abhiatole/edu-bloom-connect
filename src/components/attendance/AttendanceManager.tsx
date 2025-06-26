@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,23 +5,19 @@ import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, Clock, Users, CalendarDays } from 'lucide-react';
-
 interface Student {
   id: string;
   name: string;
   email: string;
 }
-
 interface AttendanceRecord {
   studentId: string;
   status: 'present' | 'absent' | 'late';
 }
-
 const AttendanceManager = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
-
   // Mock data - replace with real data from Supabase
   const students: Student[] = [
     { id: '1', name: 'John Doe', email: 'john@example.com' },
@@ -30,13 +25,11 @@ const AttendanceManager = () => {
     { id: '3', name: 'Mike Johnson', email: 'mike@example.com' },
     { id: '4', name: 'Sarah Wilson', email: 'sarah@example.com' },
   ];
-
   const classes = [
     { id: 'math-101', name: 'Mathematics 101' },
     { id: 'eng-101', name: 'English 101' },
     { id: 'sci-101', name: 'Science 101' },
   ];
-
   const handleAttendanceChange = (studentId: string, status: 'present' | 'absent' | 'late') => {
     setAttendance(prev => {
       const existing = prev.find(a => a.studentId === studentId);
@@ -46,11 +39,9 @@ const AttendanceManager = () => {
       return [...prev, { studentId, status }];
     });
   };
-
   const getAttendanceStatus = (studentId: string) => {
     return attendance.find(a => a.studentId === studentId)?.status || 'present';
   };
-
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'present': return <CheckCircle className="h-4 w-4 text-green-600" />;
@@ -59,7 +50,6 @@ const AttendanceManager = () => {
       default: return <CheckCircle className="h-4 w-4 text-green-600" />;
     }
   };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'present': return 'bg-green-100 text-green-800';
@@ -68,16 +58,9 @@ const AttendanceManager = () => {
       default: return 'bg-green-100 text-green-800';
     }
   };
-
   const saveAttendance = () => {
-    console.log('Saving attendance:', {
-      date: selectedDate,
-      class: selectedClass,
-      attendance
-    });
     // TODO: Save to Supabase
   };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -89,7 +72,6 @@ const AttendanceManager = () => {
           Save Attendance
         </Button>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calendar and Class Selection */}
         <Card>
@@ -124,7 +106,6 @@ const AttendanceManager = () => {
             </div>
           </CardContent>
         </Card>
-
         {/* Student List */}
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -199,5 +180,4 @@ const AttendanceManager = () => {
     </div>
   );
 };
-
 export default AttendanceManager;

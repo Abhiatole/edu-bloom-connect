@@ -28,14 +28,12 @@ import {
   MoreHorizontal,
   Eye
 } from 'lucide-react';
-
 interface ApprovalAction {
   type: 'approve' | 'reject' | 'bulk_approve';
   userIds: string[];
   userType: 'student' | 'teacher';
   reason?: string;
 }
-
 const WorkflowManagementDashboard = () => {
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,18 +49,15 @@ const WorkflowManagementDashboard = () => {
   } | null>(null);
   const [viewingUser, setViewingUser] = useState<PendingUser | null>(null);
   const { toast } = useToast();
-
   useEffect(() => {
     fetchPendingUsers();
   }, []);
-
   const fetchPendingUsers = async () => {
     setLoading(true);
     try {
       const users = await ApprovalService.getPendingUsers();
       setPendingUsers(users);
     } catch (error: any) {
-      console.error('Error fetching pending users:', error);
       toast({
         title: "Error",
         description: "Failed to fetch pending users. Please try again.",
@@ -72,7 +67,6 @@ const WorkflowManagementDashboard = () => {
       setLoading(false);
     }
   };
-
   const handleApproval = async (action: ApprovalAction) => {
     setActionLoading(action.userIds[0] || 'bulk');
     try {
@@ -100,7 +94,6 @@ const WorkflowManagementDashboard = () => {
       } else if (action.type === 'reject') {
         result = await ApprovalService.rejectUser(action.userIds[0], action.userType, action.reason);
       }
-
       if (result?.success) {
         toast({
           title: "Success",
@@ -132,7 +125,6 @@ const WorkflowManagementDashboard = () => {
         throw new Error(result?.error || 'Action failed');
       }
     } catch (error: any) {
-      console.error('Approval action error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to process approval action",
@@ -143,7 +135,6 @@ const WorkflowManagementDashboard = () => {
       setConfirmDialog(null);
     }
   };
-
   const openConfirmDialog = (action: ApprovalAction, user?: PendingUser) => {
     let title = '';
     let description = '';
@@ -166,21 +157,18 @@ const WorkflowManagementDashboard = () => {
       description
     });
   };
-
   const filteredUsers = pendingUsers.filter(user => {
     const matchesSearch = user.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterType === 'all' || user.role === filterType;
     return matchesSearch && matchesFilter;
   });
-
   const stats = {
     total: pendingUsers.length,
     students: pendingUsers.filter(u => u.role === 'student').length,
     teachers: pendingUsers.filter(u => u.role === 'teacher').length,
     selectedCount: selectedUsers.length
   };
-
   const handleSelectUser = (userId: string) => {
     setSelectedUsers(prev => 
       prev.includes(userId) 
@@ -188,7 +176,6 @@ const WorkflowManagementDashboard = () => {
         : [...prev, userId]
     );
   };
-
   const handleSelectAll = () => {
     const filteredUserIds = filteredUsers.map(u => u.user_id);
     setSelectedUsers(prev => 
@@ -197,7 +184,6 @@ const WorkflowManagementDashboard = () => {
         : filteredUserIds
     );
   };
-
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6">
       {/* Header Stats */}
@@ -242,7 +228,6 @@ const WorkflowManagementDashboard = () => {
           </CardContent>
         </Card>
       </div>
-
       {/* Main Content */}
       <Card>
         <CardHeader>
@@ -302,7 +287,6 @@ const WorkflowManagementDashboard = () => {
               </Button>
             </div>
           </div>
-
           {/* Bulk Actions */}
           {selectedUsers.length > 0 && (
             <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
@@ -347,7 +331,6 @@ const WorkflowManagementDashboard = () => {
               </div>
             </div>
           )}
-
           {/* User List */}
           <div className="space-y-2">
             {loading ? (
@@ -459,7 +442,6 @@ const WorkflowManagementDashboard = () => {
           </div>
         </CardContent>
       </Card>
-
       {/* Confirmation Dialog */}
       {confirmDialog && (
         <AlertDialog open={confirmDialog.isOpen} onOpenChange={() => setConfirmDialog(null)}>
@@ -505,7 +487,6 @@ const WorkflowManagementDashboard = () => {
           </AlertDialogContent>
         </AlertDialog>
       )}
-
       {/* User Details Dialog */}
       {viewingUser && (
         <AlertDialog open={!!viewingUser} onOpenChange={() => setViewingUser(null)}>
@@ -557,5 +538,4 @@ const WorkflowManagementDashboard = () => {
     </div>
   );
 };
-
 export default WorkflowManagementDashboard;

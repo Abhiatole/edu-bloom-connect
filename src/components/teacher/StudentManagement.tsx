@@ -16,7 +16,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { 
   Users, Search, GraduationCap, FileText, BadgeCheck, Mail 
 } from 'lucide-react';
-
 interface Student {
   id: string;
   enrollment_no: string;
@@ -26,7 +25,6 @@ interface Student {
   created_at: string;
   display_name?: string;
 }
-
 const StudentManagement = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
@@ -34,11 +32,9 @@ const StudentManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClass, setSelectedClass] = useState<string>('all');
   const { toast } = useToast();
-
   useEffect(() => {
     fetchStudents();
   }, []);
-
   useEffect(() => {
     filterStudents();
   }, [students, searchQuery, selectedClass]);
@@ -50,7 +46,6 @@ const StudentManagement = () => {
         .select('id, enrollment_no, email, class_level, status, created_at')
         .eq('status', 'APPROVED')
         .order('class_level', { ascending: true });
-
       if (error) throw error;
       
       // Add real student names based on enrollment number
@@ -77,7 +72,6 @@ const StudentManagement = () => {
       
       setStudents(mappedData);
     } catch (error) {
-      console.error('Error fetching students:', error);
       toast({
         title: "Error",
         description: "Failed to load student data",
@@ -89,7 +83,6 @@ const StudentManagement = () => {
   };
   const filterStudents = () => {
     let filtered = [...students];
-
     // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -99,17 +92,14 @@ const StudentManagement = () => {
         student.email?.toLowerCase().includes(query)
       );
     }
-
     // Filter by class
     if (selectedClass !== 'all') {
       filtered = filtered.filter(
         student => student.class_level === parseInt(selectedClass)
       );
     }
-
     setFilteredStudents(filtered);
   };
-
   return (
     <Card className="border-0 shadow-md">
       <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
@@ -148,7 +138,6 @@ const StudentManagement = () => {
             </Select>
           </div>
         </div>
-
         {loading ? (
           <div className="flex justify-center p-8">
             <div className="animate-spin h-8 w-8 border-b-2 border-blue-600 rounded-full"></div>
@@ -218,5 +207,4 @@ const StudentManagement = () => {
     </Card>
   );
 };
-
 export default StudentManagement;

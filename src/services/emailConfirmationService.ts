@@ -1,15 +1,12 @@
 // Email Confirmation Service
 // Handles email confirmation, resending, and user guidance
-
 import { supabase } from '@/integrations/supabase/client';
-
 export interface EmailConfirmationResult {
   success: boolean;
   message: string;
   requiresConfirmation?: boolean;
   user?: any;
 }
-
 export class EmailConfirmationService {
   /**
    * Get the current domain for email redirects
@@ -25,7 +22,6 @@ export class EmailConfirmationService {
     // Use a consistent path for all email confirmations
     return `${currentDomain}/email-confirmed`;
   }
-
   /**
    * Resend confirmation email with proper redirect
    */
@@ -38,9 +34,7 @@ export class EmailConfirmationService {
           emailRedirectTo: this.getConfirmationUrl()
         }
       });
-
       if (error) throw error;
-
       return {
         success: true,
         message: 'Confirmation email sent successfully!'
@@ -52,7 +46,6 @@ export class EmailConfirmationService {
       };
     }
   }
-
   /**
    * Verify email confirmation token
    */
@@ -75,7 +68,6 @@ export class EmailConfirmationService {
       };
     }
   }
-
   /**
    * Check if user needs email confirmation
    */
@@ -89,16 +81,13 @@ export class EmailConfirmationService {
       if (error || !user.user) {
         return { isConfirmed: false, requiresConfirmation: true };
       }
-
       const isConfirmed = !!user.user.email_confirmed_at;
       const requiresConfirmation = !isConfirmed;
-
       return { isConfirmed, requiresConfirmation };
     } catch (error) {
       return { isConfirmed: false, requiresConfirmation: true };
     }
   }
-
   /**
    * Sign up with proper email confirmation setup
    */
@@ -116,9 +105,7 @@ export class EmailConfirmationService {
           emailRedirectTo: this.getConfirmationUrl()
         }
       });
-
       if (error) throw error;
-
       if (data.user) {
         const requiresConfirmation = !data.session && !data.user.email_confirmed_at;
         
@@ -131,7 +118,6 @@ export class EmailConfirmationService {
           user: data.user
         };
       }
-
       throw new Error('User creation failed');
     } catch (error: any) {
       return {
@@ -140,7 +126,6 @@ export class EmailConfirmationService {
       };
     }
   }
-
   /**
    * Get email confirmation instructions
    */
@@ -160,7 +145,6 @@ export class EmailConfirmationService {
       ]
     };
   }
-
   /**
    * Handle email confirmation callback
    */
@@ -182,6 +166,5 @@ export class EmailConfirmationService {
     }
   }
 }
-
 // Export for use in components
 export default EmailConfirmationService;

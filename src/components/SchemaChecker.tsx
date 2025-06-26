@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, CheckCircle, Database, Download, RefreshCw, Table } from 'lucide-react';
 import MissingTablesAlert from './MissingTablesAlert';
-
 /**
  * Table Status - displays status of specific tables we care about
  */
@@ -29,7 +28,6 @@ const TableStatus = ({ tables }: { tables: Record<string, boolean> }) => {
     </div>
   );
 };
-
 const SchemaChecker = () => {
   const [loading, setLoading] = useState(true);
   const [tableStatus, setTableStatus] = useState<Record<string, boolean>>({});
@@ -71,7 +69,6 @@ const SchemaChecker = () => {
       const tables = await getTablesList();
       setAllTables(tables);
     } catch (error) {
-      console.error('Error checking schema:', error);
     } finally {
       setLoading(false);
     }
@@ -204,5 +201,4 @@ const SchemaChecker = () => {
     </div>
   );
 };
-
 export default SchemaChecker;

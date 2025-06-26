@@ -1,6 +1,5 @@
 import React from 'react';
 import AIAssistant from '@/components/AIAssistant';
-
 const AIAssistantPage = () => {
   return (
     <div className="container mx-auto py-8">
@@ -13,5 +12,4 @@ const AIAssistantPage = () => {
     </div>
   );
 };
-
 export default AIAssistantPage;

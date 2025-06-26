@@ -15,7 +15,6 @@ import {
   Eye,
   BarChart3
 } from 'lucide-react';
-
 const StudentDashboard = () => {
   const [stats, setStats] = useState({
     totalExams: 0,
@@ -28,26 +27,21 @@ const StudentDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [studentProfile, setStudentProfile] = useState(null);
   const { toast } = useToast();
-
   useEffect(() => {
     fetchStudentData();
   }, []);
-
   const fetchStudentData = async () => {
     try {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error('Not authenticated');
-
       // Get student profile
       const { data: profile, error: profileError } = await supabase
         .from('student_profiles')
         .select('*')
         .eq('user_id', currentUser.user.id)
         .single();
-
       if (profileError) throw profileError;
       setStudentProfile(profile);
-
       // Get exam results
       const { data: results, error: resultsError } = await supabase
         .from('exam_results')
@@ -63,10 +57,8 @@ const StudentDashboard = () => {
         .eq('student_id', profile.id)
         .order('submitted_at', { ascending: false })
         .limit(5);
-
       if (resultsError) throw resultsError;
       setRecentResults(results || []);
-
       // Get AI insights
       const { data: insightsData, error: insightsError } = await supabase
         .from('student_insights')
@@ -75,10 +67,8 @@ const StudentDashboard = () => {
           subjects(name)
         `)
         .eq('student_id', profile.id);
-
       if (insightsError) throw insightsError;
       setInsights(insightsData || []);
-
       // Calculate statistics
       const allResults = results || [];
       const scores = allResults.map(r => r.percentage || ((r.marks_obtained / (r.exams?.max_marks || 100)) * 100));
@@ -95,7 +85,6 @@ const StudentDashboard = () => {
         }).length
       });
     } catch (error) {
-      console.error('Error fetching student data:', error);
       toast({
         title: "Error",
         description: "Failed to load dashboard data",
@@ -105,7 +94,6 @@ const StudentDashboard = () => {
       setLoading(false);
     }
   };
-
   const quickActions = [
     {
       title: "View Performance",
@@ -140,11 +128,9 @@ const StudentDashboard = () => {
       link: "/student/performance"
     }
   ];
-
   if (loading) {
     return <div className="flex justify-center p-8">Loading dashboard...</div>;
   }
-
   return (
     <div className="space-y-6">      {/* Header */}
       <div className="flex justify-between items-center">
@@ -161,7 +147,6 @@ const StudentDashboard = () => {
           Student
         </Badge>
       </div>
-
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
@@ -175,7 +160,6 @@ const StudentDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -187,7 +171,6 @@ const StudentDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -199,7 +182,6 @@ const StudentDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -212,7 +194,6 @@ const StudentDashboard = () => {
           </CardContent>
         </Card>
       </div>
-
       {/* Quick Actions */}
       <Card>
         <CardHeader>
@@ -242,7 +223,6 @@ const StudentDashboard = () => {
           </div>
         </CardContent>
       </Card>
-
       {/* Recent Results and AI Insights */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Results */}
@@ -294,7 +274,6 @@ const StudentDashboard = () => {
             )}
           </CardContent>
         </Card>
-
         {/* AI Insights Preview */}
         <Card>
           <CardHeader>
@@ -344,5 +323,4 @@ const StudentDashboard = () => {
     </div>
   );
 };
-
 export default StudentDashboard;

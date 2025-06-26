@@ -17,14 +17,12 @@ import {
   BookOpen,
   Shield
 } from 'lucide-react';
-
 interface WorkflowStep {
   name: string;
   completed: boolean;
   description: string;
   current?: boolean;
 }
-
 interface UserStatus {
   isAuthenticated: boolean;
   userId?: string;
@@ -35,7 +33,6 @@ interface UserStatus {
   approvalDate?: string;
   approvedBy?: string;
 }
-
 const RegistrationStatusTracker = () => {
   const [userStatus, setUserStatus] = useState<UserStatus>({
     isAuthenticated: false,
@@ -43,11 +40,9 @@ const RegistrationStatusTracker = () => {
   });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-
   useEffect(() => {
     checkUserStatus();
   }, []);
-
   const checkUserStatus = async () => {
     setLoading(true);
     try {
@@ -61,17 +56,14 @@ const RegistrationStatusTracker = () => {
         });
         return;
       }
-
       const userId = userData.user.id;
       const userEmail = userData.user.email;
-
       // Check in student_profiles
       const { data: studentData } = await supabase
         .from('student_profiles')
         .select('*')
         .eq('user_id', userId)
         .single();
-
       if (studentData) {
         setUserStatus({
           isAuthenticated: true,
@@ -85,14 +77,12 @@ const RegistrationStatusTracker = () => {
         });
         return;
       }
-
       // Check in teacher_profiles
       const { data: teacherData } = await supabase
         .from('teacher_profiles')
         .select('*')
         .eq('user_id', userId)
         .single();
-
       if (teacherData) {
         setUserStatus({
           isAuthenticated: true,
@@ -106,14 +96,12 @@ const RegistrationStatusTracker = () => {
         });
         return;
       }
-
       // Check in user_profiles (for admins)
       const { data: adminData } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('user_id', userId)
         .single();
-
       if (adminData) {
         setUserStatus({
           isAuthenticated: true,
@@ -125,7 +113,6 @@ const RegistrationStatusTracker = () => {
         });
         return;
       }
-
       // User authenticated but no profile found
       setUserStatus({
         isAuthenticated: true,
@@ -133,9 +120,7 @@ const RegistrationStatusTracker = () => {
         email: userEmail,
         registrationStatus: 'not_found'
       });
-
     } catch (error: any) {
-      console.error('Error checking user status:', error);
       toast({
         title: "Error",
         description: "Failed to check registration status. Please try again.",
@@ -145,7 +130,6 @@ const RegistrationStatusTracker = () => {
       setLoading(false);
     }
   };
-
   const getStatusIcon = () => {
     switch (userStatus.registrationStatus) {
       case 'pending':
@@ -158,7 +142,6 @@ const RegistrationStatusTracker = () => {
         return <AlertCircle className="h-6 w-6 text-gray-500" />;
     }
   };
-
   const getStatusBadge = () => {
     switch (userStatus.registrationStatus) {
       case 'pending':
@@ -171,7 +154,6 @@ const RegistrationStatusTracker = () => {
         return <Badge variant="outline">Status Unknown</Badge>;
     }
   };
-
   const getProgressValue = () => {
     switch (userStatus.registrationStatus) {
       case 'pending':
@@ -184,7 +166,6 @@ const RegistrationStatusTracker = () => {
         return 10;
     }
   };
-
   const getUserTypeIcon = () => {
     switch (userStatus.userType) {
       case 'student':
@@ -205,7 +186,6 @@ const RegistrationStatusTracker = () => {
         description: 'Your registration form has been submitted successfully' 
       }
     ];
-
     if (userStatus.userType === 'student') {
       return [
         ...baseSteps,
@@ -253,7 +233,6 @@ const RegistrationStatusTracker = () => {
       ];
     }
   };
-
   if (loading) {
     return (
       <Card className="w-full max-w-2xl mx-auto">
@@ -264,7 +243,6 @@ const RegistrationStatusTracker = () => {
       </Card>
     );
   }
-
   if (!userStatus.isAuthenticated) {
     return (
       <Card className="w-full max-w-2xl mx-auto">
@@ -285,7 +263,6 @@ const RegistrationStatusTracker = () => {
       </Card>
     );
   }
-
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
       {/* Status Overview Card */}
@@ -315,7 +292,6 @@ const RegistrationStatusTracker = () => {
             </div>
             <Progress value={getProgressValue()} className="h-2" />
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -346,7 +322,6 @@ const RegistrationStatusTracker = () => {
           </div>
         </CardContent>
       </Card>
-
       {/* Workflow Steps Card */}
       <Card>
         <CardHeader>
@@ -387,7 +362,6 @@ const RegistrationStatusTracker = () => {
           </div>
         </CardContent>
       </Card>
-
       {/* Action Card */}
       <Card>
         <CardHeader>
@@ -418,7 +392,6 @@ const RegistrationStatusTracker = () => {
               </div>
             </div>
           )}
-
           {userStatus.registrationStatus === 'approved' && (
             <div className="space-y-3">
               <p className="text-green-700 font-medium">
@@ -432,7 +405,6 @@ const RegistrationStatusTracker = () => {
               </Button>
             </div>
           )}
-
           {userStatus.registrationStatus === 'rejected' && (
             <div className="space-y-3">
               <p className="text-red-700 font-medium">
@@ -451,7 +423,6 @@ const RegistrationStatusTracker = () => {
               </div>
             </div>
           )}
-
           {userStatus.registrationStatus === 'not_found' && (
             <div className="space-y-3">
               <p className="text-gray-600">
@@ -475,5 +446,4 @@ const RegistrationStatusTracker = () => {
     </div>
   );
 };
-
 export default RegistrationStatusTracker;

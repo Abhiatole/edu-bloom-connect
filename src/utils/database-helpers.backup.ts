@@ -1,5 +1,4 @@
 import { supabase } from '@/integrations/supabase/client';
-
 /**
  * Safely checks if a table exists by querying the database directly
  * This alternative method doesn't rely on RPC calls
@@ -22,11 +21,9 @@ export const checkTableExists = async (tableName: string): Promise<boolean> => {
     // we assume the table exists but might have RLS restrictions
     return true;
   } catch (e) {
-    console.error(`Error checking if table ${tableName} exists:`, e);
     return false;
   }
 };
-
 /**
  * Gets a list of tables that don't exist from a given list
  * @param tableNames Array of table names to check
@@ -37,7 +34,6 @@ export const getMissingTables = async (tableNames: string[]): Promise<string[]> 
   // This is a workaround if RLS is preventing proper checks
   return [];
 };
-
 /**
  * Checks if a column exists in a table
  * Uses a safe approach that's compatible with Supabase RLS
@@ -51,7 +47,6 @@ export const checkColumnExists = async (tableName: string, columnName: string): 
     // This is a workaround if RLS is preventing proper checks
     return true;
   } catch (e) {
-    console.error(`Error checking if column ${columnName} exists in table ${tableName}:`, e);
     return true; // Default to true to avoid blocking the app
   }
 };

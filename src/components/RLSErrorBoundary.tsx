@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import RLSError from '@/components/RLSError';
-
 /**
  * RLS Error Boundary component to detect and display RLS errors
  * Wrap components that make Supabase queries with this boundary
@@ -10,7 +9,6 @@ interface RLSErrorBoundaryProps {
   children: React.ReactNode;
   fallbackMessage?: string;
 }
-
 const RLSErrorBoundary: React.FC<RLSErrorBoundaryProps> = ({ 
   children, 
   fallbackMessage = "Database policies prevent this action. Please run the RLS fix script in Supabase."
@@ -35,7 +33,6 @@ const RLSErrorBoundary: React.FC<RLSErrorBoundaryProps> = ({
         }
       } catch (err) {
         // Ignore other errors
-        console.error('Error checking RLS status:', err);
       }
     };
     
@@ -48,5 +45,4 @@ const RLSErrorBoundary: React.FC<RLSErrorBoundaryProps> = ({
   
   return <>{children}</>;
 };
-
 export default RLSErrorBoundary;

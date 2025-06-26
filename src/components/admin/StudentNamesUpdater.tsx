@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, User, UserCheck, RefreshCw } from 'lucide-react';
-
 // Student data to update with the actual student names and enrollment numbers
 const studentData = [
   { full_name: 'Ananya Sharma', enrollment_no: 'S1000' },
@@ -14,13 +13,11 @@ const studentData = [
   { full_name: 'Neha Gupta', enrollment_no: 'S1004' },
   { full_name: 'Aditya Verma', enrollment_no: 'S1005' }
 ];
-
 const StudentNamesUpdater = () => {
   const [loading, setLoading] = useState(false);
   const [studentProfiles, setStudentProfiles] = useState([]);
   const [updatedCount, setUpdatedCount] = useState(0);
   const { toast } = useToast();
-
   // Fetch current student profiles
   const fetchStudentProfiles = async () => {
     setLoading(true);
@@ -29,7 +26,6 @@ const StudentNamesUpdater = () => {
         .from('student_profiles')
         .select('id, full_name, enrollment_no')
         .order('created_at', { ascending: true });
-
       if (error) throw error;
       setStudentProfiles(data || []);
       
@@ -38,7 +34,6 @@ const StudentNamesUpdater = () => {
         description: `Loaded ${data?.length || 0} student profiles.`,
       });
     } catch (error) {
-      console.error('Error fetching student profiles:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -48,7 +43,6 @@ const StudentNamesUpdater = () => {
       setLoading(false);
     }
   };
-
   // Update student profiles with real names
   const updateStudentNames = async () => {
     if (studentProfiles.length === 0) {
@@ -59,13 +53,10 @@ const StudentNamesUpdater = () => {
       });
       return;
     }
-
     setLoading(true);
     setUpdatedCount(0);
     let successCount = 0;
-
     try {      // Note: We're assuming the enrollment_no column already exists or was added via SQL
-
       // Update each student with new data
       for (let i = 0; i < Math.min(studentProfiles.length, studentData.length); i++) {
         const student = studentProfiles[i];
@@ -80,7 +71,6 @@ const StudentNamesUpdater = () => {
           .eq('id', student.id);
         
         if (updateError) {
-          console.error(`Error updating student ${student.id}:`, updateError);
           toast({
             variant: "destructive",
             title: "Error",
@@ -94,7 +84,6 @@ const StudentNamesUpdater = () => {
         // Small delay to prevent overwhelming the database
         await new Promise(resolve => setTimeout(resolve, 300));
       }
-
       if (successCount > 0) {
         toast({
           title: "Success",
@@ -105,7 +94,6 @@ const StudentNamesUpdater = () => {
         fetchStudentProfiles();
       }
     } catch (error) {
-      console.error('Error updating student names:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -115,7 +103,6 @@ const StudentNamesUpdater = () => {
       setLoading(false);
     }
   };
-
   return (
     <Card className="shadow-md">
       <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
@@ -208,5 +195,4 @@ const StudentNamesUpdater = () => {
     </Card>
   );
 };
-
 export default StudentNamesUpdater;

@@ -17,24 +17,20 @@ import { supabase } from '@/integrations/supabase/client';
 import ManualMarkUpload from '@/components/ManualMarkUpload';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
-
 // Minimal interface for Student
 interface Student {
   id: string;
   enrollment_no: string;
   display_name: string;
 }
-
 // Minimal interface for Exam
 interface Exam {
   id: string;
   title: string;
   max_marks: number;
 }
-
 // Valid exam types based on Supabase enum
 const EXAM_TYPES = ['JEE', 'NEET', 'CET', 'Boards', 'Internal'];
-
 // Hardcoded subjects
 const SUBJECTS = [
   { id: '1', name: 'Physics' },
@@ -43,7 +39,6 @@ const SUBJECTS = [
   { id: '4', name: 'Biology' },
   { id: '5', name: 'English' }
 ];
-
 const ExamManagement: React.FC = () => {
   const { toast } = useToast();
   
@@ -88,7 +83,6 @@ const ExamManagement: React.FC = () => {
           .select('id, class_level');
         
         if (studentsError) {
-          console.error('Error fetching students:', studentsError);
           setStudents([]);
         } else {
           // Transform student data with placeholder info
@@ -101,7 +95,6 @@ const ExamManagement: React.FC = () => {
           setStudents(processedStudents);
         }
       } catch (studentError) {
-        console.error('Exception fetching students:', studentError);
         setStudents([]);
       }
       
@@ -112,7 +105,6 @@ const ExamManagement: React.FC = () => {
           .select('id, title');
         
         if (examsError) {
-          console.error('Error fetching exams:', examsError);
           setExams([]);
         } else {
           // Transform exams data with minimal fields
@@ -125,11 +117,9 @@ const ExamManagement: React.FC = () => {
           setExams(processedExams);
         }
       } catch (examsError) {
-        console.error('Exception fetching exams:', examsError);
         setExams([]);
       }
     } catch (error) {
-      console.error('Error in loadData:', error);
       toast({
         title: 'Error',
         description: 'Failed to load exam data. Please try again.',
@@ -193,7 +183,6 @@ const ExamManagement: React.FC = () => {
         .select();
       
       if (error) {
-        console.error('Error creating exam:', error);
         toast({
           title: 'Error',
           description: 'Failed to create exam. Please try again.',
@@ -229,7 +218,6 @@ const ExamManagement: React.FC = () => {
         setSelectedSubject('');
       }
     } catch (error) {
-      console.error('Exception creating exam:', error);
       toast({
         title: 'Error',
         description: 'An error occurred while creating the exam',
@@ -425,5 +413,4 @@ const ExamManagement: React.FC = () => {
     </div>
   );
 };
-
 export default ExamManagement;

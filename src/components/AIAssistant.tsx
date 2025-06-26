@@ -6,14 +6,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, BookOpen, GraduationCap } from 'lucide-react';
 import { getAICompletion, getEducationalContent, generateStudentFeedback } from '@/services/openaiService';
-
 const AIAssistant = () => {
   const [prompt, setPrompt] = useState('');
   const [response, setResponse] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
   const { toast } = useToast();
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -51,7 +49,6 @@ const AIAssistant = () => {
       setIsLoading(false);
     }
   };
-
   const generateEducationalContent = async (subject: string, grade: string) => {
     setIsLoading(true);
     setResponse('');
@@ -78,7 +75,6 @@ const AIAssistant = () => {
       setIsLoading(false);
     }
   };
-
   const generateFeedback = async () => {
     // This would typically come from a form
     const studentName = "John";
@@ -116,7 +112,6 @@ const AIAssistant = () => {
       setIsLoading(false);
     }
   };
-
   return (
     <div className="container mx-auto py-6">
       <Card className="w-full">
@@ -213,5 +208,4 @@ const AIAssistant = () => {
     </div>
   );
 };
-
 export default AIAssistant;

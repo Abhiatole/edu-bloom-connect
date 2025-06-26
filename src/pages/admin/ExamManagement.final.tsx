@@ -18,7 +18,6 @@ import ManualMarkUpload from '@/components/ManualMarkUpload';
 import CSVUploader from '@/components/CSVUploader';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
-
 // Interfaces matching the actual DB schema
 interface Student {
   id: string;
@@ -26,7 +25,6 @@ interface Student {
   class_level: number;
   display_name?: string;
 }
-
 interface Subject {
   id: string;
   name: string;
@@ -34,7 +32,6 @@ interface Subject {
   created_at?: string;
   updated_at?: string;
 }
-
 interface Topic {
   id: string;
   name: string;
@@ -43,10 +40,8 @@ interface Topic {
   created_at?: string;
   updated_at?: string;
 }
-
 // Use string literals based on database enum
 type ExamType = 'JEE' | 'NEET' | 'CET' | 'Boards' | 'Internal' | 'Quarterly' | 'Half Yearly' | 'Annual';
-
 interface Exam {
   id: string;
   title: string;
@@ -66,7 +61,6 @@ interface Exam {
   created_at?: string;
   updated_at?: string;
 }
-
 interface ExamResult {
   id: string;
   exam_id: string;
@@ -79,7 +73,6 @@ interface ExamResult {
   examiner_id?: string;
   submitted_at?: string;
 }
-
 const ExamManagement: React.FC = () => {
   const { toast } = useToast();
   
@@ -158,7 +151,6 @@ const ExamManagement: React.FC = () => {
           .order('name');
           
         if (fallbackError) {
-          console.error('Error fetching subjects:', fallbackError);
           // Provide default subjects if query fails
           setSubjects([
             { id: '1', name: 'Physics', class_level: 11 },
@@ -188,7 +180,6 @@ const ExamManagement: React.FC = () => {
           .select('id, enrollment_no, class_level, first_name, last_name');
         
         if (studentsError) {
-          console.error('Error fetching students:', studentsError);
         } else {
           // Transform student data to include display_name
           const processedStudents = (studentsData || []).map(student => ({
@@ -201,7 +192,6 @@ const ExamManagement: React.FC = () => {
           setStudents(processedStudents);
         }
       } catch (studentError) {
-        console.error('Exception fetching students:', studentError);
         setStudents([]);
       }
       
@@ -213,7 +203,6 @@ const ExamManagement: React.FC = () => {
           .order('created_at', { ascending: false });
         
         if (examsError) {
-          console.error('Error fetching exams:', examsError);
           setExams([]);
         } else {
           // Transform exams data to match Exam interface
@@ -240,11 +229,9 @@ const ExamManagement: React.FC = () => {
           setExams(processedExams);
         }
       } catch (examsError) {
-        console.error('Exception fetching exams:', examsError);
         setExams([]);
       }
     } catch (error) {
-      console.error('Error in loadData:', error);
       toast({
         title: 'Error',
         description: 'Failed to load exam data. Please try again.',
@@ -264,7 +251,6 @@ const ExamManagement: React.FC = () => {
         .eq('subject_id', subjectId);
       
       if (error) {
-        console.error('Error fetching topics:', error);
         setTopics([]);
       } else {
         // Transform topics data
@@ -280,7 +266,6 @@ const ExamManagement: React.FC = () => {
         setTopics(processedTopics);
       }
     } catch (error) {
-      console.error('Exception fetching topics:', error);
       setTopics([]);
     }
   };
@@ -317,7 +302,6 @@ const ExamManagement: React.FC = () => {
         .select();
       
       if (error) {
-        console.error('Error adding subject:', error);
         toast({
           title: 'Error',
           description: 'Failed to add subject. Please try again.',
@@ -340,7 +324,6 @@ const ExamManagement: React.FC = () => {
         setCustomSubject('');
       }
     } catch (error) {
-      console.error('Exception adding subject:', error);
       toast({
         title: 'Error',
         description: 'An error occurred while adding the subject',
@@ -370,7 +353,6 @@ const ExamManagement: React.FC = () => {
         .select();
       
       if (error) {
-        console.error('Error adding topic:', error);
         toast({
           title: 'Error',
           description: 'Failed to add topic. Please try again.',
@@ -394,7 +376,6 @@ const ExamManagement: React.FC = () => {
         setCustomTopic('');
       }
     } catch (error) {
-      console.error('Exception adding topic:', error);
       toast({
         title: 'Error',
         description: 'An error occurred while adding the topic',
@@ -457,7 +438,6 @@ const ExamManagement: React.FC = () => {
         .select();
       
       if (error) {
-        console.error('Error creating exam:', error);
         toast({
           title: 'Error',
           description: 'Failed to create exam. Please try again.',
@@ -500,7 +480,6 @@ const ExamManagement: React.FC = () => {
         setSelectedTopic('');
       }
     } catch (error) {
-      console.error('Exception creating exam:', error);
       toast({
         title: 'Error',
         description: 'An error occurred while creating the exam',
@@ -641,7 +620,6 @@ const ExamManagement: React.FC = () => {
             });
           
           if (error) {
-            console.error('Error uploading results:', error);
             setCsvError(`Database error: ${error.message}`);
           } else {
             toast({
@@ -664,7 +642,6 @@ const ExamManagement: React.FC = () => {
       
       reader.readAsText(csvFile);
     } catch (error) {
-      console.error('Error processing CSV:', error);
       setCsvError('Error processing CSV file');
     } finally {
       setUploadingResults(false);
@@ -964,5 +941,4 @@ const ExamManagement: React.FC = () => {
     </div>
   );
 };
-
 export default ExamManagement;

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Clock, MapPin, User, BookOpen } from 'lucide-react';
-
 interface ScheduleEntry {
   id: string;
   className: string;
@@ -19,7 +17,6 @@ interface ScheduleEntry {
   endTime: string;
   room: string;
 }
-
 const TimetableManager = () => {
   const [scheduleEntries, setScheduleEntries] = useState<ScheduleEntry[]>([
     {
@@ -53,10 +50,8 @@ const TimetableManager = () => {
       room: 'Lab 201'
     }
   ]);
-
   const [newEntry, setNewEntry] = useState<Partial<ScheduleEntry>>({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
   const daysOfWeek = [
     { value: 1, label: 'Monday' },
     { value: 2, label: 'Tuesday' },
@@ -65,20 +60,16 @@ const TimetableManager = () => {
     { value: 5, label: 'Friday' },
     { value: 6, label: 'Saturday' }
   ];
-
   const timeSlots = [
     '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
     '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00'
   ];
-
   const teachers = [
     'Dr. Smith', 'Ms. Johnson', 'Dr. Wilson', 'Prof. Brown', 'Ms. Davis'
   ];
-
   const subjects = [
     'Mathematics', 'English', 'Science', 'History', 'Geography', 'Physics', 'Chemistry', 'Biology'
   ];
-
   const addScheduleEntry = () => {
     if (newEntry.className && newEntry.subject && newEntry.teacher && 
         newEntry.dayOfWeek && newEntry.startTime && newEntry.endTime) {
@@ -98,17 +89,14 @@ const TimetableManager = () => {
       setIsDialogOpen(false);
     }
   };
-
   const getDayName = (dayNumber: number) => {
     return daysOfWeek.find(d => d.value === dayNumber)?.label || '';
   };
-
   const getEntriesForDay = (day: number) => {
     return scheduleEntries
       .filter(entry => entry.dayOfWeek === day)
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
   };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -231,7 +219,6 @@ const TimetableManager = () => {
           </DialogContent>
         </Dialog>
       </div>
-
       {/* Weekly Timetable View */}
       <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {daysOfWeek.map(day => (
@@ -286,5 +273,4 @@ const TimetableManager = () => {
     </div>
   );
 };
-
 export default TimetableManager;

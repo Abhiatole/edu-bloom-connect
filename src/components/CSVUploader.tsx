@@ -5,14 +5,12 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-
 interface CSVUploaderProps {
   onFileSelect: (file: File) => void;
   onReset: () => void;
   isUploading: boolean;
   error?: string;
 }
-
 const CSVUploader: React.FC<CSVUploaderProps> = ({
   onFileSelect,
   onReset,
@@ -22,7 +20,6 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -39,7 +36,6 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({
     setSelectedFile(file);
     onFileSelect(file);
   };
-
   const handleReset = () => {
     setSelectedFile(null);
     if (fileInputRef.current) {
@@ -47,7 +43,6 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({
     }
     onReset();
   };
-
   return (
     <Card className="mt-4">
       <CardContent className="pt-6">
@@ -86,5 +81,4 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({
     </Card>
   );
 };
-
 export default CSVUploader;

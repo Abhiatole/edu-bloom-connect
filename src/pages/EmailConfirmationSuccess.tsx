@@ -6,7 +6,6 @@ import { CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
 import { RegistrationService } from '@/services/registrationService';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-
 const EmailConfirmationSuccess = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,7 +33,6 @@ const EmailConfirmationSuccess = () => {
           description: 'Your email has been confirmed. Please login to continue.',
         });
       } catch (err: any) {
-        console.error('Profile creation error:', err);
         setError(err.message || 'Failed to create profile');
         toast({
           title: 'Error',
@@ -48,7 +46,6 @@ const EmailConfirmationSuccess = () => {
     
     createUserProfile();
   }, [confirmationPending, userRole, toast]);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
@@ -91,7 +88,6 @@ const EmailConfirmationSuccess = () => {
               </div>
             </div>
           )}
-
           <div className="space-y-3">
             <Button 
               onClick={() => navigate('/login')}
@@ -101,7 +97,6 @@ const EmailConfirmationSuccess = () => {
               Go to Login
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
-
             <Button 
               onClick={() => navigate('/')}
               variant="outline"
@@ -115,5 +110,4 @@ const EmailConfirmationSuccess = () => {
       </Card>
     </div>  );
 };
-
 export default EmailConfirmationSuccess;

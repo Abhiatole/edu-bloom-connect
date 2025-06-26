@@ -1,5 +1,4 @@
 import { supabase } from '@/integrations/supabase/client';
-
 export interface RegistrationData {
   fullName: string;
   email: string;
@@ -7,22 +6,18 @@ export interface RegistrationData {
   role: 'student' | 'teacher' | 'admin';
   additionalData?: any;
 }
-
 export interface StudentRegistrationData extends RegistrationData {
   classLevel: number;
   guardianName: string;
   guardianMobile: string;
 }
-
 export interface TeacherRegistrationData extends RegistrationData {
   subjectExpertise: string;
   experienceYears: number;
 }
-
 export interface AdminRegistrationData extends RegistrationData {
   department?: string;
 }
-
 export class RegistrationService {
   /**
    * Register a new student using secure database function
@@ -43,9 +38,7 @@ export class RegistrationService {
           }
         }
       });
-
       if (authError) throw authError;
-
       if (authData.user) {
         // Use secure database function to create profile
         const { data: profileResult, error: profileError } = await supabase.rpc(
@@ -59,15 +52,12 @@ export class RegistrationService {
             p_guardian_mobile: data.guardianMobile
           }
         );
-
         if (profileError) {
           throw new Error(`Profile creation failed: ${profileError.message}`);
         }
-
         if (!profileResult.success) {
           throw new Error(`Profile creation failed: ${profileResult.message}`);
         }
-
         return {
           success: true,
           message: 'Student registered successfully. Please check your email for verification.',
@@ -75,14 +65,11 @@ export class RegistrationService {
           enrollmentNo: profileResult.enrollment_no
         };
       }
-
       throw new Error('User creation failed - no user data returned');
     } catch (error: any) {
-      console.error('Student registration error:', error);
       throw error;
     }
   }
-
   /**
    * Register a new teacher using secure database function
    */
@@ -101,9 +88,7 @@ export class RegistrationService {
           }
         }
       });
-
       if (authError) throw authError;
-
       if (authData.user) {
         // Use secure database function to create profile
         const { data: profileResult, error: profileError } = await supabase.rpc(
@@ -116,29 +101,23 @@ export class RegistrationService {
             p_experience_years: data.experienceYears
           }
         );
-
         if (profileError) {
           throw new Error(`Profile creation failed: ${profileError.message}`);
         }
-
         if (!profileResult.success) {
           throw new Error(`Profile creation failed: ${profileResult.message}`);
         }
-
         return {
           success: true,
           message: 'Teacher registered successfully. Please check your email for verification.',
           user: authData.user
         };
       }
-
       throw new Error('User creation failed - no user data returned');
     } catch (error: any) {
-      console.error('Teacher registration error:', error);
       throw error;
     }
   }
-
   /**
    * Register a new admin
    */
@@ -156,9 +135,7 @@ export class RegistrationService {
           }
         }
       });
-
       if (authError) throw authError;
-
       if (authData.user) {
         // Create admin profile directly (admins are auto-approved)
         const profileData = {
@@ -168,29 +145,23 @@ export class RegistrationService {
           role: 'ADMIN' as const,
           status: 'APPROVED' as const
         };
-
         const { error: profileError } = await supabase
           .from('user_profiles')
           .insert(profileData);
-
         if (profileError) {
           throw new Error(`Profile creation failed: ${profileError.message}`);
         }
-
         return {
           success: true,
           message: 'Admin registered successfully. Please check your email for verification.',
           user: authData.user
         };
       }
-
       throw new Error('User creation failed - no user data returned');
     } catch (error: any) {
-      console.error('Admin registration error:', error);
       throw error;
     }
   }
-
   /**
    * Handle email confirmation and create profile if needed
    */
@@ -198,10 +169,8 @@ export class RegistrationService {
     try {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error('Not authenticated');
-
       const role = userMetadata.role;
       const userId = currentUser.user.id;
-
       // Check if profile already exists
       if (role === 'student') {
         const { data: existingProfile } = await supabase
@@ -209,7 +178,6 @@ export class RegistrationService {
           .select('id')
           .eq('user_id', userId)
           .single();
-
         if (!existingProfile) {
           // Use secure function to create profile
           const { data: profileResult, error: profileError } = await supabase.rpc(
@@ -223,7 +191,6 @@ export class RegistrationService {
               p_guardian_mobile: userMetadata.guardian_mobile
             }
           );
-
           if (profileError || !profileResult.success) {
             throw new Error(`Profile creation failed: ${profileError?.message || profileResult.message}`);
           }
@@ -234,7 +201,6 @@ export class RegistrationService {
           .select('id')
           .eq('user_id', userId)
           .single();
-
         if (!existingProfile) {
           // Use secure function to create profile
           const { data: profileResult, error: profileError } = await supabase.rpc(
@@ -247,16 +213,13 @@ export class RegistrationService {
               p_experience_years: userMetadata.experience_years || 0
             }
           );
-
           if (profileError || !profileResult.success) {
             throw new Error(`Profile creation failed: ${profileError?.message || profileResult.message}`);
           }
         }
       }
-
       return { success: true };
     } catch (error: any) {
-      console.error('Email confirmation error:', error);
       throw error;
     }
   }

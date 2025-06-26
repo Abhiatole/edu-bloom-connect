@@ -17,20 +17,17 @@ import { supabase } from '@/integrations/supabase/client';
 import ManualMarkUpload from '@/components/ManualMarkUpload';
 import { Loader2 } from 'lucide-react';
 import ErrorDetector from '@/components/debug/ErrorDetector';
-
 // Minimal interfaces to match ManualMarkUpload component
 interface Student {
   id: string;
   enrollment_no: string;
   display_name: string;
 }
-
 interface Exam {
   id: string;
   title: string;
   max_marks: number;
 }
-
 const ExamManagement: React.FC = () => {
   const { toast } = useToast();
   
@@ -79,7 +76,6 @@ const ExamManagement: React.FC = () => {
         
         setStudents(mappedStudents);
       } catch (err) {
-        console.error('Error loading students:', err);
         // Fallback to empty array
         setStudents([]);
       }
@@ -102,12 +98,10 @@ const ExamManagement: React.FC = () => {
         
         setExams(mappedExams);
       } catch (err) {
-        console.error('Error loading exams:', err);
         // Fallback to empty array
         setExams([]);
       }
     } catch (err) {
-      console.error('Error in loadData:', err);
       toast({
         title: 'Error',
         description: 'Failed to load data',
@@ -117,7 +111,6 @@ const ExamManagement: React.FC = () => {
       setLoading(false);
     }
   };
-
   // Create exam function
   const handleCreateExam = async () => {
     try {
@@ -145,7 +138,6 @@ const ExamManagement: React.FC = () => {
         exam_date: new Date(newExamDate).toISOString(),
       };
       
-      console.log('Attempting to create exam with data:', examData);
       
       const { data, error } = await supabase
         .from('exams')
@@ -153,7 +145,6 @@ const ExamManagement: React.FC = () => {
         .select();
         
       if (error) {
-        console.error('Error creating exam:', error);
         // Provide more detailed error message to help debugging
         let errorMsg = 'Failed to create exam';
         if (error.message) {
@@ -169,7 +160,6 @@ const ExamManagement: React.FC = () => {
             error.message.includes('schema') || 
             error.message.includes('field')
         )) {
-          console.log('First attempt failed due to schema issues, trying with minimal fields...');
           // Try with absolute minimal fields but use the user's title and date
           const minimalExamData = {
             title: newExamTitle,
@@ -185,7 +175,6 @@ const ExamManagement: React.FC = () => {
             .select();
             
           if (retryResult.error) {
-            console.error('Retry also failed:', retryResult.error);
             toast({
               title: 'Error',
               description: errorMsg,
@@ -193,7 +182,6 @@ const ExamManagement: React.FC = () => {
             });
             return;
           } else if (retryResult.data && retryResult.data.length > 0) {
-            console.log('Retry succeeded with minimal fields');
             // Handle success case
             toast({
               title: 'Success',
@@ -252,7 +240,6 @@ const ExamManagement: React.FC = () => {
         loadData();
       }
     } catch (err) {
-      console.error('Error in handleCreateExam:', err);
       // Provide more specific error message for debugging
       let errorMessage = 'An unexpected error occurred';
       
@@ -440,6 +427,5 @@ const ExamManagement: React.FC = () => {
       )}
     </div>  );
 }
-
 // Make sure to use this exact syntax for the default export
 export default ExamManagement;

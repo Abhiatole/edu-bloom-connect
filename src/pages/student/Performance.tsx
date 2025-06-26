@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,7 +5,6 @@ import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Responsi
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Brain, Target, TrendingUp, AlertTriangle, BookOpen, Award, Calendar } from 'lucide-react';
-
 interface ExamResult {
   id: string;
   marks_obtained: number;
@@ -21,7 +19,6 @@ interface ExamResult {
     };
   };
 }
-
 interface StudentInsight {
   id: string;
   strength_level: number;
@@ -34,33 +31,27 @@ interface StudentInsight {
     name: string;
   };
 }
-
 const Performance = () => {
   const [examResults, setExamResults] = useState<ExamResult[]>([]);
   const [insights, setInsights] = useState<StudentInsight[]>([]);
   const [loading, setLoading] = useState(true);
   const [studentProfile, setStudentProfile] = useState<any>(null);
   const { toast } = useToast();
-
   useEffect(() => {
     fetchStudentData();
   }, []);
-
   const fetchStudentData = async () => {
     try {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error('Not authenticated');
-
       // Get student profile
       const { data: profile, error: profileError } = await supabase
         .from('student_profiles')
         .select('*')
         .eq('user_id', currentUser.user.id)
         .single();
-
       if (profileError) throw profileError;
       setStudentProfile(profile);
-
       // Get exam results
       const { data: results, error: resultsError } = await supabase
         .from('exam_results')
@@ -75,9 +66,7 @@ const Performance = () => {
         `)
         .eq('student_id', profile.id)
         .order('submitted_at', { ascending: false });
-
       if (resultsError) throw resultsError;
-
       // Get AI insights
       const { data: insightsData, error: insightsError } = await supabase
         .from('student_insights')
@@ -86,13 +75,10 @@ const Performance = () => {
           subjects(name)
         `)
         .eq('student_id', profile.id);
-
       if (insightsError) throw insightsError;
-
       setExamResults(results || []);
       setInsights(insightsData || []);
     } catch (error: any) {
-      console.error('Error fetching student data:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to load performance data",
@@ -102,7 +88,6 @@ const Performance = () => {
       setLoading(false);
     }
   };
-
   const getSubjectPerformanceData = () => {
     const subjectData: { [key: string]: number[] } = {};
     
@@ -115,14 +100,12 @@ const Performance = () => {
         subjectData[subject].push(result.percentage || 0);
       }
     });
-
     return Object.entries(subjectData).map(([subject, scores]) => ({
       subject,
       average: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
       fullMark: 100
     }));
   };
-
   const getPerformanceTrend = () => {
     return examResults
       .slice(0, 10)
@@ -133,10 +116,8 @@ const Performance = () => {
         subject: result.exams?.subjects?.name || 'Unknown'
       }));
   };
-
   const getOverallStats = () => {
     if (examResults.length === 0) return { average: 0, highest: 0, lowest: 0, totalExams: 0 };
-
     const scores = examResults.map(r => r.percentage || 0);
     return {
       average: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
@@ -145,13 +126,11 @@ const Performance = () => {
       totalExams: examResults.length
     };
   };
-
   const getStrengthLevelColor = (level: number) => {
     if (level >= 4) return 'bg-green-100 text-green-800';
     if (level >= 3) return 'bg-yellow-100 text-yellow-800';
     return 'bg-red-100 text-red-800';
   };
-
   const getTrendIcon = (trend: string) => {
     switch (trend) {
       case 'improving':
@@ -162,13 +141,10 @@ const Performance = () => {
         return <TrendingUp className="h-4 w-4 text-gray-600" />;
     }
   };
-
   const stats = getOverallStats();
-
   if (loading) {
     return <div className="flex justify-center p-8">Loading performance data...</div>;
   }
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -183,7 +159,6 @@ const Performance = () => {
           </div>
         )}
       </div>
-
       {/* Overall Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
@@ -197,7 +172,6 @@ const Performance = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -209,7 +183,6 @@ const Performance = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -221,7 +194,6 @@ const Performance = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -234,7 +206,6 @@ const Performance = () => {
           </CardContent>
         </Card>
       </div>
-
       {examResults.length > 0 ? (
         <>
           {/* Performance Charts */}
@@ -263,7 +234,6 @@ const Performance = () => {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -284,7 +254,6 @@ const Performance = () => {
               </CardContent>
             </Card>
           </div>
-
           {/* Subject-wise Performance */}
           <Card>
             <CardHeader>
@@ -305,7 +274,6 @@ const Performance = () => {
               </ResponsiveContainer>
             </CardContent>
           </Card>
-
           {/* Recent Exam Results */}
           <Card>
             <CardHeader>
@@ -354,7 +322,6 @@ const Performance = () => {
           </CardContent>
         </Card>
       )}
-
       {/* AI Insights */}
       {insights.length > 0 && (
         <div className="space-y-6">
@@ -393,7 +360,6 @@ const Performance = () => {
                       ))}
                     </div>
                   </div>
-
                   <div>
                     <h4 className="font-semibold text-red-700 flex items-center gap-2 mb-2">
                       <AlertTriangle className="h-4 w-4" />
@@ -407,7 +373,6 @@ const Performance = () => {
                       ))}
                     </div>
                   </div>
-
                   <div>
                     <h4 className="font-semibold text-blue-700 flex items-center gap-2 mb-2">
                       <Target className="h-4 w-4" />
@@ -421,7 +386,6 @@ const Performance = () => {
                       ))}
                     </div>
                   </div>
-
                   <div>
                     <h4 className="font-semibold text-purple-700 mb-2">AI Recommendations</h4>
                     <p className="text-sm text-gray-700 bg-purple-50 p-3 rounded-lg">
@@ -437,5 +401,4 @@ const Performance = () => {
     </div>
   );
 };
-
 export default Performance;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,36 +17,30 @@ import {
   Calendar,
   Bell
 } from 'lucide-react';
-
 interface ParentProfile {
   id: string;
   full_name: string;
   email: string;
 }
-
 interface LinkedStudent {
   id: string;
   full_name: string;
   class_level: number;
   relationship: string;
 }
-
 const ParentDashboard = () => {
   const [parentProfile, setParentProfile] = useState<ParentProfile | null>(null);
   const [linkedStudents, setLinkedStudents] = useState<LinkedStudent[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-
   useEffect(() => {
     fetchParentData();
   }, []);
-
   const fetchParentData = async () => {
     try {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error('Not authenticated');
-
       // This is a mock implementation since parent tables aren't in the current schema
       // In a real implementation, you would fetch from parent_profiles and parent_students tables
       
@@ -71,7 +64,6 @@ const ParentDashboard = () => {
           relationship: 'son'
         }
       ];
-
       setParentProfile(mockParentProfile);
       setLinkedStudents(mockLinkedStudents);
       
@@ -79,7 +71,6 @@ const ParentDashboard = () => {
         setSelectedStudent(mockLinkedStudents[0].id);
       }
     } catch (error) {
-      console.error('Error fetching parent data:', error);
       toast({
         title: "Error",
         description: "Failed to load parent dashboard data",
@@ -89,7 +80,6 @@ const ParentDashboard = () => {
       setLoading(false);
     }
   };
-
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-96">
@@ -97,7 +87,6 @@ const ParentDashboard = () => {
       </div>
     );
   }
-
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -117,14 +106,12 @@ const ParentDashboard = () => {
           Parent Portal
         </Badge>
       </div>
-
       {/* Student Selector */}
       <StudentSelector
         students={linkedStudents}
         selectedStudent={selectedStudent}
         onStudentChange={setSelectedStudent}
       />
-
       {/* Quick Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="border-0 shadow-lg">
@@ -138,7 +125,6 @@ const ParentDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card className="border-0 shadow-lg">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -150,7 +136,6 @@ const ParentDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card className="border-0 shadow-lg">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -162,7 +147,6 @@ const ParentDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card className="border-0 shadow-lg">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -175,7 +159,6 @@ const ParentDashboard = () => {
           </CardContent>
         </Card>
       </div>
-
       {/* Main Content */}
       {selectedStudent && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -192,5 +175,4 @@ const ParentDashboard = () => {
     </div>
   );
 };
-
 export default ParentDashboard;

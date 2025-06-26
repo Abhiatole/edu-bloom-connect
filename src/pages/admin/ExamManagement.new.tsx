@@ -12,19 +12,16 @@ import { BookOpen, Plus, Upload, Download, Users, Target, AlertTriangle, Databas
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Link } from 'react-router-dom';
 import ManualMarkUpload from '@/components/ManualMarkUpload';
-
 interface Subject {
   id: string;
   name: string;
   class_level: number;
 }
-
 interface Topic {
   id: string;
   name: string;
   chapter_number: number;
 }
-
 interface Exam {
   id: string;
   title: string;
@@ -35,16 +32,13 @@ interface Exam {
   subjects: { name: string };
   topics: { name: string };
 }
-
 interface Student {
   id: string;
   full_name: string;
   class_level: number;
   roll_number?: string; // Optional since some students might not have it yet
 }
-
 type ExamType = 'JEE' | 'NEET' | 'CET' | 'Boards';
-
 const ExamManagement = () => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -70,10 +64,8 @@ const ExamManagement = () => {
     classLevel: '11',
     maxMarks: '100'
   });
-
   const { toast } = useToast();
   const examTypes: ExamType[] = ['JEE', 'NEET', 'CET', 'Boards'];
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -82,7 +74,6 @@ const ExamManagement = () => {
   const fetchData = async () => {
     // Implement your fetchData logic here
   };
-
   // Fetch topics for a subject
   const fetchTopics = async (subjectId: string) => {
     // Implement your fetchTopics logic here
@@ -168,7 +159,6 @@ const ExamManagement = () => {
               {/* Create Exam Form */}
             </DialogContent>
           </Dialog>
-
           <Dialog open={markResultsOpen} onOpenChange={setMarkResultsOpen}>
             <DialogTrigger asChild>
               <Button variant="outline">
@@ -203,7 +193,6 @@ const ExamManagement = () => {
                     Note: Uploading results to an exam that already has results may create duplicates.
                   </p>
                 </div>
-
                 <Tabs defaultValue="csv" onValueChange={(value) => setManualEntryMode(value === 'manual')}>
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="csv">CSV Upload</TabsTrigger>
@@ -258,7 +247,6 @@ const ExamManagement = () => {
                         </p>
                       )}
                     </div>
-
                     <div className="flex gap-2 my-4">
                       <Button onClick={downloadSampleCsv} variant="outline" size="sm">
                         <Download className="h-4 w-4 mr-2" />
@@ -307,7 +295,6 @@ const ExamManagement = () => {
           </Dialog>
         </div>
       </div>
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -373,5 +360,4 @@ const ExamManagement = () => {
     </div>
   );
 };
-
 export default ExamManagement;

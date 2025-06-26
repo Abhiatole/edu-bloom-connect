@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,6 @@ import { Switch } from '@/components/ui/switch';
 import { Bell, Send, Users, Settings, Smartphone, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
 const PushNotifications = () => {
   const [notifications, setNotifications] = useState([]);
   const [settings, setSettings] = useState({
@@ -27,12 +25,10 @@ const PushNotifications = () => {
   });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-
   useEffect(() => {
     fetchNotifications();
     requestNotificationPermission();
   }, []);
-
   const fetchNotifications = async () => {
     try {
       // Use security_logs as a mock notification system for now
@@ -41,11 +37,9 @@ const PushNotifications = () => {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(50);
-
       if (error) throw error;
       setNotifications(data || []);
     } catch (error) {
-      console.error('Error fetching notifications:', error);
       toast({
         title: "Error",
         description: "Failed to load notifications",
@@ -55,16 +49,13 @@ const PushNotifications = () => {
       setLoading(false);
     }
   };
-
   const requestNotificationPermission = async () => {
     if ('Notification' in window && 'serviceWorker' in navigator) {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
-        console.log('Notification permission granted');
       }
     }
   };
-
   const sendNotification = async () => {
     try {
       // Log the notification attempt in security_logs
@@ -75,13 +66,10 @@ const PushNotifications = () => {
         user_agent: navigator.userAgent,
         device_info: `${newNotification.type}: ${newNotification.title}`
       };
-
       const { error } = await supabase
         .from('security_logs')
         .insert([notificationData]);
-
       if (error) throw error;
-
       // Send browser notification if permission granted
       if (Notification.permission === 'granted') {
         new Notification(newNotification.title, {
@@ -90,27 +78,20 @@ const PushNotifications = () => {
           badge: '/favicon.ico'
         });
       }
-
       // Send email/SMS notifications (mock implementation)
       if (settings.enableEmail) {
-        console.log('Sending email notification...');
         // In real app: integrate with SendGrid, AWS SES, etc.
       }
-
       if (settings.enableSMS) {
-        console.log('Sending SMS notification...');
         // In real app: integrate with Twilio, AWS SNS, etc.
       }
-
       toast({
         title: "Success",
         description: "Notification sent successfully"
       });
-
       setNewNotification({ title: '', message: '', type: 'general', targetUsers: 'all' });
       fetchNotifications();
     } catch (error) {
-      console.error('Error sending notification:', error);
       toast({
         title: "Error",
         description: "Failed to send notification",
@@ -118,7 +99,6 @@ const PushNotifications = () => {
       });
     }
   };
-
   const markAsRead = async (notificationId: string) => {
     try {
       // Update the security log to mark as processed
@@ -126,14 +106,11 @@ const PushNotifications = () => {
         .from('security_logs')
         .update({ success: true })
         .eq('id', notificationId);
-
       if (error) throw error;
       fetchNotifications();
     } catch (error) {
-      console.error('Error marking notification as read:', error);
     }
   };
-
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'academic': return '📚';
@@ -143,7 +120,6 @@ const PushNotifications = () => {
       default: return '🔔';
     }
   };
-
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'academic': return 'bg-blue-100 text-blue-800';
@@ -153,11 +129,9 @@ const PushNotifications = () => {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
-
   if (loading) {
     return <div className="flex justify-center p-8">Loading notifications...</div>;
   }
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -166,7 +140,6 @@ const PushNotifications = () => {
           <p className="text-gray-600">Manage real-time alerts and communications</p>
         </div>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <Card>
@@ -184,7 +157,6 @@ const PushNotifications = () => {
                   placeholder="Enter notification title"
                 />
               </div>
-
               <div>
                 <Label htmlFor="message">Message</Label>
                 <Textarea
@@ -195,7 +167,6 @@ const PushNotifications = () => {
                   rows={3}
                 />
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="type">Notification Type</Label>
@@ -212,7 +183,6 @@ const PushNotifications = () => {
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div>
                   <Label htmlFor="target">Target Audience</Label>
                   <Select onValueChange={(value) => setNewNotification({ ...newNotification, targetUsers: value })}>
@@ -228,14 +198,12 @@ const PushNotifications = () => {
                   </Select>
                 </div>
               </div>
-
               <Button onClick={sendNotification} className="w-full">
                 <Send className="h-4 w-4 mr-2" />
                 Send Notification
               </Button>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader>
               <CardTitle>Recent Notifications</CardTitle>
@@ -277,7 +245,6 @@ const PushNotifications = () => {
             </CardContent>
           </Card>
         </div>
-
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -296,7 +263,6 @@ const PushNotifications = () => {
                   onCheckedChange={(checked) => setSettings({ ...settings, enablePush: checked })}
                 />
               </div>
-
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Mail className="h-4 w-4 text-gray-500" />
@@ -308,7 +274,6 @@ const PushNotifications = () => {
                   onCheckedChange={(checked) => setSettings({ ...settings, enableEmail: checked })}
                 />
               </div>
-
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Bell className="h-4 w-4 text-gray-500" />
@@ -322,7 +287,6 @@ const PushNotifications = () => {
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader>
               <CardTitle>Quick Stats</CardTitle>
@@ -351,5 +315,4 @@ const PushNotifications = () => {
     </div>
   );
 };
-
 export default PushNotifications;

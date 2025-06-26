@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   AlertDialog,
@@ -11,7 +10,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Trash2 } from 'lucide-react';
-
 interface DeleteConfirmationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -21,7 +19,6 @@ interface DeleteConfirmationDialogProps {
   itemCount?: number;
   loading?: boolean;
 }
-
 export const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
   open,
   onOpenChange,

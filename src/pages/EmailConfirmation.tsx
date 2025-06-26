@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, XCircle, Loader2, ArrowRight } from 'lucide-react';
 import EmailConfirmationService from '@/services/emailConfirmationService';
-
 const EmailConfirmation = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -33,7 +31,6 @@ const EmailConfirmation = () => {
           throw new Error(result.message);
         }
       } catch (error: any) {
-        console.error('Email confirmation error:', error);
         setStatus('error');
         setMessage(error.message || 'Failed to confirm email');
         
@@ -44,10 +41,8 @@ const EmailConfirmation = () => {
         });
       }
     };
-
     handleEmailConfirmation();
   }, [searchParams, navigate, toast]);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl border-0">
@@ -70,7 +65,6 @@ const EmailConfirmation = () => {
               {message}
             </p>
           </div>
-
           {status === 'success' && (
             <div className="space-y-4">
               <div className="p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
@@ -89,7 +83,6 @@ const EmailConfirmation = () => {
               </Button>
             </div>
           )}
-
           {status === 'error' && (
             <div className="space-y-4">
               <Button 
@@ -108,7 +101,6 @@ const EmailConfirmation = () => {
               </Button>
             </div>
           )}
-
           {status === 'loading' && (
             <Button 
               onClick={() => navigate('/')}
@@ -123,5 +115,4 @@ const EmailConfirmation = () => {
     </div>
   );
 };
-
 export default EmailConfirmation;

@@ -9,20 +9,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Upload, AlertCircle, Download } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-
 interface Exam {
   id: string;
   title: string;
   max_marks: number;
 }
-
 interface Student {
   id: string;
   enrollment_no: string;
   display_name?: string;
   full_name?: string;
 }
-
 interface MarkEntry {
   examId: string;
   studentId: string;
@@ -30,20 +27,17 @@ interface MarkEntry {
   remarks: string;
   grade: string;
 }
-
 interface ManualMarkUploadProps {
   exams: Exam[];
   students: Student[];
   onSuccess: () => void;
 }
-
 // CSV upload related interfaces
 interface CSVRow {
   enrollmentNo: string;
   marks: number;
   remarks?: string;
 }
-
 interface UploadStatus {
   total: number;
   processed: number;
@@ -51,7 +45,6 @@ interface UploadStatus {
   failed: number;
   errors: string[];
 }
-
 const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, onSuccess }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -79,7 +72,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       if (!markEntry.examId || !markEntry.studentId) {
         toast({
@@ -90,7 +82,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
         setLoading(false);
         return;
       }
-
       const selectedExam = exams.find(e => e.id === markEntry.examId);
       if (!selectedExam) {
         toast({
@@ -101,7 +92,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
         setLoading(false);
         return;
       }
-
       // Validate marks
       if (markEntry.marks < 0 || markEntry.marks > selectedExam.max_marks) {
         toast({
@@ -113,9 +103,7 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
         return;
       }
       
-      // Log to help diagnose issues
-      console.log('Attempting to save mark entry:', markEntry);
-      console.log('Selected exam:', selectedExam);// Check if entry already exists
+      // Check if entry already exists
       const { data: existingResult } = await supabase
         .from('exam_results')
         .select('*')
@@ -142,7 +130,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
             const percentage = (markEntry.marks / selectedExam.max_marks) * 100;
             updateData.percentage = parseFloat(percentage.toFixed(2));
           } catch (e) {
-            console.error("Error calculating percentage:", e);
           }
         }
         
@@ -175,7 +162,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
           const percentage = (markEntry.marks / selectedExam.max_marks) * 100;
           insertData.percentage = parseFloat(percentage.toFixed(2));
         } catch (e) {
-          console.error("Error calculating percentage:", e);
         }
         
         // Only add optional fields if they exist in the component state
@@ -190,9 +176,7 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
           .from('exam_results')
           .insert(insertData);
       }      const { error } = await operation;
-
       if (error) {
-        console.error('Error saving marks:', error);
         
         // Provide more specific error message
         let errorMessage = 'Failed to save marks.';
@@ -217,12 +201,10 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
         });
         return;
       }
-
       toast({
         title: 'Success',
         description: 'Marks saved successfully!',
       });
-
       // Reset form
       setMarkEntry({
         examId: markEntry.examId, // Keep the same exam selected
@@ -231,11 +213,9 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
         remarks: '',
         grade: '',
       });
-
       // Notify parent component
       onSuccess();
     } catch (error) {
-      console.error('Error in handleSubmit:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -245,7 +225,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
       setLoading(false);
     }
   };
-
   // Generate grade based on percentage
   const calculateGrade = (marks: number, maxMarks: number) => {
     const percentage = (marks / maxMarks) * 100;
@@ -258,7 +237,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
     if (percentage >= 40) return 'D';
     return 'F';
   };
-
   const handleMarksChange = (marks: number) => {
     const selectedExam = exams.find(e => e.id === markEntry.examId);
     if (!selectedExam) return;
@@ -275,10 +253,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
     const headerRow = 'enrollment_no,marks,remarks';
       // Get real students for the sample
     const realStudents = students.slice(0, 5);
-    
-    // Log all student enrollment numbers for debugging
-    console.log('All available student enrollment numbers:', 
-      students.map(s => `${s.display_name} (${s.enrollment_no})`).join(', '));
     
     // Use real students, or fallback to generic ones if not enough students
     const sampleRows = [];
@@ -409,7 +383,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
         });
         
       } catch (error) {
-        console.error('Error parsing CSV:', error);
         toast({
           variant: 'destructive',
           title: 'CSV Parsing Error',
@@ -422,7 +395,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
     
     reader.readAsText(file);
   };
-
   // Process CSV upload
   const handleProcessCsv = async () => {
     if (!csvExamId || !csvFile || csvPreview.length === 0) {
@@ -470,10 +442,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
       });
       
       if (!student) {
-        // Log which enrollment ID wasn't found for debugging
-        console.warn(`Student not found: "${row.enrollmentNo}". Available IDs:`, 
-          students.slice(0, 5).map(s => `${s.display_name} (${s.enrollment_no})`));
-          
         setUploadStatus(prev => ({
           ...prev,
           processed: prev.processed + 1,
@@ -521,7 +489,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
               updateData['updated_at'] = new Date().toISOString();
             }
           } catch (e) {
-            console.error('Error setting updated_at:', e);
           }
           
           operation = supabase
@@ -547,7 +514,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
               insertData['submitted_at'] = new Date().toISOString();
             }
           } catch (e) {
-            console.error('Error setting submitted_at:', e);
           }
           
           operation = supabase
@@ -557,7 +523,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
           const { error } = await operation;
         
         if (error) {
-          console.error(`Error for ${row.enrollmentNo}:`, error);
           
           // Provide more specific error messages
           let errorMessage = error.message;
@@ -584,7 +549,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
           }));
         }
       } catch (error) {
-        console.error('Error processing row:', error);
         setUploadStatus(prev => ({
           ...prev,
           processed: prev.processed + 1,
@@ -778,7 +742,6 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
                         });
                         
                         // Also log to console for copy-paste
-                        console.log('All student enrollment IDs:', students.map(s => s.enrollment_no));
                       }}
                       className="flex items-center gap-1"
                     >
@@ -906,5 +869,4 @@ const ManualMarkUpload: React.FC<ManualMarkUploadProps> = ({ exams, students, on
     </Card>
   );
 };
-
 export default ManualMarkUpload;

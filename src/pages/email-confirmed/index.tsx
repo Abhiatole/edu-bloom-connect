@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Mail, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-
 /**
  * Email confirmation callback page
  * This handles the redirect from Supabase email verification
@@ -15,7 +14,6 @@ export default function EmailConfirmed() {
   const [message, setMessage] = useState('Verifying your email...');
   const navigate = useNavigate();
   const { toast } = useToast();
-
   useEffect(() => {
     const handleEmailConfirmation = async () => {
       try {
@@ -94,7 +92,6 @@ export default function EmailConfirmed() {
         setMessage('Your email has been successfully verified!');
         
         // Log the successful verification
-        console.log('Email verified successfully for user:', user.email);
         
         toast({
           title: 'Email Verified',
@@ -118,15 +115,12 @@ export default function EmailConfirmed() {
           }
         }, 2000);
       } catch (error) {
-        console.error('Email confirmation error:', error);
         setStatus('error');
         setMessage('An unexpected error occurred during verification. Please try again later.');
       }
     };
-
     handleEmailConfirmation();
   }, [navigate, toast]);
-
   return (
     <div className="container flex items-center justify-center min-h-screen py-12">
       <Card className="w-full max-w-md">

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Users, Plus, Search, Edit, Trash2 } from 'lucide-react';
-
 const UserManagement = () => {
   const [users, setUsers] = useState([
     { id: 1, name: 'John Smith', email: 'john@school.com', role: 'teacher', status: 'active' },
@@ -20,14 +18,12 @@ const UserManagement = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newUser, setNewUser] = useState({ name: '', email: '', role: 'student' });
   const { toast } = useToast();
-
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = selectedRole === 'all' || user.role === selectedRole;
     return matchesSearch && matchesRole;
   });
-
   const handleAddUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUser.name || !newUser.email) {
@@ -38,7 +34,6 @@ const UserManagement = () => {
       });
       return;
     }
-
     const user = {
       id: users.length + 1,
       ...newUser,
@@ -52,7 +47,6 @@ const UserManagement = () => {
       description: `${newUser.role} added successfully`
     });
   };
-
   const handleDeleteUser = (id: number) => {
     setUsers(users.filter(user => user.id !== id));
     toast({
@@ -60,7 +54,6 @@ const UserManagement = () => {
       description: "User deleted successfully"
     });
   };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -73,7 +66,6 @@ const UserManagement = () => {
           Add User
         </Button>
       </div>
-
       {showAddForm && (
         <Card>
           <CardHeader>
@@ -124,7 +116,6 @@ const UserManagement = () => {
           </CardContent>
         </Card>
       )}
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
@@ -191,5 +182,4 @@ const UserManagement = () => {
     </div>
   );
 };
-
 export default UserManagement;

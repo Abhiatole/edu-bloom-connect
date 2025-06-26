@@ -3,7 +3,6 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { GraduationCap, LogOut, User, Bell } from 'lucide-react';
-
 const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -11,7 +10,6 @@ const Layout = () => {
   
   const userRole = localStorage.getItem('userRole');
   const userEmail = localStorage.getItem('userEmail');
-
   const handleLogout = () => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('userEmail');
@@ -21,7 +19,6 @@ const Layout = () => {
     });
     navigate('/login');
   };
-
   const getRoleDisplayName = (role: string | null) => {
     switch (role) {
       case 'superadmin': return 'Super Admin';
@@ -30,12 +27,10 @@ const Layout = () => {
       default: return 'User';
     }
   };
-
   // Don't show layout on login/forgot-password pages
   if (location.pathname === '/login' || location.pathname === '/forgot-password') {
     return <Outlet />;
   }
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -77,5 +72,4 @@ const Layout = () => {
     </div>
   );
 };
-
 export default Layout;

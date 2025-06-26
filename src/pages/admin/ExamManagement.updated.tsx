@@ -12,14 +12,12 @@ import { BookOpen, Plus, Upload, Download, Users, Target, AlertTriangle, Databas
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Link } from 'react-router-dom';
 import ManualMarkUpload from '@/components/ManualMarkUpload';
-
 // Updated Subject interface to match database structure
 interface Subject {
   id: string;
   name: string;
   class_level: number;
 }
-
 // Updated Topic interface to match database structure
 interface Topic {
   id: string;
@@ -29,7 +27,6 @@ interface Topic {
   created_at?: string;
   updated_at?: string;
 }
-
 // Updated Exam interface to match the actual database structure
 interface Exam {
   id: string;
@@ -46,7 +43,6 @@ interface Exam {
   exam_date?: string;
   duration_minutes?: number;
 }
-
 // Updated Student interface to match actual database structure
 interface Student {
   id: string;
@@ -58,9 +54,7 @@ interface Student {
   // We'll construct a display name from available fields
   display_name?: string; // This is a computed field, not in the database
 }
-
 type ExamType = 'JEE' | 'NEET' | 'CET' | 'Boards';
-
 const ExamManagement = () => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -89,14 +83,11 @@ const ExamManagement = () => {
     classLevel: '11',
     maxMarks: '100'
   });
-
   const { toast } = useToast();
   const examTypes: ExamType[] = ['JEE', 'NEET', 'CET', 'Boards'];
-
   useEffect(() => {
     fetchData();
   }, []);
-
   // Fetch data from the server
   const fetchData = async () => {
     try {
@@ -106,18 +97,15 @@ const ExamManagement = () => {
         const { data: subjectsData, error: subjectsError } = await supabase.rpc('get_subjects');
         
         if (subjectsError) {
-          console.error('Error fetching subjects via RPC:', subjectsError);
           // Direct table query as fallback
           const { data: directSubjectsData, error: directSubjectsError } = await supabase
             .from('subjects')
             .select('*');
             
           if (directSubjectsError) {
-            console.error('Error directly querying subjects table:', directSubjectsError);
             // Set default subjects if both methods fail
             setDefaultSubjects();
           } else {
-            console.log('Subjects loaded directly:', directSubjectsData);
             if (!directSubjectsData || directSubjectsData.length === 0) {
               setDefaultSubjects();
             } else {
@@ -131,7 +119,6 @@ const ExamManagement = () => {
             }
           }
         } else {
-          console.log('Subjects loaded via RPC:', subjectsData);
           if (!subjectsData || subjectsData.length === 0) {
             setDefaultSubjects();
           } else {
@@ -145,11 +132,9 @@ const ExamManagement = () => {
           }
         }
       } catch (subjectError) {
-        console.error('Exception fetching subjects:', subjectError);
         // Set default subjects if there was an exception
         setDefaultSubjects();
       }
-
       // Fetch students with better error handling
       try {
         const { data: studentsData, error: studentsError } = await supabase
@@ -157,10 +142,8 @@ const ExamManagement = () => {
           .select('*');
           
         if (studentsError) {
-          console.error('Error fetching students:', studentsError);
           setStudents([]); // Set empty array to avoid undefined errors
         } else {
-          console.log('Student data:', studentsData);
           
           // Map student data to our updated interface
           const mappedStudents = (studentsData || []).map(student => {
@@ -177,13 +160,10 @@ const ExamManagement = () => {
           });
           
           setStudents(mappedStudents);
-          console.log('Mapped students:', mappedStudents);
         }
       } catch (studentError) {
-        console.error('Exception fetching students:', studentError);
         setStudents([]);
       }
-
       // Fetch exams with better error handling
       try {
         // Try a simple query first as the joins might not be valid
@@ -193,12 +173,10 @@ const ExamManagement = () => {
           .order('created_at', { ascending: false });
         
         if (examsError) {
-          console.error('Error fetching exams:', examsError);
           setExams([]);
           throw examsError;
         }
         
-        console.log('Exams loaded:', examsData);
         
         // Map to our interface
         const mappedExams = (examsData || []).map(exam => ({
@@ -219,7 +197,6 @@ const ExamManagement = () => {
         
         setExams(mappedExams);
       } catch (examsError) {
-        console.error('Error in exams fetch block:', examsError);
         toast({
           title: "Error",
           description: "Failed to load exams data",
@@ -228,7 +205,6 @@ const ExamManagement = () => {
         setExams([]);
       }
     } catch (error) {
-      console.error('Global error in fetchData:', error);
       toast({
         title: "Error",
         description: "Failed to load data",
@@ -238,10 +214,8 @@ const ExamManagement = () => {
       setLoading(false);
     }
   };
-
   // Helper function to set default subjects
   const setDefaultSubjects = () => {
-    console.log('Setting default subjects');
     setSubjects([
       { id: '1', name: 'Mathematics', class_level: 11 },
       { id: '2', name: 'Physics', class_level: 11 },
@@ -250,7 +224,6 @@ const ExamManagement = () => {
       { id: '5', name: 'English', class_level: 11 }
     ]);
   };
-
   // Fetch topics for a subject
   const fetchTopics = async (subjectId: string) => {
     try {
@@ -259,15 +232,11 @@ const ExamManagement = () => {
         .from('topics')
         .select('*')
         .eq('subject_id', subjectId);
-
       if (error) {
-        console.error('Error fetching topics:', error);
         // If the topics table doesn't exist or has an error, use empty array
         setTopics([]);
         return;
       }
-
-      console.log('Topics loaded:', data);
       
       // Map to our interface
       const mappedTopics = (data || []).map(topic => ({
@@ -281,11 +250,9 @@ const ExamManagement = () => {
       
       setTopics(mappedTopics);
     } catch (error) {
-      console.error('Exception in fetchTopics:', error);
       setTopics([]);
     }
   };
-
   // Handle subject change
   const handleSubjectChange = (subjectId: string) => {
     setExamForm(prev => ({ ...prev, subjectId, topicId: '' }));
@@ -298,14 +265,12 @@ const ExamManagement = () => {
       setTopics([]);
     }
   };
-
   // Handle create exam form submission
   const handleCreateExam = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error('Not authenticated');
-
       if (!examForm.examType) {
         toast({
           title: "Error",
@@ -333,7 +298,6 @@ const ExamManagement = () => {
         return;
       }
       
-      console.log('Creating exam with form data:', examForm);      
       
       // Get the actual subject name from the selected subject ID
       const selectedSubject = subjects.find(s => s.id === examForm.subjectId);
@@ -371,21 +335,17 @@ const ExamManagement = () => {
           examData.topic = selectedTopic.name;
         }
       }
-
       // Insert the exam
       const { data, error } = await supabase
         .from('exams')
         .insert(examData)
         .select();
-
       if (error) throw error;
-
       toast({
         title: "Success",
         description: "Exam created successfully",
         variant: "default"
       });
-
       // Reset form
       setExamForm({
         title: '',
@@ -402,7 +362,6 @@ const ExamManagement = () => {
       // Refresh data
       fetchData();
     } catch (error: any) {
-      console.error('Error creating exam:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to create exam",
@@ -410,7 +369,6 @@ const ExamManagement = () => {
       });
     }
   };
-
   // Handle CSV file upload
   const handleUploadResults = async () => {
     if (!csvFile || !selectedExam) {
@@ -421,7 +379,6 @@ const ExamManagement = () => {
       });
       return;
     }
-
     // Display a loading toast because this might take some time
     setUploadingResults(true);
     setCsvError(null);
@@ -431,7 +388,6 @@ const ExamManagement = () => {
       description: "Uploading and processing your results",
       variant: "default"
     });
-
     try {
       // Read the CSV file
       const reader = new FileReader();
@@ -513,7 +469,6 @@ const ExamManagement = () => {
           setMarkResultsOpen(false);
           setManualEntryMode(false);
         } catch (parseError: any) {
-          console.error('Error parsing CSV:', parseError);
           setCsvError(parseError.message || "Failed to parse CSV file");
         } finally {
           setUploadingResults(false);
@@ -527,7 +482,6 @@ const ExamManagement = () => {
       
       reader.readAsText(csvFile);
     } catch (error: any) {
-      console.error('Error uploading results:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to upload results",
@@ -557,7 +511,6 @@ const ExamManagement = () => {
     
     setFilteredStudents(filtered.slice(0, 10)); // Limit to first 10 results for performance
   };
-
   // Function to handle adding a custom subject
   const handleAddCustomSubject = async () => {
     try {
@@ -608,7 +561,6 @@ const ExamManagement = () => {
         handleCreateExam({ preventDefault: () => {} } as React.FormEvent);
       }
     } catch (error: any) {
-      console.error('Error adding custom subject:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to add custom subject",
@@ -616,7 +568,6 @@ const ExamManagement = () => {
       });
     }
   };
-
   // Export exam results as CSV
   const handleExportResults = async (examId: string) => {
     try {
@@ -677,7 +628,6 @@ const ExamManagement = () => {
         variant: "default"
       });
     } catch (error: any) {
-      console.error('Error exporting results:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to export results",
@@ -702,7 +652,6 @@ const ExamManagement = () => {
     setCsvFile(file);
     setCsvError(null);
   };
-
   // Render the loading state
   if (loading) {
     return (
@@ -714,7 +663,6 @@ const ExamManagement = () => {
       </div>
     );
   }
-
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -852,7 +800,6 @@ const ExamManagement = () => {
           </DialogContent>
         </Dialog>
       </div>
-
       <Tabs defaultValue="exams">
         <TabsList className="mb-4">
           <TabsTrigger value="exams">
@@ -1146,5 +1093,4 @@ const ExamManagement = () => {
     </div>
   );
 };
-
 export default ExamManagement;

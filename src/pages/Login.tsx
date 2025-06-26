@@ -8,7 +8,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, LogIn, GraduationCap } from 'lucide-react';
 import { RegistrationService } from '@/services/registrationService';
-
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,60 +17,46 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       // Debug logging
-      console.log('🔍 Login Debug:');
-      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
-      console.log('Using email:', email);
       
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-
       if (authError) throw authError;
-
       if (authData.user) {        // Check user role and approval status
         const userId = authData.user.id;
-        console.log('🔍 Checking profiles for user:', userId);
         let userProfile = null;
         let userRole = null;
-
         // Check in student_profiles
-        console.log('Checking student_profiles...');
         const { data: studentProfile, error: studentError } = await supabase
           .from('student_profiles')
           .select('*')
           .eq('user_id', userId)
           .single();
-
-        console.log('Student profile result:', { studentProfile, studentError });        if (studentProfile && !studentError) {
+        
+        if (studentProfile && !studentError) {
           userProfile = studentProfile;
           userRole = 'student';
         } else {
           // Check in teacher_profiles
-          console.log('Checking teacher_profiles...');
           const { data: teacherProfile, error: teacherError } = await supabase
             .from('teacher_profiles')
             .select('*')
             .eq('user_id', userId)
             .single();
-
-          console.log('Teacher profile result:', { teacherProfile, teacherError });          if (teacherProfile && !teacherError) {
+          
+          if (teacherProfile && !teacherError) {
             userProfile = teacherProfile;
             userRole = 'teacher';          } else {
             // Check in user_profiles for admin role
-            console.log('Checking user_profiles for admin...');
             const { data: adminProfile, error: adminError } = await supabase
               .from('user_profiles')
               .select('*')
               .eq('user_id', userId)
               .eq('role', 'ADMIN')
               .single();
-
-            console.log('Admin profile result:', { adminProfile, adminError });
-
             if (adminProfile && !adminError) {
               userProfile = adminProfile;
               userRole = 'superadmin';
@@ -83,7 +68,6 @@ const Login = () => {
           const role = userMetadata?.role?.toUpperCase();
             if (role === 'STUDENT' || role === 'TEACHER' || role === 'ADMIN') {
             // This user has confirmed their email but profile isn't created yet
-            console.log('User has confirmed email but no profile exists. Creating profile...');
             
             try {
               // Create the profile based on role
@@ -111,7 +95,6 @@ const Login = () => {
               window.location.reload();
               return;
             } catch (profileError) {
-              console.error('Failed to create profile:', profileError);
               
               // Special handling for ADMIN users with errors
               if (role === 'ADMIN') {
@@ -130,7 +113,6 @@ const Login = () => {
           
           throw new Error('User profile not found. Please contact administrator.');
         }
-
         // Check approval status for students and teachers
         if ((userRole === 'student' || userRole === 'teacher') && userProfile.status !== 'APPROVED') {
           await supabase.auth.signOut();
@@ -141,16 +123,13 @@ const Login = () => {
           
           throw new Error(statusMessage);
         }
-
         // Store user role in localStorage
         localStorage.setItem('userRole', userRole);
         localStorage.setItem('userProfile', JSON.stringify(userProfile));
-
         toast({
           title: "Login Successful!",
           description: `Welcome back, ${userProfile.full_name}!`,
         });
-
         // Navigate based on role
         switch (userRole) {
           case 'superadmin':
@@ -167,7 +146,6 @@ const Login = () => {
         }
       }
     } catch (error: any) {
-      console.error('Login error:', error);
       toast({
         title: "Login Failed",
         description: error.message || "Invalid email or password",
@@ -177,7 +155,6 @@ const Login = () => {
       setLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
@@ -207,7 +184,6 @@ const Login = () => {
                 className="mt-1"
               />
             </div>
-
             <div>
               <Label htmlFor="password" className="flex items-center gap-2">
                 <Lock className="h-4 w-4" />
@@ -223,7 +199,6 @@ const Login = () => {
                 className="mt-1"
               />
             </div>
-
             <Button 
               type="submit" 
               className="w-full bg-blue-600 hover:bg-blue-700" 
@@ -278,5 +253,4 @@ const Login = () => {
     </div>
   );
 };
-
 export default Login;

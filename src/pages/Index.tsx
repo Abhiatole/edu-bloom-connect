@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GraduationCap, Users, BookOpen, Target, TrendingUp, Award, Brain, UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
 const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -38,7 +37,6 @@ const Index = () => {
           </div>
         </div>
       </section>
-
       {/* Features Section */}
       <section className="container mx-auto px-4 py-16">
         <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
@@ -59,7 +57,6 @@ const Index = () => {
               </CardDescription>
             </CardContent>
           </Card>
-
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -74,7 +71,6 @@ const Index = () => {
               </CardDescription>
             </CardContent>
           </Card>
-
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -89,7 +85,6 @@ const Index = () => {
               </CardDescription>
             </CardContent>
           </Card>
-
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -104,7 +99,6 @@ const Index = () => {
               </CardDescription>
             </CardContent>
           </Card>
-
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -119,7 +113,6 @@ const Index = () => {
               </CardDescription>
             </CardContent>
           </Card>
-
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -136,7 +129,6 @@ const Index = () => {
           </Card>
         </div>
       </section>
-
       {/* Stats Section */}
       <section className="bg-white py-16">
         <div className="container mx-auto px-4">
@@ -160,7 +152,6 @@ const Index = () => {
           </div>
         </div>
       </section>
-
       {/* CTA Section */}
       <section className="bg-gradient-to-r from-blue-600 to-purple-600 py-16 text-white">
         <div className="container mx-auto px-4 text-center">
@@ -185,5 +176,4 @@ const Index = () => {
     </div>
   );
 };
-
 export default Index;

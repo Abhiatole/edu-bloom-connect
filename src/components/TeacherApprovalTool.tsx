@@ -6,17 +6,14 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { UserCheck, Shield, X } from 'lucide-react';
 import RLSErrorBoundary from '@/components/RLSErrorBoundary';
-
 const TeacherApprovalTool = () => {
   const [pendingTeachers, setPendingTeachers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState<string | null>(null);
   const { toast } = useToast();
-
   useEffect(() => {
     fetchPendingTeachers();
   }, []);
-
   const fetchPendingTeachers = async () => {
     setLoading(true);
     try {
@@ -29,7 +26,6 @@ const TeacherApprovalTool = () => {
       
       setPendingTeachers(data || []);
     } catch (error: any) {
-      console.error('Error fetching pending teachers:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to load pending teachers",
@@ -39,7 +35,6 @@ const TeacherApprovalTool = () => {
       setLoading(false);
     }
   };
-
   const approveTeacher = async (teacherId: string) => {
     setApproving(teacherId);
     try {
@@ -57,7 +52,6 @@ const TeacherApprovalTool = () => {
       
       fetchPendingTeachers();
     } catch (error: any) {
-      console.error('Error approving teacher:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to approve teacher",
@@ -67,7 +61,6 @@ const TeacherApprovalTool = () => {
       setApproving(null);
     }
   };
-
   const approveAllTeachers = async () => {
     if (pendingTeachers.length === 0) return;
     
@@ -89,7 +82,6 @@ const TeacherApprovalTool = () => {
       
       fetchPendingTeachers();
     } catch (error: any) {
-      console.error('Error approving all teachers:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to approve teachers",
@@ -99,7 +91,6 @@ const TeacherApprovalTool = () => {
       setLoading(false);
     }
   };
-
   return (
     <RLSErrorBoundary>
       <Card className="w-full">
@@ -174,5 +165,4 @@ const TeacherApprovalTool = () => {
     </RLSErrorBoundary>
   );
 };
-
 export default TeacherApprovalTool;
