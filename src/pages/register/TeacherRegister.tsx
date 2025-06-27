@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, BookOpen, Clock, Lock, GraduationCap } from 'lucide-react';
 import { EmailConfirmationService } from '@/services/emailConfirmationService';
+import { UnifiedRegistrationService } from '@/services/unifiedRegistrationService';
 const TeacherRegister = () => {
   const [formData, setFormData] = useState({
     fullName: '',
@@ -39,66 +40,45 @@ const TeacherRegister = () => {
         throw new Error('Please fill in all required fields');
       }
       
-      // Get the current domain for email redirect
-      const currentDomain = window.location.origin;      // Step 1: Create auth user first with email redirect
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      // Use unified registration service
+      const result = await UnifiedRegistrationService.registerTeacher({
+        fullName: formData.fullName,
         email: formData.email,
         password: formData.password,
-        options: {
-          data: {
-            role: 'TEACHER',
-            full_name: formData.fullName,
-            subject_expertise: formData.subjectExpertise,
-            experience_years: parseInt(formData.experienceYears)
-          },
-          emailRedirectTo: EmailConfirmationService.getConfirmationUrl()
-        }
+        subjectExpertise: formData.subjectExpertise,
+        experienceYears: parseInt(formData.experienceYears)
       });
-      if (authError) {
-        throw authError;
+
+      if (!result.success) {
+        throw new Error(result.message);
       }
-      if (!authData.user) {
-        throw new Error('User creation failed - no user data returned');
-      }
-      // Step 2: Create profile with the returned user ID (not auth.uid())
-      if (authData.session || authData.user.email_confirmed_at) {
-        
-        const profileData = {
-          user_id: authData.user.id, // Use the actual user ID from signup
-          full_name: formData.fullName,
-          email: formData.email,
-          subject_expertise: formData.subjectExpertise as any,
-          experience_years: parseInt(formData.experienceYears),
-          status: 'PENDING' as const
-        };
-        const { error: profileError } = await supabase
-          .from('teacher_profiles')
-          .insert(profileData);
-        if (profileError) {
-          
-          // Clean up auth user if profile creation fails
-          try {
-            await supabase.auth.admin.deleteUser(authData.user.id);
-          } catch (cleanupError) {
-          }
-          
-          throw new Error(`Profile creation failed: ${profileError.message}`);
-        }
-        
+
+      if (result.requiresEmailConfirmation) {
         toast({
           title: "Registration Successful!",
-          description: "Your teacher account has been created and is pending admin approval. You'll be notified once approved.",
+          description: "Please check your email to confirm your account.",
         });
-        
-        navigate('/login');
-      } else {
+
         navigate('/register/success', {
           state: {
             email: formData.email,
-            userType: 'teacher'
+            userType: 'teacher',
+            message: 'Please check your email to confirm your account.'
+          }
+        });
+      } else {
+        toast({
+          title: "Registration Successful!",
+          description: "Your teacher account has been created and is pending admin approval.",
+        });
+
+        navigate('/login', {
+          state: {
+            message: 'Registration successful! Your account is pending admin approval.'
           }
         });
       }
+
     } catch (error: any) {
         // Provide more specific error messages
       let errorMessage = error.message || "An error occurred during registration";

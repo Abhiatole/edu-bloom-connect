@@ -3,9 +3,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { UserCheck, UserX, Clock, GraduationCap, Phone, Mail } from 'lucide-react';
+import { UserCheck, UserX, Clock, GraduationCap, Phone, Mail, Trash2 } from 'lucide-react';
 import { SubjectService, TeacherStudent } from '@/services/subjectService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StudentApprovalProps {
   teacherUserId: string;
@@ -16,6 +28,7 @@ const StudentApproval: React.FC<StudentApprovalProps> = ({ teacherUserId }) => {
   const [allStudents, setAllStudents] = useState<TeacherStudent[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [studentToDelete, setStudentToDelete] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -27,10 +40,10 @@ const StudentApproval: React.FC<StudentApprovalProps> = ({ teacherUserId }) => {
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const [pending, all] = await Promise.all([
-        SubjectService.getTeacherPendingStudents(teacherUserId),
-        SubjectService.getTeacherStudents(teacherUserId)
-      ]);
+      // Get all teacher students
+      const all = await SubjectService.getTeacherStudents(teacherUserId);
+      // Filter pending students
+      const pending = all.filter(student => student.status === 'PENDING');
       
       setPendingStudents(pending);
       setAllStudents(all);
@@ -49,19 +62,30 @@ const StudentApproval: React.FC<StudentApprovalProps> = ({ teacherUserId }) => {
     try {
       setActionLoading(studentId);
       
-      const result = action === 'approve' 
-        ? await SubjectService.approveStudent(studentId, teacherUserId)
-        : await SubjectService.rejectStudent(studentId, teacherUserId);
+      const { data: currentUser } = await supabase.auth.getUser();
+      if (!currentUser.user) throw new Error('Not authenticated');
 
-      if (result.success) {
-        toast({
-          title: "Success",
-          description: result.message,
-        });
-        await fetchStudents(); // Refresh the data
-      } else {
-        throw new Error(result.message);
-      }
+      const status = action === 'approve' ? 'APPROVED' : 'REJECTED';
+      const { error } = await supabase
+        .from('student_profiles')
+        .update({
+          status,
+          approval_date: action === 'approve' ? new Date().toISOString() : null,
+          approved_by: action === 'approve' ? currentUser.user.id : null,
+          rejected_by: action === 'reject' ? currentUser.user.id : null,
+          rejected_at: action === 'reject' ? new Date().toISOString() : null,
+          rejection_reason: action === 'reject' ? 'Rejected by subject teacher' : null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', studentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Student ${action}d successfully`,
+      });
+      await fetchStudents(); // Refresh the data
     } catch (error: any) {
       toast({
         title: "Error",
@@ -70,6 +94,47 @@ const StudentApproval: React.FC<StudentApprovalProps> = ({ teacherUserId }) => {
       });
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleDeleteStudent = async () => {
+    if (!studentToDelete) return;
+
+    try {
+      setActionLoading(studentToDelete);
+      
+      const { data: currentUser } = await supabase.auth.getUser();
+      if (!currentUser.user) throw new Error('Not authenticated');
+
+      // Soft delete by updating status to 'REJECTED' with deletion reason
+      const { error } = await supabase
+        .from('student_profiles')
+        .update({
+          status: 'REJECTED',
+          rejected_by: currentUser.user.id,
+          rejected_at: new Date().toISOString(),
+          rejection_reason: 'Student removed by subject teacher',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', studentToDelete);
+
+      if (error) throw error;
+
+      toast({
+        title: "Student Removed",
+        description: "Student has been removed from your subject.",
+      });
+
+      await fetchStudents(); // Refresh the list
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: `Failed to remove student: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setActionLoading(null);
+      setStudentToDelete(null);
     }
   };
 
@@ -247,6 +312,41 @@ const StudentApproval: React.FC<StudentApprovalProps> = ({ teacherUserId }) => {
                     
                     <div className="flex items-center gap-2">
                       {getStatusBadge(student.status)}
+                      
+                      {/* Remove Student Button */}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                            disabled={actionLoading === student.id}
+                          >
+                            <Trash2 className="h-5 w-5" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Remove Student</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to remove {student.full_name} from your subject?
+                              This action will mark them as rejected and they will lose access to your subject materials.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => {
+                                setStudentToDelete(student.id);
+                                handleDeleteStudent();
+                              }}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Remove Student
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 </div>

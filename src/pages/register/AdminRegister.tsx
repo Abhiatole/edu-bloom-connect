@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Shield, AlertTriangle, CheckCircle } from 'lucide-react';
 import { EmailConfirmationService } from '@/services/emailConfirmationService';
+import { UnifiedRegistrationService } from '@/services/unifiedRegistrationService';
 const AdminRegister = () => {
   const [formData, setFormData] = useState({
     fullName: '',
@@ -35,61 +36,44 @@ const AdminRegister = () => {
       // Optional: Check admin code if provided
       if (showAdminCode && formData.adminCode && formData.adminCode !== 'ADMIN2025') {
         throw new Error('Invalid admin verification code');
-      }      // Get the current domain for email redirect
-      const currentDomain = window.location.origin;
-      
-      // Create auth user with admin role in metadata and email redirect
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      }      // Use unified registration service
+      const result = await UnifiedRegistrationService.registerAdmin({
+        fullName: formData.fullName,
         email: formData.email,
-        password: formData.password,
-        options: {          data: {
-            role: 'ADMIN',
-            full_name: formData.fullName,
-          },
-          emailRedirectTo: EmailConfirmationService.getConfirmationUrl()
-        }
+        password: formData.password
       });
-      if (authError) throw authError;
-      if (authData.user) {
-        
-        // Check if email confirmation is required
-        if (authData.session || authData.user.email_confirmed_at) {
-          // User is immediately confirmed or email confirmation is disabled - create profile directly
-          const profileData = {
-            user_id: authData.user.id,
-            full_name: formData.fullName,
-            email: formData.email,
-            role: 'ADMIN' as const,
-            status: 'APPROVED' as const  // Auto-approve admins
-          };
-          
-          const { error: profileError } = await supabase
-            .from('user_profiles')
-            .insert(profileData);
-          if (profileError) {
-            // Continue anyway - the trigger should handle this
-          }
-          toast({
-            title: "Admin Registration Successful!",
-            description: "Your admin account has been created successfully. You can now login.",
-          });
-          
-          navigate('/login');
-        } else {
-          // Email confirmation is required - redirect to success page
-          
-          navigate('/register/success', {
-            state: {
-              email: formData.email,
-              userType: 'admin'
-            }
-          });
-        }
-      } else {
-        throw new Error('Admin creation failed - no user data returned');
+
+      if (!result.success) {
+        throw new Error(result.message);
       }
+
+      if (result.requiresEmailConfirmation) {
+        toast({
+          title: "Registration Successful!",
+          description: "Please check your email to confirm your account.",
+        });
+
+        navigate('/register/success', {
+          state: {
+            email: formData.email,
+            userType: 'admin',
+            message: 'Please check your email to confirm your account.'
+          }
+        });
+      } else {
+        toast({
+          title: "Admin Registration Successful!",
+          description: "Your admin account has been created. You can now login.",
+        });
+
+        navigate('/login', {
+          state: {
+            message: 'Admin registration successful! You can now login.'
+          }
+        });
+      }
+
     } catch (error: any) {
-      
       // Provide more specific error messages
       let errorMessage = error.message || "An error occurred during admin registration";
       

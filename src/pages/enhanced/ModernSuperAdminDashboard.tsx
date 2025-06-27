@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ModernDashboardCard } from '@/components/enhanced/ModernDashboardCard';
@@ -9,6 +10,8 @@ import { ModernActionCard } from '@/components/enhanced/ModernActionCard';
 import RLSError from '@/components/RLSError';
 import TeacherApprovalTool from '@/components/TeacherApprovalTool';
 import StudentNamesUpdater from '@/components/admin/StudentNamesUpdater';
+import StudentApprovalSystem from '@/components/admin/StudentApprovalSystem';
+import AllStudentsList from '@/components/admin/AllStudentsList';
 import {
   Users,
   User,
@@ -28,6 +31,7 @@ import {
   Activity
 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area, BarChart, Bar } from 'recharts';
+
 const ModernSuperAdminDashboard = () => {  const [stats, setStats] = useState({
     totalStudents: 0,
     totalTeachers: 0,
@@ -187,6 +191,17 @@ const ModernSuperAdminDashboard = () => {  const [stats, setStats] = useState({
           Super Administrator
         </Badge>
       </div>
+
+      {/* Tabs for different sections */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">Dashboard Overview</TabsTrigger>
+          <TabsTrigger value="students">All Students</TabsTrigger>
+          <TabsTrigger value="approvals">Student Approvals</TabsTrigger>
+          <TabsTrigger value="management">Data Management</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-8 mt-8">
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-6">
         <ModernDashboardCard
@@ -402,22 +417,59 @@ const ModernSuperAdminDashboard = () => {  const [stats, setStats] = useState({
             </div>
           </CardContent>
         </Card>      </div>
-      {/* Student Names Updater */}
-      <Card className="border-0 shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5 text-blue-600" />
-            Student Data Management
-          </CardTitle>
-          <CardDescription>
-            Update student names and enrollment numbers in the system
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <StudentNamesUpdater />
-        </CardContent>
-      </Card>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        {quickActions.map((action, index) => (
+          <ModernActionCard key={index} {...action} />
+        ))}
+      </div>
+        </TabsContent>
+
+        <TabsContent value="students" className="space-y-6 mt-8">
+          {/* All Students List */}
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-blue-600" />
+                All Students Management
+              </CardTitle>
+              <CardDescription>
+                Comprehensive list of all students with full management capabilities
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AllStudentsList userType="admin" />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="approvals" className="space-y-6 mt-8">
+          {/* Student Approval System */}
+          <StudentApprovalSystem userType="admin" />
+        </TabsContent>
+
+        <TabsContent value="management" className="space-y-6 mt-8">
+          {/* Student Names Updater */}
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5 text-blue-600" />
+                Student Data Management
+              </CardTitle>
+              <CardDescription>
+                Update student names and enrollment numbers in the system
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <StudentNamesUpdater />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+      </Tabs>
     </div>
   );
 };
+
 export default ModernSuperAdminDashboard;

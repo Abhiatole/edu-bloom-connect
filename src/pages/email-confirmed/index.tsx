@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Mail, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { UnifiedRegistrationService } from '@/services/unifiedRegistrationService';
 /**
  * Email confirmation callback page
  * This handles the redirect from Supabase email verification
@@ -87,33 +88,51 @@ export default function EmailConfirmed() {
           return;
         }
         
-        // Successful verification
-        setStatus('success');
-        setMessage('Your email has been successfully verified!');
+        // Successful verification - now create profile if needed
+        console.log('✅ Email verified, creating profile...');
         
-        // Log the successful verification
-        
-        toast({
-          title: 'Email Verified',
-          description: 'Your email has been successfully verified!',
-          variant: 'default'
-        });
-        
-        // Redirect after a short delay
-        setTimeout(() => {
-          // Redirect based on user role if available
-          const userRole = user.user_metadata?.role;
-          if (userRole === 'teacher') {
-            navigate('/teacher/dashboard');
-          } else if (userRole === 'student') {
-            navigate('/student/dashboard');
-          } else if (userRole === 'admin') {
-            navigate('/admin/dashboard');
-          } else {
-            // Default redirect
-            navigate('/dashboard');
-          }
-        }, 2000);
+        try {
+          // Use unified service to handle profile creation
+          const profileResult = await UnifiedRegistrationService.handleEmailConfirmation(user.user_metadata);
+          
+          setStatus('success');
+          setMessage(profileResult.message || 'Your email has been successfully verified and your profile created!');
+          
+          toast({
+            title: 'Email Verified',
+            description: profileResult.message || 'Your email has been successfully verified!',
+            variant: 'default'
+          });
+          
+          // Redirect after a short delay
+          setTimeout(() => {
+            const userRole = user.user_metadata?.role?.toLowerCase();
+            if (userRole === 'teacher') {
+              navigate('/teacher/dashboard');
+            } else if (userRole === 'student') {
+              navigate('/student/dashboard');
+            } else if (userRole === 'admin') {
+              navigate('/admin/dashboard');
+            } else {
+              navigate('/dashboard');
+            }
+          }, 2000);
+          
+        } catch (profileError: any) {
+          console.error('❌ Profile creation failed:', profileError);
+          setStatus('success'); // Email is verified even if profile creation fails
+          setMessage('Email verified! Please contact support if you have issues accessing your account.');
+          
+          toast({
+            title: 'Email Verified',
+            description: 'Email verified! You may need to complete your registration.',
+            variant: 'default'
+          });
+          
+          setTimeout(() => {
+            navigate('/login');
+          }, 2000);
+        }
       } catch (error) {
         setStatus('error');
         setMessage('An unexpected error occurred during verification. Please try again later.');

@@ -1,4 +1,11 @@
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  PendingStudent, 
+  ApprovalAction, 
+  ApprovalSystemStats, 
+  UserType 
+} from '../types/approval-system';
+
 export interface PendingUser {
   id: string;
   user_id: string;
@@ -8,6 +15,7 @@ export interface PendingUser {
   registrationDate: string;
   additionalInfo: any;
 }
+
 export interface ApprovalResult {
   success: boolean;
   message: string;
@@ -347,6 +355,234 @@ export class ApprovalService {
       return false;
     } catch (error: any) {
       return false;
+    }
+  }
+
+  /**
+   * Get pending students with new approval system
+   */
+  static async getPendingStudents(userType: UserType, userId?: string): Promise<PendingStudent[]> {
+    try {
+      let query = supabase
+        .from('student_profiles')
+        .select(`
+          *,
+          selected_subjects,
+          selected_batches
+        `)
+        .eq('is_approved', false)
+        .in('status', ['PENDING', 'pending']);
+
+      // If teacher, filter by their subject specialization
+      if (userType === 'teacher' && userId) {
+        const { data: teacherProfile } = await supabase
+          .from('teacher_profiles')
+          .select('subject_specialization')
+          .eq('user_id', userId)
+          .single();
+
+        if (teacherProfile?.subject_specialization) {
+          query = query.overlaps('selected_subjects', teacherProfile.subject_specialization);
+        } else {
+          return [];
+        }
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching pending students:', error);
+        throw new Error(`Failed to fetch pending students: ${error.message}`);
+      }
+
+      return (data || []).map(student => ({
+        ...student,
+        subjects_display: student.selected_subjects?.join(', ') || null,
+        batches_display: student.selected_batches?.join(', ') || null,
+      }));
+
+    } catch (error) {
+      console.error('Error in getPendingStudents:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Approve a student with new system
+   */
+  static async approveStudentNew(studentId: string, approverId: string, approverType: UserType): Promise<boolean> {
+    try {
+      // Try using the database function first
+      const { data, error } = await supabase.rpc('approve_student', {
+        p_student_id: studentId,
+        p_approver_id: approverId,
+        p_approver_type: approverType
+      });
+
+      if (error) {
+        // Fallback to manual update
+        const { error: updateError } = await supabase
+          .from('student_profiles')
+          .update({
+            is_approved: true,
+            status: 'APPROVED',
+            approved_by: approverId,
+            approval_date: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', studentId);
+
+        if (updateError) {
+          throw updateError;
+        }
+
+        // Log the approval action
+        await supabase
+          .from('approval_actions')
+          .insert({
+            student_id: studentId,
+            approver_id: approverId,
+            approver_type: approverType,
+            action: 'approve'
+          });
+      }
+
+      return true;
+
+    } catch (error) {
+      console.error('Error approving student:', error);
+      throw new Error(`Failed to approve student: ${error.message}`);
+    }
+  }
+
+  /**
+   * Reject a student with new system
+   */
+  static async rejectStudentNew(studentId: string, approverId: string, approverType: UserType, reason: string): Promise<boolean> {
+    try {
+      // Try using the database function first
+      const { data, error } = await supabase.rpc('reject_student', {
+        p_student_id: studentId,
+        p_approver_id: approverId,
+        p_approver_type: approverType,
+        p_reason: reason
+      });
+
+      if (error) {
+        // Fallback to manual update
+        const { error: updateError } = await supabase
+          .from('student_profiles')
+          .update({
+            is_approved: false,
+            status: 'REJECTED',
+            rejected_by: approverId,
+            rejected_at: new Date().toISOString(),
+            rejection_reason: reason,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', studentId);
+
+        if (updateError) {
+          throw updateError;
+        }
+
+        // Log the rejection action
+        await supabase
+          .from('approval_actions')
+          .insert({
+            student_id: studentId,
+            approver_id: approverId,
+            approver_type: approverType,
+            action: 'reject',
+            reason: reason
+          });
+      }
+
+      return true;
+
+    } catch (error) {
+      console.error('Error rejecting student:', error);
+      throw new Error(`Failed to reject student: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get approval system statistics
+   */
+  static async getApprovalStats(userType: UserType, userId?: string): Promise<ApprovalSystemStats> {
+    try {
+      const { data: allStudents } = await supabase
+        .from('student_profiles')
+        .select('status, is_approved, selected_subjects');
+
+      if (!allStudents) {
+        return {
+          totalPending: 0,
+          totalApproved: 0,
+          totalRejected: 0,
+          pendingBySubject: {}
+        };
+      }
+
+      let relevantStudents = allStudents;
+
+      // Filter for teacher's subjects if needed
+      if (userType === 'teacher' && userId) {
+        const { data: teacherProfile } = await supabase
+          .from('teacher_profiles')
+          .select('subject_specialization')
+          .eq('user_id', userId)
+          .single();
+
+        if (teacherProfile?.subject_specialization) {
+          relevantStudents = allStudents.filter(student => 
+            student.selected_subjects?.some(subject => 
+              teacherProfile.subject_specialization?.includes(subject)
+            )
+          );
+        }
+      }
+
+      // Calculate stats
+      const totalPending = relevantStudents.filter(s => 
+        s.is_approved === false && ['PENDING', 'pending'].includes(s.status)
+      ).length;
+
+      const totalApproved = relevantStudents.filter(s => 
+        s.is_approved === true || s.status === 'APPROVED'
+      ).length;
+
+      const totalRejected = relevantStudents.filter(s => 
+        s.status === 'REJECTED'
+      ).length;
+
+      // Calculate pending by subject
+      const pendingBySubject: Record<string, number> = {};
+      relevantStudents
+        .filter(s => s.is_approved === false && ['PENDING', 'pending'].includes(s.status))
+        .forEach(student => {
+          if (student.selected_subjects) {
+            student.selected_subjects.forEach(subject => {
+              pendingBySubject[subject] = (pendingBySubject[subject] || 0) + 1;
+            });
+          }
+        });
+
+      return {
+        totalPending,
+        totalApproved,
+        totalRejected,
+        pendingBySubject
+      };
+
+    } catch (error) {
+      console.error('Error getting approval stats:', error);
+      return {
+        totalPending: 0,
+        totalApproved: 0,
+        totalRejected: 0,
+        pendingBySubject: {}
+      };
     }
   }
 }

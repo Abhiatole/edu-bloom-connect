@@ -21,10 +21,12 @@ import AdminRegister from "./pages/register/AdminRegister";
 import EmailConfirmation from "./pages/EmailConfirmation";
 import EmailConfirmationSuccess from "./pages/EmailConfirmationSuccess";
 import RegistrationSuccess from "./pages/RegistrationSuccess";
+import AuthConfirm from "./pages/auth/confirm";
 
 // Debug/Test Components
 import { RegistrationTest } from "./components/debug/RegistrationTest";
 import { DirectSignUpTest } from "./components/debug/DirectSignUpTest";
+import TeacherApprovalFlowTest from "./pages/TeacherApprovalFlowTest";
 
 // Enhanced Dashboards
 import ModernSuperAdminDashboard from "./pages/enhanced/ModernSuperAdminDashboard";
@@ -81,7 +83,7 @@ const App = () => (
               <Route path="register/teacher" element={<TeacherRegister />} />
               <Route path="register/admin" element={<AdminRegister />} />
               <Route path="register/success" element={<RegistrationSuccess />} />
-              <Route path="auth/confirm" element={<EmailConfirmation />} />
+              <Route path="auth/confirm" element={<AuthConfirm />} />
               <Route path="auth/success" element={<EmailConfirmationSuccess />} />
               <Route path="email-confirmed" element={<EmailConfirmationSuccess />} />
 
@@ -91,6 +93,7 @@ const App = () => (
               <Route path="debug/registration" element={<DirectRegistrationTest />} />
               <Route path="debug/registration-test" element={<RegistrationTest />} />
               <Route path="debug/signup-test" element={<DirectSignUpTest />} />
+              <Route path="debug/teacher-approval-flow" element={<TeacherApprovalFlowTest />} />
 
               {/* Admin Routes - Nested under /admin */}
               <Route path="admin">
@@ -179,6 +182,12 @@ const App = () => (
                   } 
                 />
               </Route>
+
+              {/* Debug/Test Routes */}
+              <Route 
+                path="test/teacher-approval-flow" 
+                element={<TeacherApprovalFlowTest />} 
+              />
 
               {/* Fallback Route */}
               <Route path="*" element={<NotFound />} />

@@ -249,15 +249,63 @@ export class StudentRegistrationService {
   }
 
   /**
-   * Get student's enrolled subjects and batches (placeholder for future implementation)
+   * Get student's enrolled subjects and batches
    */
   static async getStudentEnrollments(studentId: string) {
-    // This will be implemented once the database migration is applied
-    // For now, return empty arrays since the tables don't exist yet
-    return {
-      subjects: [],
-      batches: []
-    };
+    try {
+      // Get enrolled subjects
+      const { data: subjectEnrollments, error: subjectsError } = await supabase
+        .from('student_subjects')
+        .select(`
+          id,
+          enrolled_at,
+          subjects (
+            id,
+            name,
+            description
+          )
+        `)
+        .eq('student_id', studentId);
+
+      if (subjectsError) {
+        console.error('Error fetching subject enrollments:', subjectsError);
+      }
+
+      // Get enrolled batches
+      const { data: batchEnrollments, error: batchesError } = await supabase
+        .from('student_batches')
+        .select(`
+          id,
+          enrolled_at,
+          batches (
+            id,
+            name,
+            description
+          )
+        `)
+        .eq('student_id', studentId);
+
+      if (batchesError) {
+        console.error('Error fetching batch enrollments:', batchesError);
+      }
+
+      return {
+        subjects: subjectEnrollments?.map(enrollment => ({
+          ...enrollment.subjects,
+          enrolledAt: enrollment.enrolled_at
+        })) || [],
+        batches: batchEnrollments?.map(enrollment => ({
+          ...enrollment.batches,
+          enrolledAt: enrollment.enrolled_at
+        })) || []
+      };
+    } catch (error) {
+      console.error('Error in getStudentEnrollments:', error);
+      return {
+        subjects: [],
+        batches: []
+      };
+    }
   }
 
   /**

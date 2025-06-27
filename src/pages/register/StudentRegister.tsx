@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, School, Lock, Users, UserCheck, GraduationCap } from 'lucide-react';
 import SubjectSelection from '@/components/registration/SubjectSelection';
 import BatchSelection from '@/components/registration/BatchSelection';
-import { FinalRegistrationService } from '@/services/finalRegistrationService';
+import { UnifiedRegistrationService } from '@/services/unifiedRegistrationService';
 
 const StudentRegister = () => {
   const [formData, setFormData] = useState({
@@ -63,12 +63,12 @@ const StudentRegister = () => {
         return;
       }
 
-      // Use the final registration service with bypass function
-      console.log('📝 Using final registration service...');
+      // Use the unified registration service
+      console.log('📝 Using unified registration service...');
       console.log('📋 Selected batches:', selectedBatches);
       console.log('📋 Selected subjects:', selectedSubjects);
       
-      const result = await FinalRegistrationService.registerStudent({
+      const result = await UnifiedRegistrationService.registerStudent({
         fullName: formData.fullName,
         email: formData.email,
         password: formData.password,
@@ -102,13 +102,12 @@ const StudentRegister = () => {
       } else {
         toast({
           title: "Registration Successful!",
-          description: `Your enrollment number is ${result.enrollmentNumber}. Your account is pending approval.`,
+          description: "Your account has been created and is pending approval.",
         });
 
         navigate('/login', {
           state: {
-            message: 'Registration successful! Your account is pending approval.',
-            enrollmentNumber: result.enrollmentNumber
+            message: 'Registration successful! Your account is pending approval.'
           }
         });
       }
