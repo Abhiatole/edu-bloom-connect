@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, School, Lock, Users, UserCheck, GraduationCap } from 'lucide-react';
 import SubjectSelection from '@/components/registration/SubjectSelection';
 import BatchSelection from '@/components/registration/BatchSelection';
-import { FinalRegistrationService } from '@/services/finalRegistrationService';
+import { supabase } from '@/integrations/supabase/client';
 
 const StudentRegister = () => {
   const [formData, setFormData] = useState({
@@ -63,55 +63,101 @@ const StudentRegister = () => {
         return;
       }
 
-      // Use the final registration service with bypass function
-      console.log('📝 Using final registration service...');
-      console.log('📋 Selected batches:', selectedBatches);
-      console.log('📋 Selected subjects:', selectedSubjects);
-      
-      const result = await FinalRegistrationService.registerStudent({
-        fullName: formData.fullName,
+      // SIMPLIFIED REGISTRATION - Direct auth signup with detailed logging
+      console.log('📝 Creating auth user...');
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
-        classLevel: formData.classLevel,
-        guardianName: formData.guardianName,
-        guardianMobile: formData.guardianMobile,
-        parentMobile: formData.parentMobile,
-        batches: selectedBatches,
-        subjects: selectedSubjects
+        options: {
+          data: {
+            role: 'student',
+            full_name: formData.fullName,
+            student_class: formData.classLevel,
+            batches: selectedBatches,
+            subjects: selectedSubjects,
+            parent_mobile: formData.parentMobile
+          },
+          emailRedirectTo: `${window.location.origin}/auth/confirm`
+        }
       });
 
-      if (!result.success) {
-        throw new Error(result.message);
+      if (authError) {
+        console.error('❌ Auth signup error:', authError);
+        throw new Error(`Authentication failed: ${authError.message}`);
       }
 
-      console.log('✅ Registration successful:', result);
+      if (!authData.user) {
+        throw new Error('User creation failed - no user data returned');
+      }
 
-      if (result.requiresEmailConfirmation) {
+      console.log('✅ Auth user created successfully:', authData.user.id);
+      console.log('📧 Session available:', !!authData.session);
+      console.log('📧 Email confirmed:', !!authData.user.email_confirmed_at);
+
+      const requiresConfirmation = !authData.session && !authData.user.email_confirmed_at;
+
+      if (!requiresConfirmation && authData.session) {
+        console.log('🔄 No email confirmation needed, creating profile...');
+        
+        // Set session first
+        await supabase.auth.setSession(authData.session);
+        
+        // Generate enrollment number
+        const enrollmentNumber = `STU${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(Date.now()).slice(-4)}`;
+        
+        // Try to create profile directly with minimal data
+        const profileData = {
+          user_id: authData.user.id,
+          enrollment_no: enrollmentNumber,
+          class_level: parseInt(formData.classLevel),
+          parent_email: formData.email,
+          parent_phone: formData.parentMobile || '',
+          status: 'PENDING' as const
+        };
+
+        console.log('📋 Creating profile with data:', profileData);
+
+        const { data: profileResult, error: profileError } = await supabase
+          .from('student_profiles')
+          .insert(profileData)
+          .select()
+          .single();
+
+        if (profileError) {
+          console.error('❌ Profile creation error:', profileError);
+          console.error('📋 Error details:', JSON.stringify(profileError, null, 2));
+          throw new Error(`Database error saving new user: ${profileError.message}`);
+        }
+
+        console.log('✅ Profile created successfully:', profileResult);
+
         toast({
           title: "Registration Successful!",
-          description: "Please check your email to confirm your account.",
-        });
-
-        navigate('/register/success', {
-          state: {
-            email: formData.email,
-            userType: 'student',
-            message: 'Please check your email to confirm your account.'
-          }
-        });
-      } else {
-        toast({
-          title: "Registration Successful!",
-          description: `Your enrollment number is ${result.enrollmentNumber}. Your account is pending approval.`,
+          description: `Your enrollment number is ${enrollmentNumber}. Your account is pending approval.`,
         });
 
         navigate('/login', {
           state: {
             message: 'Registration successful! Your account is pending approval.',
-            enrollmentNumber: result.enrollmentNumber
+            enrollmentNumber: enrollmentNumber
           }
         });
+        return;
       }
+
+      // Email confirmation required
+      toast({
+        title: "Registration Successful!",
+        description: "Please check your email to confirm your account.",
+      });
+
+      navigate('/register/success', {
+        state: {
+          email: formData.email,
+          userType: 'student',
+          message: 'Please check your email to confirm your account.'
+        }
+      });
 
     } catch (error: any) {
       console.error('💥 Registration failed:', error);
@@ -195,7 +241,7 @@ const StudentRegister = () => {
                 <div>
                   <Label htmlFor="studentMobile" className="flex items-center gap-2">
                     <Phone className="h-4 w-4" />
-                    Student Mobile Number *
+                    Student Mobile Number
                   </Label>
                   <Input
                     id="studentMobile"
@@ -203,7 +249,6 @@ const StudentRegister = () => {
                     value={formData.studentMobile}
                     onChange={(e) => updateFormField('studentMobile')(e.target.value)}
                     placeholder="Enter your mobile number"
-                    required
                     className="mt-1"
                   />
                 </div>
@@ -211,7 +256,7 @@ const StudentRegister = () => {
                 <div>
                   <Label htmlFor="parentMobile" className="flex items-center gap-2">
                     <Phone className="h-4 w-4" />
-                    Parent Mobile Number *
+                    Parent Mobile Number
                   </Label>
                   <Input
                     id="parentMobile"
@@ -219,7 +264,6 @@ const StudentRegister = () => {
                     value={formData.parentMobile}
                     onChange={(e) => updateFormField('parentMobile')(e.target.value)}
                     placeholder="Enter parent's mobile number"
-                    required
                     className="mt-1"
                   />
                 </div>
@@ -241,45 +285,6 @@ const StudentRegister = () => {
                   <option value="11">Class 11</option>
                   <option value="12">Class 12</option>
                 </select>
-              </div>
-            </div>
-
-            {/* Guardian Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Guardian Information</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="guardianName" className="flex items-center gap-2">
-                    <UserCheck className="h-4 w-4" />
-                    Guardian Name *
-                  </Label>
-                  <Input
-                    id="guardianName"
-                    type="text"
-                    value={formData.guardianName}
-                    onChange={(e) => updateFormField('guardianName')(e.target.value)}
-                    placeholder="Enter guardian's name"
-                    required
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="guardianMobile" className="flex items-center gap-2">
-                    <Phone className="h-4 w-4" />
-                    Guardian Mobile *
-                  </Label>
-                  <Input
-                    id="guardianMobile"
-                    type="tel"
-                    value={formData.guardianMobile}
-                    onChange={(e) => updateFormField('guardianMobile')(e.target.value)}
-                    placeholder="Enter guardian's mobile number"
-                    required
-                    className="mt-1"
-                  />
-                </div>
               </div>
             </div>
 

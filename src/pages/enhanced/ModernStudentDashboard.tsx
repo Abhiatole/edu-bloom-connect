@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ModernDashboardCard } from '@/components/enhanced/ModernDashboardCard';
 import { ModernActionCard } from '@/components/enhanced/ModernActionCard';
+import { StudentRegistrationService } from '@/services/studentRegistrationService';
 import {
   BookOpen,
   Target,
@@ -17,7 +18,9 @@ import {
   BarChart3,
   Star,
   Clock,
-  Zap
+  Zap,
+  GraduationCap,
+  Users
 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area } from 'recharts';
 const ModernStudentDashboard = () => {
@@ -34,6 +37,7 @@ const ModernStudentDashboard = () => {
   const [performanceData, setPerformanceData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [studentProfile, setStudentProfile] = useState(null);
+  const [enrollments, setEnrollments] = useState({ subjects: [], batches: [] });
   const { toast } = useToast();
   useEffect(() => {
     fetchStudentData();
@@ -50,6 +54,12 @@ const ModernStudentDashboard = () => {
         .single();
       if (profileError) throw profileError;
       setStudentProfile(profile);
+
+      // Get student's enrolled subjects and batches
+      if (profile) {
+        const enrollmentData = await StudentRegistrationService.getStudentEnrollments(profile.id);
+        setEnrollments(enrollmentData);
+      }
       // Get exam results with performance data
       const { data: results, error: resultsError } = await supabase
         .from('exam_results')
@@ -175,6 +185,55 @@ const ModernStudentDashboard = () => {
           <div className="text-sm text-muted-foreground">
             <span className="font-semibold">Enrollment ID:</span> {studentProfile?.enrollment_no}
           </div>
+        </div>
+
+        {/* Enrolled Subjects and Batches */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
+          {/* Enrolled Subjects */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <BookOpen className="h-4 w-4" />
+                Enrolled Subjects ({enrollments.subjects.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {enrollments.subjects.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {enrollments.subjects.map((subject: any) => (
+                    <Badge key={subject.id} variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                      {subject.name}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No subjects enrolled yet</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Enrolled Batches */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <GraduationCap className="h-4 w-4" />
+                Enrolled Batches ({enrollments.batches.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {enrollments.batches.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {enrollments.batches.map((batch: any) => (
+                    <Badge key={batch.id} variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                      {batch.name}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No batches enrolled yet</p>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
       {/* Key Metrics */}

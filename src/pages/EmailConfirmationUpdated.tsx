@@ -5,40 +5,66 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, XCircle, Loader2, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { StudentRegistrationService } from '@/services/correctedStudentRegistrationService';
+import { StudentRegistrationService } from '@/services/studentRegistrationService';
+
 const EmailConfirmation = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
+  const [enrollmentNumber, setEnrollmentNumber] = useState<string>('');
+
   useEffect(() => {
     const handleEmailConfirmation = async () => {
       try {
-        // Get the current user after email confirmation
-        const { data: { user }, error } = await supabase.auth.getUser();
+        // Get the current user (should be confirmed after clicking the email link)
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
         
-        if (error) throw error;
-        if (!user) throw new Error('No user found after confirmation');
+        if (userError || !user) {
+          throw new Error('Email confirmation failed. Please try the link again.');
+        }
 
-        // Handle the confirmation using the corrected service
-        const result = await StudentRegistrationService.handleEmailConfirmation(user);
-        
-        if (result.success) {
+        // If user is a student, complete the registration process
+        if (user.user_metadata?.role === 'student') {
+          const result = await StudentRegistrationService.handleEmailConfirmation(user);
+          
+          if (result.success) {
+            setStatus('success');
+            setMessage(result.message);
+            if (result.enrollmentNumber) {
+              setEnrollmentNumber(result.enrollmentNumber);
+            }
+            
+            toast({
+              title: "Email Confirmed!",
+              description: `Registration complete! ${result.enrollmentNumber ? `Enrollment Number: ${result.enrollmentNumber}` : ''}`,
+            });
+
+            // Redirect to success page after a short delay
+            setTimeout(() => {
+              navigate('/email-confirmed', {
+                state: {
+                  enrollmentNumber: result.enrollmentNumber
+                }
+              });
+            }, 2000);
+          } else {
+            throw new Error(result.message);
+          }
+        } else {
+          // For other user types, just confirm the email
           setStatus('success');
-          setMessage(result.message);
+          setMessage('Email confirmed successfully!');
           
           toast({
             title: "Email Confirmed!",
             description: "Your account is now verified and pending approval.",
           });
-          
-          // Redirect to success page after a short delay
+
           setTimeout(() => {
             navigate('/email-confirmed');
           }, 2000);
-        } else {
-          throw new Error(result.message);
         }
       } catch (error: any) {
         setStatus('error');
@@ -51,8 +77,10 @@ const EmailConfirmation = () => {
         });
       }
     };
+
     handleEmailConfirmation();
-  }, [searchParams, navigate, toast]);
+  }, [navigate, toast]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl border-0">
@@ -75,6 +103,7 @@ const EmailConfirmation = () => {
               {message}
             </p>
           </div>
+          
           {status === 'success' && (
             <div className="space-y-4">
               <div className="p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
@@ -82,6 +111,16 @@ const EmailConfirmation = () => {
                 <p className="text-sm text-green-700 dark:text-green-300 mt-2">
                   Your account is now pending approval from an administrator. You'll be notified once approved.
                 </p>
+                {enrollmentNumber && (
+                  <div className="mt-3 p-3 bg-white dark:bg-green-900 rounded border border-green-300 dark:border-green-700">
+                    <p className="text-sm font-semibold text-green-800 dark:text-green-200">
+                      Your Enrollment Number: <span className="font-mono text-lg">{enrollmentNumber}</span>
+                    </p>
+                    <p className="text-xs text-green-600 dark:text-green-300 mt-1">
+                      Please save this number for future reference.
+                    </p>
+                  </div>
+                )}
               </div>
               
               <Button 
@@ -93,6 +132,7 @@ const EmailConfirmation = () => {
               </Button>
             </div>
           )}
+          
           {status === 'error' && (
             <div className="space-y-4">
               <Button 
@@ -111,18 +151,10 @@ const EmailConfirmation = () => {
               </Button>
             </div>
           )}
-          {status === 'loading' && (
-            <Button 
-              onClick={() => navigate('/')}
-              variant="outline"
-              className="w-full"
-            >
-              Back to Home
-            </Button>
-          )}
         </CardContent>
       </Card>
     </div>
   );
 };
+
 export default EmailConfirmation;

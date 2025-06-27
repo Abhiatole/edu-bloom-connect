@@ -22,6 +22,10 @@ import EmailConfirmation from "./pages/EmailConfirmation";
 import EmailConfirmationSuccess from "./pages/EmailConfirmationSuccess";
 import RegistrationSuccess from "./pages/RegistrationSuccess";
 
+// Debug/Test Components
+import { RegistrationTest } from "./components/debug/RegistrationTest";
+import { DirectSignUpTest } from "./components/debug/DirectSignUpTest";
+
 // Enhanced Dashboards
 import ModernSuperAdminDashboard from "./pages/enhanced/ModernSuperAdminDashboard";
 import EnhancedTeacherDashboard from "./pages/enhanced/EnhancedTeacherDashboard";
@@ -44,6 +48,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 import AIAssistantPage from "./pages/ai-assistant";
 import AIStudentInsightsPage from "./pages/ai-student-insights";
+import DatabaseTest from "./components/debug/DatabaseTest";
+import DatabaseDebugger from "./components/debug/DatabaseDebugger";
+import DirectRegistrationTest from "./components/debug/DirectRegistrationTest";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +84,13 @@ const App = () => (
               <Route path="auth/confirm" element={<EmailConfirmation />} />
               <Route path="auth/success" element={<EmailConfirmationSuccess />} />
               <Route path="email-confirmed" element={<EmailConfirmationSuccess />} />
+
+              {/* Debug Routes */}
+              <Route path="debug/database" element={<DatabaseTest />} />
+              <Route path="debug/database-test" element={<DatabaseDebugger />} />
+              <Route path="debug/registration" element={<DirectRegistrationTest />} />
+              <Route path="debug/registration-test" element={<RegistrationTest />} />
+              <Route path="debug/signup-test" element={<DirectSignUpTest />} />
 
               {/* Admin Routes - Nested under /admin */}
               <Route path="admin">
