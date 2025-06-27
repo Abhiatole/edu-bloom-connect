@@ -64,6 +64,43 @@ export class UnifiedRegistrationService {
   }
 
   /**
+   * Utility to sanitize and validate user metadata for Supabase auth
+   */
+  private static sanitizeMetadata(role: 'student' | 'teacher' | 'admin', data: any): Record<string, any> {
+    if (role === 'student') {
+      if (!data.fullName || !data.classLevel) throw new Error('Full name and class level are required');
+      const meta: Record<string, any> = {
+        role: 'student',
+        full_name: data.fullName,
+        class_level: data.classLevel,
+        guardian_name: data.guardianName || '',
+        guardian_mobile: data.guardianMobile || '',
+        parent_mobile: data.parentMobile || ''
+      };
+      if (Array.isArray(data.batches)) meta.batches = JSON.stringify(data.batches);
+      if (Array.isArray(data.subjects)) meta.subjects = JSON.stringify(data.subjects);
+      return meta;
+    }
+    if (role === 'teacher') {
+      if (!data.fullName || !data.subjectExpertise || typeof data.experienceYears !== 'number') throw new Error('All fields are required and experience years must be a number');
+      return {
+        role: 'teacher',
+        full_name: data.fullName,
+        subject_expertise: data.subjectExpertise,
+        experience_years: data.experienceYears
+      };
+    }
+    if (role === 'admin') {
+      if (!data.fullName) throw new Error('Full name is required');
+      return {
+        role: 'admin',
+        full_name: data.fullName
+      };
+    }
+    throw new Error('Invalid role for metadata');
+  }
+
+  /**
    * Register a new student with comprehensive error handling and fallback strategies
    */
   static async registerStudent(data: StudentRegistrationData): Promise<RegistrationResult> {
@@ -80,22 +117,7 @@ export class UnifiedRegistrationService {
       }
 
       // Prepare metadata (convert arrays to JSON strings to avoid metadata issues)
-      const userMetadata: Record<string, any> = {
-        role: 'student',
-        full_name: data.fullName,
-        class_level: data.classLevel,
-        guardian_name: data.guardianName || '',
-        guardian_mobile: data.guardianMobile || '',
-        parent_mobile: data.parentMobile || ''
-      };
-
-      // Handle arrays safely
-      if (data.batches && data.batches.length > 0) {
-        userMetadata.batches = JSON.stringify(data.batches);
-      }
-      if (data.subjects && data.subjects.length > 0) {
-        userMetadata.subjects = JSON.stringify(data.subjects);
-      }
+      const userMetadata = this.sanitizeMetadata('student', data);
 
       console.log('📋 Creating auth user with safe metadata:', userMetadata);
 
@@ -268,17 +290,16 @@ export class UnifiedRegistrationService {
         throw new Error('Invalid subject expertise');
       }
 
+      // Prepare metadata
+      const userMetadata = this.sanitizeMetadata('teacher', data);
+      console.log('📋 Creating auth user with safe metadata:', userMetadata);
+
       // Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
-          data: {
-            role: 'teacher',
-            full_name: data.fullName,
-            subject_expertise: data.subjectExpertise,
-            experience_years: data.experienceYears
-          },
+          data: userMetadata,
           emailRedirectTo: this.getConfirmationUrl()
         }
       });
@@ -353,15 +374,16 @@ export class UnifiedRegistrationService {
         throw new Error('Full name is required');
       }
 
+      // Prepare metadata
+      const userMetadata = this.sanitizeMetadata('admin', data);
+      console.log('📋 Creating auth user with safe metadata:', userMetadata);
+
       // Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
-          data: {
-            role: 'admin',
-            full_name: data.fullName
-          },
+          data: userMetadata,
           emailRedirectTo: this.getConfirmationUrl()
         }
       });
