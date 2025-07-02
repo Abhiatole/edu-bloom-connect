@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, BookOpen, Clock, Lock, GraduationCap } from 'lucide-react';
 import { EmailConfirmationService } from '@/services/emailConfirmationService';
-import { UnifiedRegistrationService } from '@/services/unifiedRegistrationService';
+import { FinalRegistrationService } from '@/services/finalRegistrationService';
 const TeacherRegister = () => {
   const [formData, setFormData] = useState({
     fullName: '',
@@ -40,8 +40,8 @@ const TeacherRegister = () => {
         throw new Error('Please fill in all required fields');
       }
       
-      // Use unified registration service
-      const result = await UnifiedRegistrationService.registerTeacher({
+      // Use clean registration service
+      const result = await FinalRegistrationService.registerTeacher({
         fullName: formData.fullName,
         email: formData.email,
         password: formData.password,

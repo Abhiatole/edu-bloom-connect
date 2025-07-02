@@ -1,6 +1,7 @@
 // Email Confirmation Service
 // Handles email confirmation, resending, and user guidance
 import { supabase } from '@/integrations/supabase/client';
+import { FinalRegistrationService } from './finalRegistrationService';
 export interface EmailConfirmationResult {
   success: boolean;
   message: string;
@@ -47,7 +48,7 @@ export class EmailConfirmationService {
     }
   }
   /**
-   * Verify email confirmation token
+   * Verify email confirmation token and create profiles if needed
    */
   static async verifyEmailConfirmation(token: string, type: string): Promise<EmailConfirmationResult> {
     try {
@@ -55,7 +56,32 @@ export class EmailConfirmationService {
         token_hash: token,
         type: type as 'signup' | 'email'
       });
+      
       if (error) throw error;
+      
+      if (data.user) {
+        // Check if user has metadata and create profile if needed
+        const userMetadata = data.user.user_metadata || {};
+        
+        if (userMetadata.role) {
+          try {
+            const profileResult = await FinalRegistrationService.handleEmailConfirmation(data.session, userMetadata);
+            return {
+              success: true,
+              message: profileResult.message || 'Email confirmed successfully!',
+              user: data.user
+            };
+          } catch (profileError: any) {
+            // Profile creation failed, but email is confirmed
+            return {
+              success: true,
+              message: 'Email confirmed successfully! Please contact support if you have trouble accessing your account.',
+              user: data.user
+            };
+          }
+        }
+      }
+      
       return {
         success: true,
         message: 'Email confirmed successfully!',

@@ -12,6 +12,20 @@ export interface StudentRegistrationData {
   subjects?: string[]; // Array of subjects like ['Physics', 'Chemistry']
 }
 
+export interface TeacherRegistrationData {
+  fullName: string;
+  email: string;
+  password: string;
+  subjectExpertise: string;
+  experienceYears: number;
+}
+
+export interface AdminRegistrationData {
+  fullName: string;
+  email: string;
+  password: string;
+}
+
 export interface RegistrationResult {
   success: boolean;
   message: string;
@@ -26,8 +40,6 @@ export class FinalRegistrationService {
    */
   static async registerStudent(data: StudentRegistrationData): Promise<RegistrationResult> {
     try {
-      console.log('🚀 Starting student registration with bypass...');
-      
       // Step 1: Create auth user with proper metadata handling
       const userMetadata: Record<string, any> = {
         role: 'student',
@@ -45,8 +57,6 @@ export class FinalRegistrationService {
         userMetadata.subjects = JSON.stringify(data.subjects);
       }
 
-      console.log('📋 Creating auth user with metadata:', userMetadata);
-
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -57,7 +67,6 @@ export class FinalRegistrationService {
       });
 
       if (authError) {
-        console.error('❌ Auth signup error:', authError);
         throw new Error(`Authentication failed: ${authError.message}`);
       }
 
@@ -65,19 +74,14 @@ export class FinalRegistrationService {
         throw new Error('User creation failed - no user data returned');
       }
 
-      console.log('✅ Auth user created successfully:', authData.user.id);
-      console.log('📧 Email confirmed:', !!authData.user.email_confirmed_at);
-
       const requiresConfirmation = !authData.session && !authData.user.email_confirmed_at;
 
       // Step 2: Create profile using bypass function
       if (!requiresConfirmation) {
-        console.log('🔄 Creating profile using bypass function...');
-        
         try {
           // Use the bypass function to create profile
-          const { data: profileResult, error: profileError } = await supabase.rpc(
-            'register_student_bypass' as any,
+          const { data: profileResult, error: profileError } = await (supabase as any).rpc(
+            'register_student_bypass',
             {
               p_user_id: authData.user.id,
               p_email: data.email,
@@ -89,16 +93,12 @@ export class FinalRegistrationService {
           ) as { data: any, error: any };
 
           if (profileError) {
-            console.error('❌ Bypass function error:', profileError);
             throw new Error(`Profile creation failed: ${profileError.message}`);
           }
 
           if (!profileResult || !profileResult.success) {
-            console.error('❌ Bypass function returned error:', profileResult);
             throw new Error(`Profile creation failed: ${profileResult?.error || 'Unknown error'}`);
           }
-
-          console.log('✅ Profile created successfully with bypass:', profileResult);
 
           return {
             success: true,
@@ -109,8 +109,6 @@ export class FinalRegistrationService {
           };
 
         } catch (bypassError) {
-          console.error('❌ Bypass function failed, trying direct insert...', bypassError);
-          
           // Fallback: Direct insert with session
           if (authData.session) {
             await supabase.auth.setSession(authData.session);
@@ -128,8 +126,6 @@ export class FinalRegistrationService {
             status: 'PENDING' as const
           };
 
-          console.log('📋 Attempting direct insert with data:', profileData);
-
           const { data: directResult, error: directError } = await supabase
             .from('student_profiles')
             .insert(profileData)
@@ -137,11 +133,8 @@ export class FinalRegistrationService {
             .single();
 
           if (directError) {
-            console.error('❌ Direct insert also failed:', directError);
             throw new Error(`Database error: ${directError.message}`);
           }
-
-          console.log('✅ Direct insert succeeded:', directResult);
 
           return {
             success: true,
@@ -191,8 +184,6 @@ export class FinalRegistrationService {
         throw new Error('No user session available');
       }
 
-      console.log('🔄 Handling email confirmation for user:', session.user.id);
-
       // Check if profile already exists
       const { data: existingProfile } = await supabase
         .from('student_profiles')
@@ -201,7 +192,6 @@ export class FinalRegistrationService {
         .single();
 
       if (existingProfile) {
-        console.log('✅ Profile already exists');
         return {
           success: true,
           message: 'Account confirmed successfully!',
@@ -210,8 +200,8 @@ export class FinalRegistrationService {
       }
 
       // Create profile using bypass function
-      const { data: profileResult, error: profileError } = await supabase.rpc(
-        'register_student_bypass' as any,
+      const { data: profileResult, error: profileError } = await (supabase as any).rpc(
+        'register_student_bypass',
         {
           p_user_id: session.user.id,
           p_email: session.user.email,
@@ -227,8 +217,6 @@ export class FinalRegistrationService {
         throw new Error('Failed to create user profile after confirmation');
       }
 
-      console.log('✅ Profile created after email confirmation:', profileResult);
-
       return {
         success: true,
         message: 'Account confirmed and profile created successfully!',
@@ -237,11 +225,116 @@ export class FinalRegistrationService {
       };
 
     } catch (error: any) {
-      console.error('💥 Email confirmation handling failed:', error);
       return {
         success: false,
         message: error.message || 'Failed to complete account setup'
       };
+    }
+  }
+
+  /**
+   * Register a new teacher
+   */
+  static async registerTeacher(data: TeacherRegistrationData): Promise<RegistrationResult> {
+    try {
+      // Validation
+      if (!data.fullName || !data.subjectExpertise || typeof data.experienceYears !== 'number') {
+        throw new Error('All fields are required and experience years must be a number');
+      }
+
+      const validSubjects = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English', 'Computer Science', 'Other'];
+      if (!validSubjects.includes(data.subjectExpertise)) {
+        throw new Error('Invalid subject expertise');
+      }
+
+      // Prepare metadata
+      const userMetadata = {
+        role: 'teacher',
+        full_name: data.fullName,
+        subject_expertise: data.subjectExpertise,
+        experience_years: data.experienceYears
+      };
+
+      // Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: userMetadata,
+          emailRedirectTo: `${window.location.origin}/auth/confirm`
+        }
+      });
+
+      if (authError) {
+        throw new Error(`Authentication failed: ${authError.message}`);
+      }
+
+      if (!authData.user) {
+        throw new Error('User creation failed - no user data returned');
+      }
+
+      const requiresConfirmation = !authData.session && !authData.user.email_confirmed_at;
+      
+      return {
+        success: true,
+        message: requiresConfirmation 
+          ? 'Registration successful! Please check your email to confirm your account.'
+          : 'Teacher registration successful! Your account is pending admin approval.',
+        user: authData.user,
+        requiresEmailConfirmation: requiresConfirmation
+      };
+
+    } catch (error: any) {
+      throw new Error(error.message || 'Teacher registration failed');
+    }
+  }
+
+  /**
+   * Register a new admin
+   */
+  static async registerAdmin(data: AdminRegistrationData): Promise<RegistrationResult> {
+    try {
+      if (!data.fullName) {
+        throw new Error('Full name is required');
+      }
+
+      // Prepare metadata
+      const userMetadata = {
+        role: 'admin',
+        full_name: data.fullName
+      };
+
+      // Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: userMetadata,
+          emailRedirectTo: `${window.location.origin}/auth/confirm`
+        }
+      });
+
+      if (authError) {
+        throw new Error(`Authentication failed: ${authError.message}`);
+      }
+
+      if (!authData.user) {
+        throw new Error('User creation failed - no user data returned');
+      }
+
+      const requiresConfirmation = !authData.session && !authData.user.email_confirmed_at;
+      
+      return {
+        success: true,
+        message: requiresConfirmation 
+          ? 'Registration successful! Please check your email to confirm your account.'
+          : 'Admin registration successful! You can now login.',
+        user: authData.user,
+        requiresEmailConfirmation: requiresConfirmation
+      };
+
+    } catch (error: any) {
+      throw new Error(error.message || 'Admin registration failed');
     }
   }
 }

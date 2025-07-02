@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ModernDashboardCard } from '@/components/enhanced/ModernDashboardCard';
 import { ModernActionCard } from '@/components/enhanced/ModernActionCard';
-import { StudentRegistrationService } from '@/services/studentRegistrationService';
+import { FinalRegistrationService } from '@/services/finalRegistrationService';
 import {
   BookOpen,
   Target,
@@ -55,11 +55,6 @@ const ModernStudentDashboard = () => {
       if (profileError) throw profileError;
       setStudentProfile(profile);
 
-      // Get student's enrolled subjects and batches
-      if (profile) {
-        const enrollmentData = await StudentRegistrationService.getStudentEnrollments(profile.id);
-        setEnrollments(enrollmentData);
-      }
       // Get exam results with performance data
       const { data: results, error: resultsError } = await supabase
         .from('exam_results')

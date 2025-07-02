@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, LogIn, GraduationCap } from 'lucide-react';
-import { RegistrationService } from '@/services/registrationService';
+import { FinalRegistrationService } from '@/services/finalRegistrationService';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -71,7 +71,7 @@ const Login = () => {
             
             try {
               // Create the profile based on role
-              await RegistrationService.handleEmailConfirmation(userMetadata);
+              await FinalRegistrationService.handleEmailConfirmation(authData.session, userMetadata);
               
               // Special handling for ADMIN role
               if (role === 'ADMIN') {

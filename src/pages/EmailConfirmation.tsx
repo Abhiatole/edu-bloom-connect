@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, XCircle, Loader2, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { StudentRegistrationService } from '@/services/correctedStudentRegistrationService';
+import { FinalRegistrationService } from '@/services/finalRegistrationService';
 const EmailConfirmation = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -21,8 +21,11 @@ const EmailConfirmation = () => {
         if (error) throw error;
         if (!user) throw new Error('No user found after confirmation');
 
-        // Handle the confirmation using the corrected service
-        const result = await StudentRegistrationService.handleEmailConfirmation(user);
+        // Get current session for the confirmation
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        // Handle the confirmation using the final service
+        const result = await FinalRegistrationService.handleEmailConfirmation(session, user.user_metadata);
         
         if (result.success) {
           setStatus('success');

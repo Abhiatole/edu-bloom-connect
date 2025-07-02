@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { UnifiedRegistrationService } from './unifiedRegistrationService';
+import { FinalRegistrationService } from './finalRegistrationService';
 
 export interface EmailConfirmationResult {
   success: boolean;
@@ -76,7 +76,7 @@ export class EnhancedEmailConfirmationService {
       
       // Create profile if needed using unified service
       try {
-        const profileResult = await UnifiedRegistrationService.handleEmailConfirmation(user.user_metadata);
+        const profileResult = await FinalRegistrationService.handleEmailConfirmation(null, user.user_metadata);
         
         // Determine redirect path
         const userRole = user.user_metadata?.role?.toLowerCase();

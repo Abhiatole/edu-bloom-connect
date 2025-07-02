@@ -19,7 +19,7 @@ import {
   Star,
   Zap
 } from 'lucide-react';
-import { EnhancedRegistrationService } from '@/services/enhancedRegistrationService';
+import { FinalRegistrationService } from '@/services/finalRegistrationService';
 
 const EnhancedStudentDashboard = () => {
   const [stats, setStats] = useState({
@@ -54,15 +54,7 @@ const EnhancedStudentDashboard = () => {
         .single();
 
       if (profileError) throw profileError;
-      setStudentProfile(profile);
-
-      // Get student's enrolled subjects and batches
-      if (profile) {
-        const enrollmentData = await EnhancedRegistrationService.getStudentEnrollments(profile.id);
-        setEnrollments(enrollmentData);
-      }
-
-      // Get exam results with performance data
+      setStudentProfile(profile);      // Get exam results with performance data
       const { data: results, error: resultsError } = await supabase
         .from('exam_results')
         .select(`

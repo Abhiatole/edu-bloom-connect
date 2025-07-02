@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, XCircle, Loader2, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { StudentRegistrationService } from '@/services/studentRegistrationService';
+import { FinalRegistrationService } from '@/services/finalRegistrationService';
 
 const EmailConfirmation = () => {
   const [searchParams] = useSearchParams();
@@ -18,8 +18,8 @@ const EmailConfirmation = () => {
   useEffect(() => {
     const handleEmailConfirmation = async () => {
       try {
-        // Get the current user (should be confirmed after clicking the email link)
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        // Get the current user and session (should be confirmed after clicking the email link)
+        const { data: { user, session }, error: userError } = await supabase.auth.getUser();
         
         if (userError || !user) {
           throw new Error('Email confirmation failed. Please try the link again.');
@@ -27,7 +27,7 @@ const EmailConfirmation = () => {
 
         // If user is a student, complete the registration process
         if (user.user_metadata?.role === 'student') {
-          const result = await StudentRegistrationService.handleEmailConfirmation(user);
+          const result = await FinalRegistrationService.handleEmailConfirmation(session, user.user_metadata);
           
           if (result.success) {
             setStatus('success');

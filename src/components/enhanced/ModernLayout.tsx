@@ -58,7 +58,7 @@ const ModernLayout = () => {
               </div>
               <div className="hidden sm:block">
                 <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  EduGrowHub
+                  Siddhivinayak Science Academy
                 </h1>
                 <p className="text-xs text-muted-foreground">Learning Excellence</p>
               </div>

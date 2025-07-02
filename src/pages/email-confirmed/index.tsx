@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Mail, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { UnifiedRegistrationService } from '@/services/unifiedRegistrationService';
+import { FinalRegistrationService } from '@/services/finalRegistrationService';
 /**
  * Email confirmation callback page
  * This handles the redirect from Supabase email verification
@@ -82,6 +82,9 @@ export default function EmailConfirmed() {
           return;
         }
         
+        // Get the current session
+        const { data: { session } } = await supabase.auth.getSession();
+        
         if (!user.email_confirmed_at) {
           setStatus('error');
           setMessage('Email verification failed. Please try again or contact support.');
@@ -92,8 +95,8 @@ export default function EmailConfirmed() {
         console.log('✅ Email verified, creating profile...');
         
         try {
-          // Use unified service to handle profile creation
-          const profileResult = await UnifiedRegistrationService.handleEmailConfirmation(user.user_metadata);
+          // Use final service to handle profile creation
+          const profileResult = await FinalRegistrationService.handleEmailConfirmation(session, user.user_metadata);
           
           setStatus('success');
           setMessage(profileResult.message || 'Your email has been successfully verified and your profile created!');

@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, School, Lock, Users, UserCheck, GraduationCap } from 'lucide-react';
 import SubjectSelection from '@/components/registration/SubjectSelection';
 import BatchSelection from '@/components/registration/BatchSelection';
-import { UnifiedRegistrationService } from '@/services/unifiedRegistrationService';
+import { FinalRegistrationService } from '@/services/finalRegistrationService';
 
 const StudentRegister = () => {
   const [formData, setFormData] = useState({
@@ -39,8 +39,6 @@ const StudentRegister = () => {
     setBatchError('');
 
     try {
-      console.log('🚀 Starting registration process...');
-      
       // Validate form data
       if (formData.password !== formData.confirmPassword) {
         throw new Error('Passwords do not match');
@@ -63,12 +61,8 @@ const StudentRegister = () => {
         return;
       }
 
-      // Use the unified registration service
-      console.log('📝 Using unified registration service...');
-      console.log('📋 Selected batches:', selectedBatches);
-      console.log('📋 Selected subjects:', selectedSubjects);
-      
-      const result = await UnifiedRegistrationService.registerStudent({
+      // Use the clean registration service
+      const result = await FinalRegistrationService.registerStudent({
         fullName: formData.fullName,
         email: formData.email,
         password: formData.password,
@@ -83,8 +77,6 @@ const StudentRegister = () => {
       if (!result.success) {
         throw new Error(result.message);
       }
-
-      console.log('✅ Registration successful:', result);
 
       if (result.requiresEmailConfirmation) {
         toast({

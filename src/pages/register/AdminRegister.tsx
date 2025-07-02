@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Shield, AlertTriangle, CheckCircle } from 'lucide-react';
 import { EmailConfirmationService } from '@/services/emailConfirmationService';
-import { UnifiedRegistrationService } from '@/services/unifiedRegistrationService';
+import { FinalRegistrationService } from '@/services/finalRegistrationService';
 const AdminRegister = () => {
   const [formData, setFormData] = useState({
     fullName: '',
@@ -36,8 +36,8 @@ const AdminRegister = () => {
       // Optional: Check admin code if provided
       if (showAdminCode && formData.adminCode && formData.adminCode !== 'ADMIN2025') {
         throw new Error('Invalid admin verification code');
-      }      // Use unified registration service
-      const result = await UnifiedRegistrationService.registerAdmin({
+      }      // Use clean registration service
+      const result = await FinalRegistrationService.registerAdmin({
         fullName: formData.fullName,
         email: formData.email,
         password: formData.password
