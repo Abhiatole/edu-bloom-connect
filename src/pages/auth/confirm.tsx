@@ -23,6 +23,10 @@ export default function AuthConfirm() {
         setStatus('loading');
         setMessage('Confirming your email...');
 
+        // Log all URL parameters for debugging
+        const allParams = Object.fromEntries(searchParams.entries());
+        console.log('Email confirmation URL parameters:', allParams);
+
         // Use the URL search params to handle confirmation
         const result = await EmailConfirmationService.handleEmailConfirmationCallback(searchParams);
 
@@ -52,11 +56,11 @@ export default function AuthConfirm() {
 
         } else {
           setStatus('error');
-          setMessage(result.message);
+          setMessage(result.message || 'Email confirmation failed.');
 
           toast({
             title: 'Confirmation Failed',
-            description: result.message,
+            description: result.message || 'Please check the confirmation link or try again.',
             variant: 'destructive',
           });
         }
@@ -64,7 +68,7 @@ export default function AuthConfirm() {
       } catch (error: any) {
         console.error('Confirmation error:', error);
         setStatus('error');
-        setMessage('An unexpected error occurred. Please try again.');
+        setMessage('An unexpected error occurred. Please try again or contact support.');
 
         toast({
           title: 'Error',
@@ -75,7 +79,7 @@ export default function AuthConfirm() {
     };
 
     processConfirmation();
-  }, [navigate, toast]);
+  }, [navigate, toast, searchParams]);
 
   const handleRetry = () => {
     window.location.reload();

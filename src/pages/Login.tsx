@@ -29,37 +29,66 @@ const Login = () => {
         const userId = authData.user.id;
         let userProfile = null;
         let userRole = null;
-        // Check in student_profiles
-        const { data: studentProfile, error: studentError } = await supabase
-          .from('student_profiles')
+        
+        // Check in user_profiles first for role information
+        const { data: baseProfile, error: baseError } = await supabase
+          .from('user_profiles')
           .select('*')
           .eq('user_id', userId)
           .single();
         
-        if (studentProfile && !studentError) {
-          userProfile = studentProfile;
-          userRole = 'student';
+        if (baseProfile && !baseError) {
+          // We have a base profile, now get the specific role profile
+          const role = baseProfile.role?.toUpperCase();
+          
+          if (role === 'STUDENT') {
+            const { data: studentProfile, error: studentError } = await supabase
+              .from('student_profiles')
+              .select('*')
+              .eq('user_id', userId)
+              .single();
+            
+            if (studentProfile && !studentError) {
+              userProfile = { ...baseProfile, ...studentProfile };
+              userRole = 'student';
+            }
+          } else if (role === 'TEACHER') {
+            const { data: teacherProfile, error: teacherError } = await supabase
+              .from('teacher_profiles')
+              .select('*')
+              .eq('user_id', userId)
+              .single();
+            
+            if (teacherProfile && !teacherError) {
+              userProfile = { ...baseProfile, ...teacherProfile };
+              userRole = 'teacher';
+            }
+          } else if (role === 'ADMIN') {
+            // Admins are stored in user_profiles table only
+            userProfile = baseProfile;
+            userRole = 'superadmin';
+          }
         } else {
-          // Check in teacher_profiles
-          const { data: teacherProfile, error: teacherError } = await supabase
-            .from('teacher_profiles')
+          // Fallback: Check individual profile tables for legacy users
+          const { data: studentProfile, error: studentError } = await supabase
+            .from('student_profiles')
             .select('*')
             .eq('user_id', userId)
             .single();
           
-          if (teacherProfile && !teacherError) {
-            userProfile = teacherProfile;
-            userRole = 'teacher';          } else {
-            // Check in user_profiles for admin role
-            const { data: adminProfile, error: adminError } = await supabase
-              .from('user_profiles')
+          if (studentProfile && !studentError) {
+            userProfile = studentProfile;
+            userRole = 'student';
+          } else {
+            const { data: teacherProfile, error: teacherError } = await supabase
+              .from('teacher_profiles')
               .select('*')
               .eq('user_id', userId)
-              .eq('role', 'ADMIN')
               .single();
-            if (adminProfile && !adminError) {
-              userProfile = adminProfile;
-              userRole = 'superadmin';
+            
+            if (teacherProfile && !teacherError) {
+              userProfile = teacherProfile;
+              userRole = 'teacher';
             }
           }
         }        if (!userProfile || !userRole) {

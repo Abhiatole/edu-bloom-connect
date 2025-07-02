@@ -178,16 +178,82 @@ export class EmailConfirmationService {
     searchParams: URLSearchParams
   ): Promise<EmailConfirmationResult> {
     try {
-      const token = searchParams.get('token') || searchParams.get('access_token');
-      const type = searchParams.get('type');
-      if (!token || (type !== 'signup' && type !== 'email')) {
-        throw new Error('Invalid confirmation link');
+      // Check for all possible token parameter names from Supabase
+      const token = searchParams.get('token') || 
+                   searchParams.get('access_token') || 
+                   searchParams.get('confirmation_token') ||
+                   searchParams.get('token_hash');
+      
+      const type = searchParams.get('type') || 'signup';
+      
+      // Check for refresh token as well
+      const refreshToken = searchParams.get('refresh_token');
+      
+      console.log('Email confirmation parameters:', {
+        token: token ? '***present***' : 'missing',
+        type,
+        refreshToken: refreshToken ? '***present***' : 'missing',
+        allParams: Object.fromEntries(searchParams.entries())
+      });
+      
+      if (!token) {
+        // Try to handle the confirmation using session-based approach
+        return await this.handleSessionBasedConfirmation(searchParams);
       }
+      
+      // Validate type parameter
+      if (type !== 'signup' && type !== 'email' && type !== 'recovery') {
+        console.warn('Unexpected type parameter:', type);
+        // Don't fail, just use 'signup' as default
+      }
+      
       return await this.verifyEmailConfirmation(token, type);
+    } catch (error: any) {
+      console.error('Email confirmation callback error:', error);
+      return {
+        success: false,
+        message: error.message || 'Invalid confirmation link. Please try again or contact support.'
+      };
+    }
+  }
+
+  /**
+   * Handle confirmation when no token is present (session-based)
+   */
+  static async handleSessionBasedConfirmation(
+    searchParams: URLSearchParams
+  ): Promise<EmailConfirmationResult> {
+    try {
+      // Get current session and user separately
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (sessionError || userError) throw sessionError || userError;
+      
+      if (user && user.email_confirmed_at) {
+        // User is already confirmed, just create profile if needed
+        const userMetadata = user.user_metadata || {};
+        
+        if (userMetadata.role) {
+          try {
+            await FinalRegistrationService.handleEmailConfirmation(session, userMetadata);
+          } catch (profileError) {
+            console.warn('Profile creation failed but email is confirmed:', profileError);
+          }
+        }
+        
+        return {
+          success: true,
+          message: 'Email already confirmed! You can now log in.',
+          user
+        };
+      }
+      
+      throw new Error('No valid confirmation token found and user is not authenticated');
     } catch (error: any) {
       return {
         success: false,
-        message: error.message || 'Invalid confirmation link'
+        message: 'Unable to confirm email. Please try clicking the link in your email again.'
       };
     }
   }
