@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Mail, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { EnhancedEmailConfirmationService } from '@/services/enhancedEmailConfirmationService';
+import { EmailConfirmationService } from '@/services/emailConfirmationService';
 
 /**
  * Improved email confirmation page that handles auth/confirm route
@@ -13,6 +13,7 @@ export default function AuthConfirm() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Confirming your email...');
   const [userRole, setUserRole] = useState<string>('');
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -22,29 +23,31 @@ export default function AuthConfirm() {
         setStatus('loading');
         setMessage('Confirming your email...');
 
-        const result = await EnhancedEmailConfirmationService.handleConfirmation();
+        // Use the URL search params to handle confirmation
+        const result = await EmailConfirmationService.handleEmailConfirmationCallback(searchParams);
 
         if (result.success) {
           setStatus('success');
-          setMessage(result.message);
+          setMessage(result.message || 'Email confirmed successfully!');
           
           // Extract role for display
           if (result.user?.user_metadata?.role) {
-            setUserRole(result.user.user_metadata.role);
+            setUserRole(result.user.user_metadata.role.toLowerCase());
           }
 
           toast({
             title: 'Email Confirmed!',
-            description: result.message,
+            description: result.message || 'Your email has been successfully confirmed.',
           });
 
-          // Redirect after delay
+          // Redirect to login after delay
           setTimeout(() => {
-            if (result.redirectPath) {
-              navigate(result.redirectPath);
-            } else {
-              navigate('/login');
-            }
+            navigate('/login', { 
+              state: { 
+                message: 'Email confirmed! You can now log in.',
+                type: 'success'
+              }
+            });
           }, 3000);
 
         } else {
