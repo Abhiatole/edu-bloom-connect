@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Mail, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Mail, CheckCircle, AlertCircle, Loader2, RefreshCw, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { EmailConfirmationService } from '@/services/emailConfirmationService';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Improved email confirmation page that handles auth/confirm route
@@ -12,7 +12,7 @@ import { EmailConfirmationService } from '@/services/emailConfirmationService';
 export default function AuthConfirm() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Confirming your email...');
-  const [userRole, setUserRole] = useState<string>('');
+  const [userEmail, setUserEmail] = useState<string>('');
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -23,52 +23,149 @@ export default function AuthConfirm() {
         setStatus('loading');
         setMessage('Confirming your email...');
 
-        // Log all URL parameters for debugging
-        const allParams = Object.fromEntries(searchParams.entries());
-        console.log('Email confirmation URL parameters:', allParams);
+        console.log("🔍 Email confirmation started");
+        console.log("📧 Full URL:", window.location.href);
+        
+        // Get all possible parameters from URL
+        const token = searchParams.get('token');
+        const type = searchParams.get('type');
+        const access_token = searchParams.get('access_token');
+        const refresh_token = searchParams.get('refresh_token');
+        const error = searchParams.get('error');
+        const error_description = searchParams.get('error_description');
+        const token_hash = searchParams.get('token_hash');
+        const email = searchParams.get('email');
 
-        // Use the URL search params to handle confirmation
-        const result = await EmailConfirmationService.handleEmailConfirmationCallback(searchParams);
+        console.log("📋 All URL Parameters:", {
+          token, type, access_token, refresh_token, error, error_description, token_hash, email
+        });
 
-        if (result.success) {
-          setStatus('success');
-          setMessage(result.message || 'Email confirmed successfully!');
-          
-          // Extract role for display
-          if (result.user?.user_metadata?.role) {
-            setUserRole(result.user.user_metadata.role.toLowerCase());
-          }
-
-          toast({
-            title: 'Email Confirmed!',
-            description: result.message || 'Your email has been successfully confirmed.',
-          });
-
-          // Redirect to login after delay
-          setTimeout(() => {
-            navigate('/login', { 
-              state: { 
-                message: 'Email confirmed! You can now log in.',
-                type: 'success'
-              }
-            });
-          }, 3000);
-
-        } else {
+        // Check for errors first
+        if (error) {
+          console.error("❌ URL contains error:", error, error_description);
           setStatus('error');
-          setMessage(result.message || 'Email confirmation failed.');
+          setMessage(`Confirmation failed: ${error_description || error}`);
+          return;
+        }
 
-          toast({
-            title: 'Confirmation Failed',
-            description: result.message || 'Please check the confirmation link or try again.',
-            variant: 'destructive',
+        let result;
+
+        // Method 1: Try verifyOtp with token_hash (most common format)
+        if (token_hash && type) {
+          console.log("🔑 Attempting verifyOtp with token_hash...");
+          result = await supabase.auth.verifyOtp({
+            token_hash,
+            type: type as any
           });
+        }
+        // Method 2: Try verifyOtp with regular token
+        else if (token && type) {
+          console.log("🔑 Attempting verifyOtp with token...");
+          result = await supabase.auth.verifyOtp({
+            token_hash: token,
+            type: type as any
+          });
+        }
+        // Method 3: Try setSession with access tokens
+        else if (access_token) {
+          console.log("🔑 Attempting setSession with tokens...");
+          result = await supabase.auth.setSession({
+            access_token,
+            refresh_token: refresh_token || ''
+          });
+        }
+        // Method 4: Manual confirmation for specific cases
+        else if (email && token) {
+          console.log("🔑 Attempting manual email confirmation...");
+          // This is a fallback method for older token formats
+          result = await supabase.auth.verifyOtp({
+            email,
+            token,
+            type: 'email'
+          });
+        }
+        // Method 5: Check current session (user might already be logged in)
+        else {
+          console.log("🔍 Checking current session...");
+          result = await supabase.auth.getSession();
+        }
+
+        console.log("📊 Confirmation result:", result);
+
+        if (result.error) {
+          console.error("❌ Confirmation error:", result.error);
+          
+          // Handle specific error cases
+          if (result.error.message.includes('token') && result.error.message.includes('expired')) {
+            setStatus('error');
+            setMessage('Email confirmation link has expired. Please request a new confirmation email.');
+          } else if (result.error.message.includes('invalid') || result.error.message.includes('token')) {
+            setStatus('error');
+            setMessage('Invalid confirmation link. Please check your email for the correct link or request a new one.');
+          } else {
+            setStatus('error');
+            setMessage(`Email confirmation failed: ${result.error.message}`);
+          }
+          return;
+        }
+
+        const user = result.data?.user || result.data?.session?.user;
+        
+        if (user) {
+          console.log("✅ User confirmed:", user.email);
+          setUserEmail(user.email || '');
+          
+          // Check if email is now confirmed
+          if (user.email_confirmed_at) {
+            console.log("📧 Email confirmed at:", user.email_confirmed_at);
+            
+            // Wait for database triggers to create profiles
+            console.log("🔄 Waiting for profile creation...");
+            setMessage('Email confirmed! Creating your profile...');
+            
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            
+            // Verify profile was created
+            const { data: profileCheck } = await supabase
+              .from('user_profiles')
+              .select('role, status')
+              .eq('user_id', user.id)
+              .single();
+            
+            console.log("👤 Profile check result:", profileCheck);
+            
+            setStatus('success');
+            if (profileCheck) {
+              setMessage(`Welcome! Your ${profileCheck.role?.toLowerCase()} account has been confirmed and your profile is ready.`);
+            } else {
+              setMessage(`Welcome! Your email has been confirmed. Please log in to complete your profile setup.`);
+            }
+            
+            toast({
+              title: 'Email Confirmed!',
+              description: 'Your account is ready. Redirecting to login...',
+            });
+            
+            // Show success for a moment, then redirect
+            setTimeout(() => {
+              navigate('/login?confirmed=true&email=' + encodeURIComponent(user.email));
+            }, 4000);
+          } else {
+            // User exists but email not confirmed - this shouldn't happen but handle it
+            setStatus('error');
+            setMessage('User authenticated but email confirmation status unclear. Please try logging in.');
+            setTimeout(() => navigate('/login'), 3000);
+          }
+        } else {
+          console.log("⚠️ No user data in result");
+          setStatus('error');
+          setMessage('Email confirmation failed: Invalid or expired confirmation link.');
         }
 
       } catch (error: any) {
-        console.error('Confirmation error:', error);
+        console.error('💥 Confirmation error:', error);
         setStatus('error');
-        setMessage('An unexpected error occurred. Please try again or contact support.');
+        setMessage('An unexpected error occurred. Please try again or request a new confirmation email.');
 
         toast({
           title: 'Error',
@@ -114,18 +211,10 @@ export default function AuthConfirm() {
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                 <p className="text-sm text-green-800">
                   Your email has been successfully verified!
-                  {userRole && ` You're now registered as a ${userRole}.`}
                 </p>
-                {userRole === 'student' && (
-                  <p className="text-xs text-green-700 mt-2">
-                    Your account is pending teacher approval.
-                  </p>
-                )}
-                {userRole === 'teacher' && (
-                  <p className="text-xs text-green-700 mt-2">
-                    Your account is pending admin approval.
-                  </p>
-                )}
+                <p className="text-xs text-green-700 mt-2">
+                  Your profile has been created. You can now log in to access your dashboard.
+                </p>
               </div>
               
               <p className="text-sm text-gray-600 mb-4">
